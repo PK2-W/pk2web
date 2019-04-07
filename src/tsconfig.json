@@ -1,0 +1,32 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES2017",
+    "sourceMap": true,
+    "alwaysStrict": true,
+    "watch": false,
+    "baseUrl": ".",
+    "paths": {
+//      "@s:app/*": ["../src/app/*"],
+//      "@s:be/*": ["../src/backend/*"],
+//      "@s:fe/*": ["../src/frontend/*"],
+//      "@s:ng/*": ["../src/backend/_engine/*"],
+//      "@s:sp/*": ["../src/support/*"],
+//
+//      "@c:app/*": ["./app/*"],
+//      "@c:be/*": ["./backend/*"],
+//      "@c:fe/*": ["./frontend/*"],
+//      "@c:sp/*": ["./support/*"],
+
+      "@vendor/*": ["./vendor/*"]
+    }
+  },
+  "include": [
+    "./**/*.ts"
+  ],
+  "exclude": [
+    "./vendor/**/*",
+    "./node_modules/**/*"
+  ]
+}

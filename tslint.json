@@ -1,0 +1,79 @@
+{
+  "defaultSeverity": "error",
+  "extends": [
+    "tslint:recommended"
+  ],
+  "jsRules": {},
+  "rules": {
+    "semicolon": [
+      true,
+      "always"
+    ],
+    "quotemark": [
+      true,
+      "single"
+    ],
+    "no-console": false,
+    "no-string-literal": false,
+    "no-bitwise": false,
+    "ordered-imports": false,
+    "only-arrow-functions": false,
+    "max-classes-per-file": [
+      false
+    ],
+    "no-shadowed-variable": false,
+    "indent": [
+      true,
+      "spaces",
+      4
+    ],
+    "no-string-throw": false,
+    "member-ordering": false,
+    "unified-signatures": false,
+    "object-literal-sort-keys": false,
+    "trailing-comma": [
+      true,
+      {
+        "multiline": "never",
+        "singleline": "never"
+      }
+    ],
+    "no-consecutive-blank-lines": [
+      true,
+      2
+    ],
+    "curly": false,
+    "no-empty": false,
+    "one-line": [
+      true,
+      "check-catch",
+      "check-finally",
+      "check-open-brace",
+      "check-whitespace"
+    ],
+    "no-trailing-whitespace": false,
+    "comment-format": false,
+    "no-conditional-assignment": false,
+    "max-line-length": [
+      false
+    ],
+    "interface-over-type-literal": false,
+    "one-variable-per-declaration": false,
+    "member-access": [
+      true,
+      "check-accessor"
+    ],
+
+
+
+
+    "prefer-const": false,
+    "variable-name": false
+  },
+  "rulesDirectory": [],
+  "linterOptions": {
+    "exclude": [
+      "dst/**/*"
+    ]
+  }
+}
