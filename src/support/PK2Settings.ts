@@ -151,7 +151,7 @@ export class PK2Settings {
     public music_max_volume: BYTE;
     
     /** @deprecated */
-    public kieli: string = 'castellano'; // idioma
+    public kieli: string = 'english'; // idioma
 }
 
 type TRawSettings = {

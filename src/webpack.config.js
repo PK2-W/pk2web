@@ -1,5 +1,6 @@
 const path = require('path');
 const WebpackNotifierPlugin = require('webpack-notifier');
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 
 const to = p => path.resolve(__dirname, p);
 
@@ -7,18 +8,24 @@ module.exports = {
     entry: path.join(__dirname, 'pk2w.ts'),
     mode: 'development',
     watch: true,
-    devtool: 'source-map',
+    devtool: 'inline-source-map',
+    optimization: {
+        removeAvailableModules: false,
+        removeEmptyChunks: false,
+        splitChunks: false
+    },
     output: {
+        pathinfo: false,
         path: path.join(__dirname, '../dist/pk2w'),
         filename: 'pk2web.min.js',
         libraryTarget: 'umd'
     },
     resolve: {
         alias: {
-            //     '@s:app': to('../src/app'),
+            '@game': to('./game'),
             //     '@s:be': to('../src/backend'),
             //     '@s:fe': to('../src/frontend'),
-            //     '@s:ng': to('../src/backend/_engine'),
+            '@ng': to('./engine'),
             //     '@s:sp': to('../src/support'),
             //
             //     '@c:app': to('./app'),
@@ -32,13 +39,17 @@ module.exports = {
     },
     module: {
         rules: [
-            {test: /\.tsx?$/, loader: 'ts-loader'}
+            {test: /\.tsx?$/, loader: 'ts-loader', options: {transpileOnly: true}}
             //{test: /\.(vert|frag)$/, loader: 'glslx-loader'}
         ]
     },
     plugins: [
-        new WebpackNotifierPlugin({alwaysNotify: true, skipFirstNotification: true})
+        new WebpackNotifierPlugin({
+            title: 'Pekka Kana 2 Web',
+            alwaysNotify: true,
+            sound: 'Pop'
+        }),
+        new ForkTsCheckerWebpackPlugin()
     ],
     externals: {}
 };
-

@@ -1,7 +1,7 @@
-import { PK2wFont } from '../../../engine/PK2wFont';
-import { Drawable } from '../../../support/drawable/Drawable';
-import * as PIXI from '../../../vendor/pixi';
-import { PK2Context } from '../../PK2Context';
+import { PK2Context } from '@game/PK2Context';
+import { Drawable } from '@ng/drawable/Drawable';
+import { PkFont } from '@ng/PkFont';
+import * as PIXI from '@vendor/pixi';
 
 export class IntroText extends Drawable {
     private readonly _context: any;
@@ -23,12 +23,13 @@ export class IntroText extends Drawable {
     }
     
     private constructor(ctx: PK2Context, text: string, fontId: number, x: number, y: number, iniTs: number, endTs: number) {
-        super();
-        
-        this._drawable = new PIXI.Container();
+        super(new PIXI.Container());
         
         this._context = ctx;
         this._text = text;
+        // TODO PARCHE
+        if (this._text == null) this._text = '?';
+        
         this._fontId = fontId;
         this._x = x;
         this._y = y;
@@ -75,20 +76,13 @@ export class IntroText extends Drawable {
         }
     }
     
-    private get font(): PK2wFont {
+    private get font(): PkFont {
         return this._context.getFont(this._fontId);
     }
     
     public arrange() {
-        // TODO PARCHE
-        if (this._text == null) this._text = '?';
-        
-        this.font.writeText(this._text, this._drawable);
+        this.font.writeText(this._text, this._drawable as PIXI.Container);
         this._drawable.x = this._x;
         this._drawable.y = this._y;
-    }
-    
-    public getDrawable() {
-        return this._drawable;
     }
 }

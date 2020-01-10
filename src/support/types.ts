@@ -47,4 +47,7 @@ export function sizeof(cvect: CVect<any>) {
     return cvect.sizeof;
 }
 
+export type TEXTID = string;
 export type FONTID = int;
+export type SCREENID = int;
+export type t_color = int;

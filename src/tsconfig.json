@@ -3,15 +3,16 @@
   "compilerOptions": {
     "module": "commonjs",
     "target": "ES2017",
+    "lib": ["es6"],
     "sourceMap": true,
     "alwaysStrict": true,
     "watch": false,
     "baseUrl": ".",
     "paths": {
-//      "@s:app/*": ["../src/app/*"],
+      "@game/*": ["./game/*"],
 //      "@s:be/*": ["../src/backend/*"],
 //      "@s:fe/*": ["../src/frontend/*"],
-//      "@s:ng/*": ["../src/backend/_engine/*"],
+      "@ng/*": ["./engine/*"],
 //      "@s:sp/*": ["../src/support/*"],
 //
 //      "@c:app/*": ["./app/*"],

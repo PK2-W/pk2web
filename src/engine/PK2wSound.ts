@@ -4,7 +4,7 @@
 //#########################
 
 import { RESOURCES_PATH } from '../support/constants';
-import { Game } from './PK2wEngine';
+import { PkEngine } from './PkEngine';
 
 // #define AUDIO_FREQ 44100
 
@@ -15,7 +15,7 @@ import { Game } from './PK2wEngine';
 // int sfx_volume = 100;
 
 export class PK2wSound {
-    private readonly _engine: Game;
+    private readonly _engine: PkEngine;
     
     // Mix_Chunk* indexes[MAX_SOUNDS]; //The original chunks loaded
     // Uint8* freq_chunks[MIX_CHANNELS]; //The chunk allocated for each channel
@@ -24,9 +24,12 @@ export class PK2wSound {
     // char playingMusic[PE_PATH_SIZE] = "";
     private _music: HTMLAudioElement;
     private _musicUri: string;
+    private _player: any;
     
-    public constructor(engine: Game) {
+    public constructor(engine: PkEngine) {
         this._engine = engine;
+        
+        XMPlayer.init();
     }
     
     // //Change the chunk frequency
@@ -132,7 +135,7 @@ export class PK2wSound {
         if (this._musicUri === uri) return;
         
         try {
-            this._music = new Audio(RESOURCES_PATH +  uri);
+            this._music = new Audio(RESOURCES_PATH + uri);
             await this._music.play();
         } catch (err) {
             console.warn(`PS     - Can\'t play "${ uri }"`);
@@ -157,13 +160,49 @@ export class PK2wSound {
         
     }
     
+    public async playXM(uri: string) {
+        XMPlayer.stop();
+        return new Promise((resolve, reject) => {
+            const req = new XMLHttpRequest();
+            req.open('GET', RESOURCES_PATH + uri, true);
+            req.responseType = 'arraybuffer';
+            req.onreadystatechange = (aEvt) => {
+                if (req.readyState === 4) {
+                    if (req.status !== 200) {
+                        return reject();
+                    }
+                    
+                    XMPlayer.load(req.response);
+                    XMPlayer.play();
+                    resolve();
+                }
+            };
+            req.send();
+        });
+    }
+    
     // void PisteSound_SetMusicVolume(int volume){
     // 	Mix_VolumeMusic(volume * 128 / 100);
     // 	mus_volume = volume;
     // }
-    // void PisteSound_StopMusic(){
-    // 	Mix_FadeOutMusic(0);
-    // }
+    
+    public setMusicVolume(v: number) {
+        //this._music.volume = v;
+    }
+    
+    public getMusicVolume() {
+        return this._music.volume;
+    }
+    
+    public stopMusic(): void {
+        try {
+            this._music.pause();
+            this._music = null;
+            this._musicUri = null;
+        } catch (err) {
+        }
+    }
+    
     //
     // int PisteSound_Start(){
     // 	if(Mix_OpenAudio(AUDIO_FREQ, MIX_DEFAULT_FORMAT, 2, 4096) < 0){

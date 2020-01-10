@@ -3,13 +3,13 @@
 //by Janne Kivilahti from Piste Gamez
 //#########################
 
-import { Screen } from '../game/screen/Screen';
+import { PkScreen } from './screen/PkScreen';
 import { WEB_CANVAS_QS } from '../support/constants';
 // #pragma once
 //
 import { uint, int, bool, FONTID } from '../support/types';
 import * as PIXI from '../vendor/pixi';
-import { PK2wFont } from './PK2wFont';
+import { PkFont } from './PkFont';
 
 // #include <SDL2/SDL.h>
 // #include <vector>
@@ -46,14 +46,14 @@ export class PK2wRenderer {
     private readonly _renderer: PIXI.SystemRenderer;
     private readonly _stage: PIXI.Container;
     
-    private _activeScreen: Screen;
-    private _nextScreen: Screen;
+    private _activeScreen: PkScreen;
+    private _nextScreen: PkScreen;
     
     // SDL_Surface*  frameBuffer8 = NULL;
     
     // SDL_Surface*  imageList[MAX_IMAGES];
     private imageList: HTMLImageElement[] = [];
-    private readonly fontList: Map<FONTID, PK2wFont> = new Map<FONTID, PK2wFont>();
+    private readonly fontList: Map<FONTID, PkFont> = new Map<FONTID, PkFont>();
     // SDL_Palette*  game_palette = NULL;
     
     private screenWidth: int;
@@ -104,29 +104,19 @@ export class PK2wRenderer {
         this.adjustScreen();
     }
     
-    public PisteDraw2_IsFading(): bool {
-        // if (this.alpha > 0 && this.fadeSpeed < 0)
-        //     return true;
-        //
-        // if (this.alpha < 100 && this.fadeSpeed > 0)
-        //     return true;
-        
-        return false;
-    }
+    /** @deprecated now screens are autonomous */
+    public PisteDraw2_IsFading() { PK2wRenderer.deprecated(); }
     
-    // int PisteDraw2_FadeOut(int speed);
+    /** @deprecated now screens are autonomous */
+    public PisteDraw2_FadeOut() { PK2wRenderer.deprecated(); }
     
-    public fadeOut(speed: int) {
-        // this.alpha = 100;
-        // this.fadeSpeed = -speed;
-        return 0;
-    }
+    /** @deprecated now screens are autonomous */
+    public fadeOut() { PK2wRenderer.deprecated(); }
     
-    public fadeIn(speed: int) {
-        this.alpha = 0;
-        this.fadeSpeed = speed;
-        return 0;
-    }
+    /** @deprecated now screens are autonomous */
+    public fadeIn() { PK2wRenderer.deprecated(); }
+    
+    private static deprecated(): void { throw new Error('DEPRECATED'); }
     
     private findfreeimage(): int {
         for (let i = 0; i < MAX_IMAGES; i++)
@@ -136,61 +126,41 @@ export class PK2wRenderer {
     }
     
     // void PisteDraw2_RotatePalette(BYTE start, BYTE end);
-    //
-    // int PisteDraw2_Image_New(int w, int h);
-    public PisteDraw2_Image_Load(filename: string/*, bool getPalette*/): int {
-        let index: int, i: int;
-        //     SDL_Palette* pal;
-        
-        index = this.findfreeimage();
-        if (index === -1) {
-            console.warn('Error - Got index -1');
-            return -1;
-        }
-        
-        // imageList[index] = SDL_LoadBMP(filename);
-        // if(imageList[index]==NULL){
-        //     printf("PD     - Error loading %s\n",filename);
-        //     return -1;
-        // }
-        // if(imageList[index]->format->BitsPerPixel != 8){
-        //     printf("PD     - Failed to open %s, just 8bpp indexed images!\n",filename);
-        //     PisteDraw2_Image_Delete(index);
-        //     return -1;
-        // }
-        // SDL_SetColorKey(imageList[index], SDL_TRUE, 255);
-        //
-        // if(getPalette){
-        //     pal = imageList[index]->format->palette;
-        //     for(i=0;i<256;i++)
-        //         game_palette->colors[i] = pal->colors[i];
-        // }
-        
-        // imageList[index]->userdata = (void*)imageList[index]->format->palette; //Put allocated pallete in userdata
-        // imageList[index]->format->palette = game_palette;
-        
-        return index;
-    }
     
-    // int PisteDraw2_Image_Copy(int src_i, int dst_i);
-    // int PisteDraw2_Image_Cut(int ImgIndex, int x, int y, int w, int h);
-    // int PisteDraw2_Image_Cut(int ImgIndex, PD_RECT area);
-    // int PisteDraw2_Image_Clip(int index, int x, int y);
-    // int PisteDraw2_Image_ClipTransparent(int index, int x, int y, int alpha);
-    // int PisteDraw2_Image_CutClip(int index, int dstx, int dsty, int srcx, int srcy, int oikea, int ala);
-    // int PisteDraw2_Image_CutClip(int index, PD_RECT srcrect, PD_RECT dstrect);
-    // int PisteDraw2_Image_CutClipTransparent(int index, PD_RECT srcrect, PD_RECT dstrect, int alpha);
-    // int PisteDraw2_Image_CutClipTransparent(int index, PD_RECT srcrect, PD_RECT dstrect, int alpha, int colorsum);
-    // void PisteDraw2_Image_GetSize(int index, int& w, int& h);
-    // int PisteDraw2_Image_FlipHori(int index);
-    // int PisteDraw2_Image_Snapshot(int index);
-    // int PisteDraw2_Image_Delete(int& index);
-    //
-    // int PisteDraw2_ImageFill(int index, BYTE color);
-    // int PisteDraw2_ImageFill(int index, int posx, int posy, int oikea, int ala, BYTE color);
-    // int PisteDraw2_ScreenFill(BYTE color);
-    // int PisteDraw2_ScreenFill(int posx, int posy, int oikea, int ala, BYTE color);
-    // void PisteDraw2_SetMask(int x, int y, int w, int h);
+    
+    /** @deprecated */
+    public PisteDraw2_Image_New(/*int w, int h*/) { PK2wRenderer.deprecated(); }
+    /** @deprecated */
+    public PisteDraw2_Image_Load(/*filename: string/*, bool getPalette*/) { PK2wRenderer.deprecated(); }
+    /** @deprecated */
+    public PisteDraw2_Image_Copy(/*int src_i, int dst_i*/) { PK2wRenderer.deprecated(); }
+    /** @deprecated */
+    public PisteDraw2_Image_Cut(/*int ImgIndex, int x, int y, int w, int h*/) { PK2wRenderer.deprecated(); }
+    //public PisteDraw2_Image_Cut(/*int ImgIndex, PD_RECT area*/) { PK2wRenderer.deprecated(); }
+    /** @deprecated */
+    public PisteDraw2_Image_Clip(/*int index, int x, int y*/) { PK2wRenderer.deprecated(); }
+    /** @deprecated */
+    public PisteDraw2_Image_ClipTransparent(/*int index, int x, int y, int alpha*/) { PK2wRenderer.deprecated(); }
+    /** @deprecated */
+    public PisteDraw2_Image_CutClip(/*int index, int dstx, int dsty, int srcx, int srcy, int oikea, int ala*/) { PK2wRenderer.deprecated(); }
+    //public PisteDraw2_Image_CutClip(/*int index, PD_RECT srcrect, PD_RECT dstrect*/) { PK2wRenderer.deprecated(); }
+    /** @deprecated */
+    public PisteDraw2_Image_CutClipTransparent(/*int index, PD_RECT srcrect, PD_RECT dstrect, int alpha*/) { PK2wRenderer.deprecated(); }
+    //public PisteDraw2_Image_CutClipTransparent(/*int index, PD_RECT srcrect, PD_RECT dstrect, int alpha, int colorsum*/) { PK2wRenderer.deprecated(); }
+    /** @deprecated */
+    public PisteDraw2_Image_GetSize(/*int index, int& w, int& h*/) { PK2wRenderer.deprecated(); }
+    /** @deprecated */
+    public PisteDraw2_Image_FlipHori(/*int index*/) { PK2wRenderer.deprecated(); }
+    /** @deprecated */
+    public PisteDraw2_Image_Snapshot(/*int index*/) { PK2wRenderer.deprecated(); }
+    /** @deprecated */
+    public PisteDraw2_Image_Delete(/*int& index*/) { PK2wRenderer.deprecated(); }
+    
+    // int PisteDraw2_ImageFill(int index, BYTE color) { PK2wRenderer.deprecated(); }
+    // int PisteDraw2_ImageFill(int index, int posx, int posy, int oikea, int ala, BYTE color) { PK2wRenderer.deprecated(); }
+    // int PisteDraw2_ScreenFill(BYTE color) { PK2wRenderer.deprecated(); }
+    // int PisteDraw2_ScreenFill(int posx, int posy, int oikea, int ala, BYTE color) { PK2wRenderer.deprecated(); }
+    // void PisteDraw2_SetMask(int x, int y, int w, int h) { PK2wRenderer.deprecated(); }
     //
     // int PisteDraw2_DrawScreen_Start(BYTE *&pixels, DWORD &pitch);
     // int PisteDraw2_DrawScreen_End();
@@ -211,15 +181,14 @@ export class PK2wRenderer {
         console.log(`PD     - Creating font from "${ uri }"`);
         
         try {
-            const font = await PK2wFont.load(uri);
+            const font = await PkFont.load(uri);
             this.fontList.set(font.iid, font);
             return font.iid;
             
         } catch (err) {
             console.warn(`PD     - Font couldn't be loaded from "${ uri }"`);
+            throw err;
         }
-        
-        return null;
     }
     
     // int PisteDraw2_Font_Write(int font_index, const char* text, int x, int y);
@@ -228,7 +197,7 @@ export class PK2wRenderer {
     // int PisteDraw2_SetFilter(const char* filter);
     // void PisteDraw2_FullScreen(bool set);
     
-    public setNextScreen(screen: Screen) {
+    public setNextScreen(screen: PkScreen) {
         if (this._activeScreen == null) {
             this.setActiveScreen(screen);
             
@@ -236,17 +205,17 @@ export class PK2wRenderer {
         }
     }
     
-    private setActiveScreen(screen: Screen) {
+    public setActiveScreen(screen: PkScreen) {
         this._stage.removeChildren();
         this._stage.addChild(screen.getDrawable());
         
-        screen.show();
+        //screen.show();
         
-        this.tmp();
+        //this.tmp();
         // this._renderer.render(this._stage);
     }
     
-    private tmp() {
+    public tmp() {
         requestAnimationFrame(() => this.tmp());
         
         this._renderer.render(this._stage);
@@ -332,11 +301,11 @@ export class PK2wRenderer {
             // SDL_RenderPresent(PD_Renderer);
             //
             // SDL_DestroyTexture(texture);
-            if (this.PisteDraw2_IsFading()) {
-                // this.alpha += this.fadeSpeed;
-                // if (this.alpha < 0) this.alpha = 0;
-                // if (this.alpha > 255) this.alpha = 255;
-            }
+            //if (this.PisteDraw2_IsFading()) {
+            // this.alpha += this.fadeSpeed;
+            // if (this.alpha < 0) this.alpha = 0;
+            // if (this.alpha > 255) this.alpha = 255;
+            //}
             
             // SDL_Rect r = {0, 0, XOffset, PD_screen_height}; // Fill the unused borders
             // SDL_FillRect(frameBuffer8, &r, 0);
@@ -347,7 +316,7 @@ export class PK2wRenderer {
     
     // void* PisteDraw2_GetRenderer();
     
-    public getFont(fontId: FONTID): PK2wFont {
+    public getFont(fontId: FONTID): PkFont {
         return this.fontList.get(fontId);
     }
 }

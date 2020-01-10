@@ -10,7 +10,7 @@ export interface IDrawable {
     /**
      * Devuelve el lienzo de este elemento, redibujando su contenido si este ha sido invalidado.<br>
      */
-    getDrawable(): PIXI.Container;
+    getDrawable(): PIXI.DisplayObject;
     
     /**
      * Establece que el contenido en cache del lienzo ya no es válido y debe reconstruirse durante el próximo

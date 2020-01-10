@@ -1,6 +1,9 @@
-import { Game } from '../engine/PK2wEngine';
-import { PK2wFont } from '../engine/PK2wFont';
+import { PkInput } from '@ng/PkInput';
+import { PkResources } from '@ng/PkResources';
+import { PkEngine } from '../engine/PkEngine';
+import { PkFont } from '../engine/PkFont';
 import { PK2wSound } from '../engine/PK2wSound';
+import { PkLanguage } from '../engine/PkLanguage';
 import { GameTimer } from '../support/GameTimer';
 import { i18nSchema } from '../support/i18nSchema';
 import { int, FONTID } from '../support/types';
@@ -17,7 +20,9 @@ export abstract class PK2Context {
     protected _tx = i18nSchema;
     
     // (Piste) _engine
-    protected _engine: Game;
+    protected _engine: PkEngine;
+    
+    public _degree: int = 0;
     
     public get fontti1(): FONTID {
         return this._fontti1;
@@ -39,23 +44,20 @@ export abstract class PK2Context {
         return this._fontti5;
     }
     
-    public get tx(): typeof i18nSchema {
-        return this._tx;
+    public get degree(): number {
+        return this._degree;
     }
     
-    protected get ng(): Game {
-        return this._engine;
-    }
+    protected get ng(): PkEngine { return this._engine; }
     
-    public get gt(): GameTimer {
-        return this._engine.gt;
-    }
+    public get resources(): PkResources { return this._engine.resources; }
     
-    public get audio(): PK2wSound {
-        return this._engine.audio;
-    }
+    public get tx(): PkLanguage { return this._engine.tx; }
+    public get time(): GameTimer { return this._engine.gt; }
+    public get input(): PkInput { return this._engine.input; }
+    public get audio(): PK2wSound { return this._engine.audio; }
     
-    public getFont(fontId: FONTID): PK2wFont {
+    public getFont(fontId: FONTID): PkFont {
         return this._engine.rendr.getFont(fontId);
     }
 }

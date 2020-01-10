@@ -3,12 +3,20 @@
 //by Janne Kivilahti from Piste Gamez
 //#########################
 
+import { PkInput } from '@ng/PkInput';
+import { PkResource, PkResources } from '@ng/PkResources';
+import { RESOURCES_PATH } from '../support/constants';
 import { GameTimer } from '../support/GameTimer';
-import { int, bool } from '../support/types';
+import { PkScreen } from './screen/PkScreen';
+import { int, bool, SCREENID } from '../support/types';
 import { PK2wRenderer } from './PK2wDraw';
 import { PK2wSound } from './PK2wSound';
+import { PkLanguage } from './PkLanguage';
 
-export class Game {
+export class PkEngine {
+    private _screens: Map<int, PkScreen>;
+    private _tmpScreen: PkScreen;
+    
     private gameLogicFnPtr: () => void;
     
     // private ready :bool= false;
@@ -24,10 +32,12 @@ export class Game {
     private count: number = 0;
     private real_fps: number = 0;
     
+    private readonly _gameTimer: GameTimer;
+    private readonly _language: PkLanguage;
+    private readonly _resources: PkResources;
     private readonly _rendr: PK2wRenderer;
+    private readonly _input: PkInput;
     private readonly _audio: PK2wSound;
-    
-    private _gameTimer: GameTimer;
     
     
     // TODO bx: throw custom error -> printf("PK2    - Failed to init PisteEngine.\n");
@@ -38,12 +48,29 @@ export class Game {
         // 		return;
         // 	}
         
+        this._gameTimer = new GameTimer(60);
+        this._language = new PkLanguage();
+        this._resources = new PkResources(RESOURCES_PATH);
         this._rendr = new PK2wRenderer(width, height);
-        // 	PisteInput_Start();
+        this._input = new PkInput(this);
         this._audio = new PK2wSound(this);
+        
+        this._screens = new Map<SCREENID, PkScreen>();
     }
     
+    
+    ///  Screen Management  ///
+    
+    public registerScreen(id: int, screen: PkScreen): PkScreen {
+        this._screens.set(id, screen);
+        return screen;
+    }
+    
+    
+    ///
+    
     public destroy() {
+        this._gameTimer.stop();
         
         this.rendr.destroy();
         // 	PisteInput_Exit();
@@ -89,8 +116,9 @@ export class Game {
         this.gameLogicFnPtr = gameLogic.bind(context);
         this.running = true;
         
-        this._gameTimer = new GameTimer(60);
+        this._gameTimer.start();
         
+        this._rendr.tmp();
         this.loop2();
     }
     
@@ -104,7 +132,7 @@ export class Game {
         
         this.count++;
         
-        this.gameLogicFnPtr();
+        //this.gameLogicFnPtr();
         this.logic();
         
         if (this.draw) {
@@ -130,8 +158,16 @@ export class Game {
         return this._rendr;
     }
     
+    public get input(): PkInput {
+        return this._input;
+    }
+    
     public get audio(): PK2wSound {
         return this._audio;
+    }
+    
+    public get resources(): PkResources {
+        return this._resources;
     }
     
     public getRenderer(): PK2wRenderer {
@@ -142,17 +178,21 @@ export class Game {
         return this._gameTimer;
     }
     
+    public get tx(): PkLanguage {
+        return this._language;
+    }
+    
     public setDebug(value: bool) {
         this.debug = value;
     }
     
-    // void Game::ignore_frame() {
+    // void PkEngine::ignore_frame() {
     //
     // 	draw = false;
     //
     // }
     //
-    // bool Game::is_ready() {
+    // bool PkEngine::is_ready() {
     //
     // 	return ready;
     //

@@ -66,14 +66,15 @@
 
 
 
-
     "prefer-const": false,
     "variable-name": false
   },
   "rulesDirectory": [],
   "linterOptions": {
     "exclude": [
-      "dst/**/*"
+      "dst/**/*",
+      "src/vendor/*.js",
+      "src/webpack.config.js"
     ]
   }
 }

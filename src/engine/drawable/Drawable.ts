@@ -1,5 +1,6 @@
 import * as PIXI from '@vendor/pixi';
 import { EventEmitter } from 'eventemitter3';
+import { minmax } from '../support/utils';
 import { DwHelper } from './DwHelper';
 import { IDrawable } from './IDrawable';
 
@@ -29,10 +30,11 @@ import { IDrawable } from './IDrawable';
  * @version 1.1-stable
  */
 export abstract class Drawable extends EventEmitter implements IDrawable {
-    // Drawable container
-    protected _drawable: PIXI.Container;
-    // Alpha
-    private _alpha;
+    // Drawable object
+    protected _drawable: PIXI.DisplayObject;
+    // Visibility
+    private readonly _alphaFilter: PIXI.filters.AlphaFilter;
+    
     
     // Indica si este elemento requiere redibujado o no
     private _invalidated: boolean;
@@ -44,14 +46,19 @@ export abstract class Drawable extends EventEmitter implements IDrawable {
      * Constructor base de está clase.
      * El lienzo nace invalidado por defecto.
      */
-    protected constructor() {
+    protected constructor(drawable: PIXI.DisplayObject) {
         super();
         
-        this._alpha = 1;
+        this._drawable = drawable;
+        this._alphaFilter = new PIXI.filters.AlphaFilter(1);
+        this._drawable.filters = [this._alphaFilter];
+        
         this._invalidated = true;
         this._childsInvalidated = [];
     }
     
+    
+    ///  Graphics  ///
     
     /**
      * Puede ser invocado por la clase hija cuando alguno de los elementos de esta sea invalidado (el contenido en
@@ -62,7 +69,7 @@ export abstract class Drawable extends EventEmitter implements IDrawable {
      * @param child - El subelemento que necesita redibujado.
      * @emits DwHelper.EVT_NEEDS_RELAYOUT
      */
-    protected onChildInvalidated(child: Drawable) {
+    protected onChildInvalidated(child: Drawable): void {
         this._childsInvalidated.push(child);
         this.emit(DwHelper.EVT_NEEDS_RELAYOUT, this);
     }
@@ -74,7 +81,7 @@ export abstract class Drawable extends EventEmitter implements IDrawable {
      * @param propagate - Por defecto TRUE, indica si la necesidad del redibujado se propaga hacia los elementos padre.
      * @emits DwHelper.EVT_NEEDS_RELAYOUT
      */
-    public invalidate(propagate: boolean = true) {
+    public invalidate(propagate: boolean = true): void {
         this._invalidated = true;
         
         if (propagate) {
@@ -99,14 +106,14 @@ export abstract class Drawable extends EventEmitter implements IDrawable {
     /**
      * Establece que el contenido en cache del lienzo vuelve a ser válido.
      */
-    protected revalidate() {
+    protected revalidate(): void {
         this._invalidated = false;
     }
     
     /**
      * Redistribuye según sea o no necesario, el contenido que va a dibujarse en el próximo ciclo de repintado.
      */
-    public relayout() {
+    public relayout(): void {
         for (const child of this._childsInvalidated) {
             child.relayout();
         }
@@ -120,18 +127,42 @@ export abstract class Drawable extends EventEmitter implements IDrawable {
     /**
      * Devuelve el lienzo de este elemento, redibujando su contenido si este ha sido invalidado.
      */
-    public abstract getDrawable(): PIXI.Container ;
-    
-    public get alpha(): number {
-        return this._alpha;
+    public getDrawable(): PIXI.DisplayObject {
+        return this._drawable;
     }
     
+    
+    ///  Properties  ///
+    
+    public get x(): number {
+        return (this._drawable != null) ? this._drawable.x : 0;
+    }
+    public set x(x: number) {
+        if (this._drawable != null)
+            this._drawable.x = x;
+    }
+    public setX(x: number): this {
+        this.x = x;
+        return this;
+    }
+    
+    public get y(): number {
+        return (this._drawable != null) ? this._drawable.y : 0;
+    }
+    public set y(y: number) {
+        if (this._drawable != null)
+            this._drawable.y = y;
+    }
+    public setY(y: number): this {
+        this.y = y;
+        return this;
+    }
+    
+    public get alpha(): number {
+        return this._alphaFilter.alpha;
+    }
     public set alpha(v: number) {
-        this._alpha =
-            (v < 0) ? 0 :
-                ((v > 1) ? 1 : v);
-        
-        this._drawable.alpha = this._alpha;
+        this._alphaFilter.alpha = minmax(v, 0, 1);
         
         this.invalidate();
     }

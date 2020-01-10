@@ -37,15 +37,21 @@ export class GameTimer {
         this._lastT = this.now();
         
         this._handlers = new Set();
+    }
+    
+    public start() {
+        if (this._timer != null)
+            return;
         
         this._timer = setTimeout(this.trigger.bind(this), 1);
     }
     
-    private destroy() {
-        if (this._timer != null) {
-            clearTimeout(this._timer);
-            this._timer = null;
-        }
+    public stop() {
+        if (this._timer == null)
+            return;
+        
+        clearTimeout(this._timer);
+        this._timer = null;
     }
     
     
