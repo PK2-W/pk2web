@@ -3,7 +3,10 @@
   "compilerOptions": {
     "module": "commonjs",
     "target": "ES2017",
-    "lib": ["es6"],
+    "lib": [
+      "es6",
+      "dom"
+    ],
     "sourceMap": true,
     "alwaysStrict": true,
     "watch": false,

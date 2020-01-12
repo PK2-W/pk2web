@@ -1,3 +1,5 @@
+import { ResourceFetchError } from '@ng/error/ResourceFetchError';
+import { ResourceNotFoundError } from '@ng/error/ResourceNotFoundError';
 import { Binary } from '@ng/support/Binary';
 import { pathJoin, cloneStruct } from '@ng/support/utils';
 
@@ -77,14 +79,14 @@ export class PkResources {
             req.onreadystatechange = (aEvt) => {
                 if (req.readyState === 4) {
                     if (req.status !== 200) {
-                        return reject();
+                        return reject(new ResourceNotFoundError(this._root, uri));
                     }
                     
                     return resolve(binary ? req.response : req.responseText);
                 }
             };
             req.onerror = () => {
-                return reject();
+                return reject(new ResourceFetchError(this._root, uri));
             };
             req.send();
         });

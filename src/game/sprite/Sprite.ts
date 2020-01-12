@@ -1,4 +1,4 @@
-import { SpritePrototype } from '@game/sprite/SpritePrototype';
+import { PK2SpritePrototype } from '@game/sprite/PK2SpritePrototype';
 import { EAi } from '@game/sprite/SpriteManager';
 import { SPRITE_MAX_AI } from '../../support/constants';
 import { int, BYTE, bool } from '../../support/types';
@@ -6,7 +6,7 @@ import { int, BYTE, bool } from '../../support/types';
 export class Sprite {
     private _aktiivinen: boolean;			// true / false
     private _pelaaja: int;			// 0 = ei pelaaja, 1 = pelaaja
-    private _tyyppi: SpritePrototype;	// osoitin spriten prototyyppiin
+    private _tyyppi: PK2SpritePrototype;	// osoitin spriten prototyyppiin
     private _piilota: boolean;			// true = ei toiminnassa, false = toiminnassa
     private _alku_x: number;				// spriten alkuper�inen x sijainti
     private _alku_y: number;				// spriten alkuper�inen y sijainti
@@ -51,14 +51,83 @@ export class Sprite {
     private _frame_aika: BYTE;			// kuinka kauan frame on n�kynyt
     private _muutos_ajastin: int;		// sprite muuttuu muutosspriteksi kun t�m� nollautuu
     
-    //     PK2Sprite();
-    //     PK2Sprite(PK2Sprite_Prototyyppi *tyyppi, int pelaaja, bool piilota, double x, double y);
-    // ~PK2Sprite();
+    public constructor() ;
+    public constructor(proto: PK2SpritePrototype, isPlayer: boolean, piilota: boolean, x: number, y: number);
+    public constructor(proto?: PK2SpritePrototype, isPlayer?: boolean, piilota?: boolean, x?: number, y?: number) {
+        this.reuseWith(proto, isPlayer, piilota, x, y);
+    }
+    
+    public reuse() {
+        if (this._piilota === false)
+            throw new Error('This sprite is still being used, so it cannot be recycled.');
+        
+        this._tyyppi = null;
+        this._pelaaja = 0;
+        this._piilota = true;
+        this._x = 0;
+        this._y = 0;
+        this._alku_x = 0;
+        this._alku_y = 0;
+        this._a = 0;
+        this._b = 0;
+        this._hyppy_ajastin = 0;
+        this._kyykky = false;
+        this._energia = 0;
+        this._alkupaino = 0;
+        this._paino = 0;
+        this._kytkinpaino = 0;
+        this._flip_x = false;
+        this._flip_y = false;
+        this._animaatio_index = EAnimation.ANIMAATIO_PAIKALLA;
+        this._alas = true;
+        this._ylos = true;
+        this._oikealle = true;
+        this._vasemmalle = true;
+        this._reuna_oikealla = false;
+        this._reuna_vasemmalla = false;
+        this._frame_aika = 0;
+        this._sekvenssi_index = 0;
+        this._isku = 0;
+        this._lataus = 0;
+        this._hyokkays1 = 0;
+        this._hyokkays2 = 0;
+        this._vedessa = false;
+        this._piilossa = false;
+        this._saatu_vahinko = 0;
+        this._vihollinen = false;
+        this._ammus1 = -1;
+        this._ammus2 = -1;
+        this._pelaaja_x = -1;
+        this._pelaaja_y = -1;
+        this._ajastin = 0;
+        this._muutos_ajastin = 0;
+    }
+    
+    public reuseWith(proto: PK2SpritePrototype, isPlayer: boolean, piilota: boolean, x: number, y: number) {
+        this.reuse();
+        
+        if (proto != null) {
+            this._tyyppi = proto;
+            this._pelaaja = isPlayer ? 1 : 0;  // TODO Convert to boolean
+            this._piilota = piilota;
+            this._x = x;
+            this._y = y;
+            this._alku_x = x;
+            this._alku_y = y;
+            this._energia = proto.energy;
+            this._alkupaino = proto.weight;
+            this._paino = this._alkupaino;
+            this._vihollinen = proto.isEnemy();
+            this._ammus1 = proto.ammus1;
+            this._ammus2 = proto.ammus2;
+        }
+    }
+    
     //     int Piirra(int kamera_x, int kamera_y);		// Animoi ja piirt�� spriten
     //     int Animaatio(int anim_i, bool nollaus);	// Vaihtaa spriten animaation
     //     int Animoi();								// Animoi muttei piirr� sprite�
     
-    /** @deprecated use {@link SpritePrototype.Onko_AI} */
+    /** @deprecated use {@link PK2SpritePrototype.Onko_AI} */
     public Onko_AI(AI: EAi) {
         throw new Error('DEPRECATED');
     }
@@ -263,6 +332,7 @@ export class Sprite {
     public get piilota(): boolean {
         return this._piilota;
     }
+    /** @deprecated: Must use hide methods. */
     public set piilota(v: boolean) {
         this._piilota = v;
     }
@@ -395,6 +465,18 @@ export class Sprite {
     }
 }
 
+export enum EAnimation {
+    ANIMAATIO_PAIKALLA,
+    ANIMAATIO_KAVELY,
+    ANIMAATIO_HYPPY_YLOS,
+    ANIMAATIO_HYPPY_ALAS,
+    ANIMAATIO_KYYKKY,
+    ANIMAATIO_VAHINKO,
+    ANIMAATIO_KUOLEMA,
+    ANIMAATIO_HYOKKAYS1,
+    ANIMAATIO_HYOKKAYS2
+}
+
 export enum EDamageType {
     VAHINKO_EI,
     VAHINKO_ISKU,
@@ -412,3 +494,30 @@ export enum EDamageType {
     VAHINKO_PISTO
 }
 
+export enum EDestructionType {
+    TUHOUTUMINEN_EI_TUHOUDU,
+    TUHOUTUMINEN_HOYHENET,
+    TUHOUTUMINEN_TAHDET_HARMAA,
+    TUHOUTUMINEN_TAHDET_SININEN,
+    TUHOUTUMINEN_TAHDET_PUNAINEN,
+    TUHOUTUMINEN_TAHDET_VIHREA,
+    TUHOUTUMINEN_TAHDET_ORANSSI,
+    TUHOUTUMINEN_TAHDET_VIOLETTI,
+    TUHOUTUMINEN_TAHDET_TURKOOSI,
+    TUHOUTUMINEN_RAJAHDYS_HARMAA,
+    TUHOUTUMINEN_RAJAHDYS_SININEN,
+    TUHOUTUMINEN_RAJAHDYS_PUNAINEN,
+    TUHOUTUMINEN_RAJAHDYS_VIHREA,
+    TUHOUTUMINEN_RAJAHDYS_ORANSSI,
+    TUHOUTUMINEN_RAJAHDYS_VIOLETTI,
+    TUHOUTUMINEN_RAJAHDYS_TURKOOSI,
+    TUHOUTUMINEN_SAVU_HARMAA,
+    TUHOUTUMINEN_SAVU_SININEN,
+    TUHOUTUMINEN_SAVU_PUNAINEN,
+    TUHOUTUMINEN_SAVU_VIHREA,
+    TUHOUTUMINEN_SAVU_ORANSSI,
+    TUHOUTUMINEN_SAVU_VIOLETTI,
+    TUHOUTUMINEN_SAVU_TURKOOSI,
+    TUHOUTUMINEN_SAVUPILVET,
+    TUHOUTUMINEN_ANIMAATIO = 100
+}

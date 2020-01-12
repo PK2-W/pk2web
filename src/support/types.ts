@@ -1,13 +1,17 @@
+/** Signed int (4 bytes). */
 export type int = number;
-export type uint = number;
+export type uint = uint8;
 export type bool = boolean;
 
-/** uint8 */
-export type BYTE = uint;
-/** uint16 */
-export type WORD = uint;
-/** uint32 */
-export type DWORD = uint;
+/** Unsigned int 1 byte (uint8). */
+export type uint8 = number;
+export type BYTE = uint8;
+/** Unsigned int 2 bytes (uint16). */
+export type uint16 = number;
+export type WORD = uint16;
+/** Unsigned int 4 bytes (uint32). */
+export type uint32 = number;
+export type DWORD = uint32;
 
 /**
  * CHAR ARRAY

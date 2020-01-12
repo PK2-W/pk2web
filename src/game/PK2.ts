@@ -22,7 +22,7 @@
 import { PK2Map } from '@game/map/PK2Map';
 import { PK2Game } from '@game/PK2Game';
 import { Sprite } from '@game/sprite/Sprite';
-import { SpritePrototype } from '@game/sprite/SpritePrototype';
+import { PK2SpritePrototype } from '@game/sprite/PK2SpritePrototype';
 import { ITickable } from '../engine/ITickable';
 import { PK2wRenderer, FADE } from '../engine/PK2wDraw';
 import { PkEngine } from '../engine/PkEngine';
@@ -150,9 +150,7 @@ type PK2SAVE = {
 ///...
 
 
-// //PALIKOIHIN LIITTYV�T AJASTIMET
-let kytkin1: int = 0, kytkin2 = 0, kytkin3 = 0;
-let palikka_animaatio: int = 0;
+
 //
 // //��NIEFEKTIT
 // int kytkin_aani,
@@ -228,9 +226,6 @@ export class PK2 extends PK2Context implements ITickable {
     private debug_active_sprites: int = 0;
     
     // MUUTA
-    
-    private cos_table: CVect<number> = cvect(360);
-    private sin_table: CVect<number> = cvect(360);
     //
     private degree_temp: int = 0;
     //
@@ -889,9 +884,10 @@ export class PK2 extends PK2Context implements ITickable {
     
     private precalculateSinCos(): void {
         let i: int;
-        for (i = 0; i < 360; i++) this.cos_table[i] = Math.cos(Math.PI * 2 * (i % 360) / 180) * 33;
-        for (i = 0; i < 360; i++) this.sin_table[i] = Math.sin(Math.PI * 2 * (i % 360) / 180) * 33;
+        for (i = 0; i < 360; i++) this.cosTable[i] = Math.cos(Math.PI * 2 * (i % 360) / 180) * 33;
+        for (i = 0; i < 360; i++) this.sinTable[i] = Math.sin(Math.PI * 2 * (i % 360) / 180) * 33;
     }
+    
     
     // int PK_Palikka_Tee_Maskit(){
     // 	BYTE *buffer = NULL;
@@ -1788,41 +1784,7 @@ export class PK2 extends PK2Context implements ITickable {
     // 		}
     // 	}
     // }
-    //
-    // int  PK2::SpriteSystem::protot_get_all() {
-    // 	char polku[PE_PATH_SIZE];
-    // 	int viimeinen_proto;
-    //
-    // 	for (int i=0;i < MAX_PROTOTYYPPEJA;i++){
-    // 		if (strcmp(kartta->protot[i],"") != 0){
-    // 			viimeinen_proto = i;
-    // 			strcpy(polku,"");
-    // 			PK_Load_EpisodeDir(polku);
-    //
-    // 			if (protot_get(polku,kartta->protot[i])!=0){
-    // 				strcpy(polku,"sprites/");
-    // 				if (protot_get(polku,kartta->protot[i])!=0){
-    // 					printf("PK2     - Can't load sprite %s. It will not appear.", kartta->protot[i]);
-    // 					next_free_prototype++;
-    // 				}
-    // 			}
-    // 		}
-    // 		else
-    // 			next_free_prototype++;
-    // 	}
-    //
-    // 	next_free_prototype = viimeinen_proto+1;
-    //
-    // 	for (int i=0;i<MAX_PROTOTYYPPEJA;i++){
-    // 		protot_get_transformation(i);
-    // 		protot_get_bonus(i);
-    // 		protot_get_ammo1(i);
-    // 		protot_get_ammo2(i);
-    // 	}
-    //
-    // 	return 0;
-    // }
-    //
+    
     // PK2::SpriteSystem::SpriteSystem() {
     //
     // 	clear();
@@ -1868,43 +1830,7 @@ export class PK2 extends PK2Context implements ITickable {
     // 	}
     // }
     //
-    // void PK2::SpriteSystem::start_directions() {
-    // 	for (int i = 0; i < MAX_SPRITEJA; i++){
-    // 		if (/*pelaaja_index >= 0 && pelaaja_index < MAX_SPRITEJA && */!spritet[i].piilota){
-    // 			spritet[i].a = 0;
-    //
-    // 			if (spritet[i].tyyppi->Onko_AI(AI_RANDOM_ALOITUSSUUNTA_HORI)){
-    // 				while (spritet[i].a == 0) {
-    // 					spritet[i].a = ((rand()%2 - rand()%2) * spritet[i].tyyppi->max_nopeus) / 3.5;//2;
-    // 				}
-    // 			}
-    //
-    // 			if (spritet[i].tyyppi->Onko_AI(AI_RANDOM_ALOITUSSUUNTA_VERT)){
-    // 				while (spritet[i].b == 0) {
-    // 					spritet[i].b = ((rand()%2 - rand()%2) * spritet[i].tyyppi->max_nopeus) / 3.5;//2;
-    // 				}
-    // 			}
-    //
-    // 			if (spritet[i].tyyppi->Onko_AI(AI_ALOITUSSUUNTA_PELAAJAA_KOHTI)){
-    //
-    // 				if (spritet[i].x < player->x)
-    // 					spritet[i].a = spritet[i].tyyppi->max_nopeus / 3.5;
-    //
-    // 				if (spritet[i].x > player->x)
-    // 					spritet[i].a = (spritet[i].tyyppi->max_nopeus * -1) / 3.5;
-    // 			}
-    //
-    // 			if (spritet[i].tyyppi->Onko_AI(AI_ALOITUSSUUNTA_PELAAJAA_KOHTI_VERT)){
-    //
-    // 				if (spritet[i].y < player->y)
-    // 					spritet[i].b = spritet[i].tyyppi->max_nopeus / -3.5;
-    //
-    // 				if (spritet[i].y > player->y)
-    // 					spritet[i].b = spritet[i].tyyppi->max_nopeus / 3.5;
-    // 			}
-    // 		}
-    // 	}
-    // }
+  
     //
     // void PK2::SpriteSystem::add(int protoype_id, int is_player, double x, double y, int emo, bool isbonus) {
     // 	PK2Sprite_Prototyyppi& proto = protot[protoype_id];
@@ -5551,7 +5477,8 @@ export class PK2 extends PK2Context implements ITickable {
         // The game loop calls PK_MainScreen().
         this._engine.start(this.PK_MainScreen, this);
         
-        this.changeToIntro();
+        console.log('RENDER IS DISABLED');
+        //this.changeToIntro();
         
         new PK2Game(this).xChangeToGame();
         // 	if(PK2_error){

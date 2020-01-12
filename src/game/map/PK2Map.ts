@@ -21,7 +21,8 @@ export class PK2Map extends PK2MapInfo {
     /** Path of map music. */
     private _musiikki: str<13>;
     
-    private _nimi: str<40>;			// map name
+    /** Map name. */
+    private _nimi: str<40>;
     private _tekija: str<40>;			// map author
     
     public _jakso: int;				// level of the episode
@@ -32,7 +33,7 @@ export class PK2Map extends PK2MapInfo {
     public _kytkin1_aika: uint;		// button 1 time - not used
     public _kytkin2_aika: uint;		// button 2 time - not used
     public _kytkin3_aika: uint;		// button 3 time - not used
-    public _pelaaja_sprite: int;		// player prototype
+    public _pelaaja_sprite: int;		// player prototype   // TODO: must be uint??
     
     /** Mapping of background tiles (256*224) */
     public _taustat: CVect<BYTE> = cvect(PK2KARTTA_KARTTA_KOKO);
@@ -40,7 +41,8 @@ export class PK2Map extends PK2MapInfo {
     public _seinat: CVect<BYTE> = cvect(PK2KARTTA_KARTTA_KOKO);
     /** Mapping of sprites (256*224) */
     public _spritet: CVect<BYTE> = cvect(PK2KARTTA_KARTTA_KOKO);
-    public _protot: CVect<str<13>> = cvect(PK2KARTTA_KARTTA_MAX_PROTOTYYPPEJA); // map prototype list .spr
+    /** List of available sprite prototypes by their file names (*.spr). */
+    public _protot: CVect<str<13>> = cvect(PK2KARTTA_KARTTA_MAX_PROTOTYYPPEJA);
     public _reunat: bool[] = new Array(PK2KARTTA_KARTTA_KOKO); // map edges - calculated during game
     
     public _palikat_buffer: int;		// index of block palette
@@ -90,7 +92,7 @@ export class PK2Map extends PK2MapInfo {
     ///
     
     private _loadInfo(): void {
-        this._raw.streamOffset = 0;
+        this._raw.streamRewind();
         
         this._version = this._raw.streamReadCStr(5);
         console.log(this._version);
@@ -117,17 +119,18 @@ export class PK2Map extends PK2MapInfo {
     private _loadInfo13() {
         console.log('load map 13');
         
-        // memset(this->taustat, 255, sizeof(this->taustat));
-        // memset(this->seinat , 255, sizeof(this->seinat));
-        // memset(this->spritet, 255, sizeof(this->spritet));
-        // for (i=0;i<PK2KARTTA_KARTTA_MAX_PROTOTYYPPEJA;i++)
-        //     strcpy(this->protot[i],"");
+        // Fill structures with "empty"
+        this._taustat.fill(255);
+        this._seinat.fill(255);
+        this._spritet.fill(255);
+        for (let i = 0; i < PK2KARTTA_KARTTA_MAX_PROTOTYYPPEJA; i++)
+            this._protot[i] = '';
         
-        this._palikka_bmp = this._raw.streamRead8CStr(13);
-        this._taustakuva = this._raw.streamRead8CStr(13);
-        this._musiikki = this._raw.streamRead8CStr(13);
-        this._nimi = this._raw.streamRead8CStr(40);
-        this._tekija = this._raw.streamRead8CStr(40);
+        this._palikka_bmp = this._raw.streamReadCStr(13);
+        this._taustakuva = this._raw.streamReadCStr(13);
+        this._musiikki = this._raw.streamReadCStr(13);
+        this._nimi = this._raw.streamReadCStr(40);
+        this._tekija = this._raw.streamReadCStr(40);
         
         this._jakso = str2num(this._raw.streamRead8CStr(8));
         this._ilma = str2num(this._raw.streamRead8CStr(8));
@@ -144,10 +147,12 @@ export class PK2Map extends PK2MapInfo {
         
         let lkm: DWORD = str2num(this._raw.streamRead8CStr(8));
         
-        //for (i=0;i<PK2KARTTA_KARTTA_MAX_PROTOTYYPPEJA;i++)
-        //	itoa(lkm,protot[i],10);//strcpy(protot[i],"");
+        // Source commented:
+        // for (i=0;i<PK2KARTTA_KARTTA_MAX_PROTOTYYPPEJA;i++)
+        //	   itoa(lkm,protot[i],10);//strcpy(protot[i],"");
         
         for (let i = 0; i < lkm; i++) {
+            // TODO  limit size
             this._protot[i] = this._raw.streamRead8CStr(13);
         }
         
@@ -186,7 +191,7 @@ export class PK2Map extends PK2MapInfo {
         for (let y = aloitus_y; y <= aloitus_y + korkeus; y++) {	// Luetaan alue tile by tile
             for (let x = aloitus_x; x <= aloitus_x + leveys; x++) {
                 tile = this._raw.streamRead8CStr(1);
-                this._spritet[x + y * PK2KARTTA_KARTTA_LEVEYS] = tile;
+                this._spritet[x + y * PK2KARTTA_KARTTA_LEVEYS] = tile.charCodeAt(0);
             }
         }
         
@@ -260,7 +265,15 @@ export class PK2Map extends PK2MapInfo {
     
     ///  Advanced accessors  ///
     
-    public getSprite(x: int, y: int) {
+    public getProto(i: int): str<13> {
+        return this._protot[i];
+    }
+    
+    public getPlayerSprite(): uint {
+        return this._pelaaja_sprite;
+    }
+    
+    public getSprite(x: int, y: int): BYTE {
         return this._spritet[x + y * PK2KARTTA_KARTTA_LEVEYS];
     }
 }

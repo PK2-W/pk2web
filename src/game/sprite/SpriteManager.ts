@@ -1,21 +1,34 @@
 import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, PK2Map } from '@game/map/PK2Map';
+import { PK2GameContext } from '@game/PK2GameContext';
 import { Sprite } from '@game/sprite/Sprite';
-import { SpritePrototype, EProtoType } from '@game/sprite/SpritePrototype';
-import { MAX_SPRITES, MAX_SPRITE_TYPES, MAX_PROTOTYYPPEJA } from '../../support/constants';
+import { PK2SpritePrototype, EProtoType } from '@game/sprite/PK2SpritePrototype';
+import { ResourceFetchError } from '@ng/error/ResourceFetchError';
+import { ResourceNotFoundError } from '@ng/error/ResourceNotFoundError';
+import { pathJoin } from '@ng/support/utils';
+import { MAX_SPRITES, MAX_SPRITE_TYPES, MAX_PROTOTYYPPEJA, MAX_AANIA } from '../../support/constants';
+import { OutOfBoundsError } from '../../support/error/OutOfBoundsError';
 import { int, CVect, cvect, rand } from '../../support/types';
 
 export class SpriteManager {
-    private _protot: CVect<SpritePrototype> = cvect(MAX_SPRITE_TYPES);
-    // is a pool!!
+    private readonly _context: PK2GameContext;
+    
+    /**
+     * List of prototypes.<br>
+     * List indexes are the same indexes used in sprite matrices to point to the requiered prototype.
+     */
+    private _protot: CVect<PK2SpritePrototype> = cvect(MAX_SPRITE_TYPES);
+    /** Sprites pool. */
     private _spritet: CVect<Sprite> = cvect(MAX_SPRITES);
+    
     private _taustaspritet: CVect<int> = cvect(MAX_SPRITES);
     
     private _player: Sprite;
+    private _nextFreeProtoIndex: int = 0;
     
-    private next_free_prototype: int = 0;
     
-    
-    public constructor() {
+    public constructor(context: PK2GameContext) {
+        this._context = context;
+        
         this.clear();
     }
     
@@ -46,90 +59,97 @@ export class SpriteManager {
      *
      * @param map
      */
-    public loadPrototypes(map: PK2Map) {
+    public async loadPrototypes(map: PK2Map, tmpEpidoseName: string) {
         //     char polku[PE_PATH_SIZE];
-        //     int viimeinen_proto;
+        let lastProtoIndex: int;
         
         for (let i = 0; i < MAX_SPRITE_TYPES; i++) {
-            //         if (strcmp(kartta->protot[i],"") != 0){
-            //             viimeinen_proto = i;
-            //             strcpy(polku,"");
-            //             PK_Load_EpisodeDir(polku);
+            const protoName = map.getProto(i);
+            let proto;
             
-            if (this.loadProto(polku, map.getProto(i)) != 0) {
-                //                 strcpy(polku,"sprites/");
-                //                 if (protot_get(polku,kartta->protot[i])!=0){
-                //                     printf("PK2     - Can't load sprite %s. It will not appear.", kartta->protot[i]);
-                //                     next_free_prototype++;
-                //                 }
+            if (protoName !== '') {
+                lastProtoIndex = i;
+                let path = pathJoin('episodes', tmpEpidoseName);
+                
+                try {
+                    proto = await this.loadProto(path, protoName);
+                    proto.assignIndex(this._nextFreeProtoIndex);
+                    this._protot[this._nextFreeProtoIndex] = proto;
+                } catch (err) {
+                    // TODO specify error
+                    try {
+                        proto = await this.loadProto('sprites', protoName);
+                        proto.assignIndex(this._nextFreeProtoIndex);
+                        this._protot[this._nextFreeProtoIndex] = proto;
+                        
+                    } catch (err) {
+                        console.warn(`PK2     - Can't load sprite ${ protoName }. It will not appear.`);
+                        console.debug(err);
+                    }
+                }
             }
-            //         } else
-            //             next_free_prototype++;
+            
+            this._nextFreeProtoIndex++;
         }
         
-        //     next_free_prototype = viimeinen_proto+1;
+        this._nextFreeProtoIndex = lastProtoIndex + 1;
         
-        //     for (int i=0;i<MAX_PROTOTYYPPEJA;i++){
-        //         protot_get_transformation(i);
-        //         protot_get_bonus(i);
-        //         protot_get_ammo1(i);
-        //         protot_get_ammo2(i);
-        //     }
+        for (let i = 0; i < MAX_SPRITE_TYPES; i++) {
+            // protot_get_transformation(i);
+            //protot_get_bonus(i);
+            // protot_get_ammo1(i);
+            // protot_get_ammo2(i);
+        }
     }
     
     /**
      * Source: PK2::SpriteSystem::protot_get
      */
-    private loadProto(path: string, file: string): void {
+    private async loadProto(fpath: string, fname: string): Promise<PK2SpritePrototype> {
+        let proto: PK2SpritePrototype;
         //     char aanipolku[255];
         //     char testipolku[255];
         //     strcpy(aanipolku,polku);
         
-        // Check if have space
-        if (next_free_prototype >= MAX_SPRITE_TYPES)
-            throw 2; //TODO
+        // Check if have space // TODO really necessary?
+        if (this._nextFreeProtoIndex >= MAX_SPRITE_TYPES)
+            throw new OutOfBoundsError('');
         
-        // Check if it can be loaded
-        // TODO try catch (return -1)
-        this._protot[next_free_prototype] = SpritePrototype.loadFromFile(ctx, polku, tiedosto);
+        // Check if it can be loaded, else error is elevated
+        proto = await PK2SpritePrototype.loadFromFile(this._context, fpath, fname);
         
-        this._protot[next_free_prototype].indeksi = next_free_prototype;
+        //Load sounds
+        for (let i = 0; i < MAX_AANIA; i++) {
+            //     if (strcmp(protot[_nextFreeProtoIndex].aanitiedostot[i],"")!=0){
+            //
+            //     strcpy(testipolku,aanipolku);
+            //     strcat(testipolku,"/");
+            //     strcat(testipolku,protot[_nextFreeProtoIndex].aanitiedostot[i]);
+            //
+            //     if (PK_Check_File(testipolku))
+            //     protot[_nextFreeProtoIndex].aanet[i] = protot_get_sound(aanipolku,protot[_nextFreeProtoIndex].aanitiedostot[i]);
+            //     else{
+            //     getcwd(aanipolku, PE_PATH_SIZE);
+            //     strcat(aanipolku,"/sprites/");
+            //
+            //     strcpy(testipolku,aanipolku);
+            //     strcat(testipolku,"/");
+            //     strcat(testipolku,protot[_nextFreeProtoIndex].aanitiedostot[i]);
+            //
+            //     if (PK_Check_File(testipolku))
+            //     protot[_nextFreeProtoIndex].aanet[i] = protot_get_sound(aanipolku,protot[_nextFreeProtoIndex].aanitiedostot[i]);
+            // }
+            // }
+        }
         
-        //     //Load sounds
-        //     for (int i=0;i<MAX_AANIA;i++){
-        //
-        //     if (strcmp(protot[next_free_prototype].aanitiedostot[i],"")!=0){
-        //
-        //     strcpy(testipolku,aanipolku);
-        //     strcat(testipolku,"/");
-        //     strcat(testipolku,protot[next_free_prototype].aanitiedostot[i]);
-        //
-        //     if (PK_Check_File(testipolku))
-        //     protot[next_free_prototype].aanet[i] = protot_get_sound(aanipolku,protot[next_free_prototype].aanitiedostot[i]);
-        //     else{
-        //     getcwd(aanipolku, PE_PATH_SIZE);
-        //     strcat(aanipolku,"/sprites/");
-        //
-        //     strcpy(testipolku,aanipolku);
-        //     strcat(testipolku,"/");
-        //     strcat(testipolku,protot[next_free_prototype].aanitiedostot[i]);
-        //
-        //     if (PK_Check_File(testipolku))
-        //     protot[next_free_prototype].aanet[i] = protot_get_sound(aanipolku,protot[next_free_prototype].aanitiedostot[i]);
-        // }
-        // }
-        // }
-        //
-        // next_free_prototype++;
-        //
-        // return 0;
+        return proto;
     }
     
     // 	void protot_clear_all();
     
     public clear(): void {
         for (let i = 0; i < MAX_SPRITES; i++) {
-            // this._spritet[i] = PK2Sprite(); // TODO
+            this._spritet[i] = new Sprite();
             this._taustaspritet[i] = -1;
         }
         
@@ -142,24 +162,22 @@ export class SpriteManager {
      */
     public addMapSprites(map: PK2Map) {
         this.clear();
-        this.add(map.pelaaja_sprite, 1, 0, 0, MAX_SPRITES, false);
-        
-        let protoId: int;
+        this.addMapSprite(map.getPlayerSprite(), true, 0, 0, MAX_SPRITES, false);
         
         for (let x = 0; x < PK2KARTTA_KARTTA_LEVEYS; x++) {
             for (let y = 0; y < PK2KARTTA_KARTTA_KORKEUS; y++) {
-                protoId = map.getSprite(x, y);
+                const protoId: int = map.getSprite(x, y);
                 
                 if (protoId !== 255 && this._protot[protoId].height > 0) {
-                    this.add(protoId, 0, x * 32, y * 32 - this._protot[protoId].height + 32, MAX_SPRITES, false);
+                    this.addMapSprite(protoId, false, x * 32, y * 32 - this._protot[protoId].height + 32, MAX_SPRITES, false);
                 }
             }
         }
         
-        this._sortBg();
+        this.sortBg();
     }
     
-    public add(protoId: int, isPlayer: int, x: number, y: number, emo: int, isBonus: boolean) {
+    public addMapSprite(protoId: int, isPlayer: boolean, x: number, y: number, emo: int, isBonus: boolean) {
         const proto = this._protot[protoId];
         let lisatty: boolean = false;
         let i: int = 0;
@@ -168,7 +186,7 @@ export class SpriteManager {
             let sprite = this._spritet[i];
             
             if (sprite.piilota) {
-                sprite = Sprite(proto, isPlayer, false, x, y); // TODO: Ojo! los reusa sin destruirlo porque es un pool
+                sprite.reuseWith(proto, isPlayer, false, x, y);
                 
                 if (isPlayer) this._player = sprite;
                 
@@ -202,7 +220,7 @@ export class SpriteManager {
         }
     }
     
-    private _addAmmo(proto: SpritePrototype, isPlayer: int, x: number, y: number, emo: int) {
+    private addAmmo(proto: PK2SpritePrototype, isPlayer: int, x: number, y: number, emo: int) {
         let lisatty: boolean = false;
         let i = 0;
         
@@ -218,24 +236,24 @@ export class SpriteManager {
                 //         if (proto.Onko_AI(AI_HEITTOASE)){
                 //             if ((int)spritet[emo].a == 0){
                 //                 // Jos "ampuja" on pelaaja tai ammuksen nopeus on nolla
-                //                 if (spritet[emo].pelaaja == 1 || sprite.tyyppi->max_nopeus == 0){
+                //                 if (spritet[emo].pelaaja == 1 || sprite.tyyppi->maxSpeed == 0){
                 //                     if (!spritet[emo].flip_x)
-                //                         sprite.a = sprite.tyyppi->max_nopeus;
+                //                         sprite.a = sprite.tyyppi->maxSpeed;
                 //                 else
-                //                     sprite.a = -sprite.tyyppi->max_nopeus;
+                //                     sprite.a = -sprite.tyyppi->maxSpeed;
                 //                 }
                 //             else{ // tai jos kyseess� on vihollinen
                 //                     if (!spritet[emo].flip_x)
-                //                         sprite.a = 1 + rand()%(int)sprite.tyyppi->max_nopeus;
+                //                         sprite.a = 1 + rand()%(int)sprite.tyyppi->maxSpeed;
                 //                 else
-                //                     sprite.a = -1 - rand()%-(int)sprite.tyyppi->max_nopeus;
+                //                     sprite.a = -1 - rand()%-(int)sprite.tyyppi->maxSpeed;
                 //                 }
                 //             }
                 //         else{
                 //                 if (!spritet[emo].flip_x)
-                //                     sprite.a = sprite.tyyppi->max_nopeus + spritet[emo].a;
+                //                     sprite.a = sprite.tyyppi->maxSpeed + spritet[emo].a;
                 //             else
-                //                 sprite.a = -sprite.tyyppi->max_nopeus + spritet[emo].a;
+                //                 sprite.a = -sprite.tyyppi->maxSpeed + spritet[emo].a;
                 //
                 //                 //sprite.a = spritet[emo].a * 1.5;
                 //
@@ -250,9 +268,9 @@ export class SpriteManager {
                 //         }
                 //         else{
                 //             if (!spritet[emo].flip_x)
-                //                 sprite.a = sprite.tyyppi->max_nopeus;
+                //                 sprite.a = sprite.tyyppi->maxSpeed;
                 //         else
-                //             sprite.a = -sprite.tyyppi->max_nopeus;
+                //             sprite.a = -sprite.tyyppi->maxSpeed;
                 //         }
                 //
                 //         if (emo != MAX_SPRITEJA){
@@ -273,7 +291,7 @@ export class SpriteManager {
         }
     }
     
-    private _sortBg(): void {
+    private sortBg(): void {
         let lopeta: boolean = false;
         let l: int = 1;
         let vali: int;
@@ -297,7 +315,45 @@ export class SpriteManager {
         }
     }
     
-    // 	void start_directions();
+    public startDirections(): void {
+        for (let i = 0; i < MAX_SPRITES; i++) {
+            let sprite = this._spritet[i];
+            
+            if (/*pelaaja_index >= 0 && pelaaja_index < MAX_SPRITEJA && */!sprite.piilota) {
+                sprite.a = 0;
+                
+                if (sprite.proto.Onko_AI(EAi.AI_RANDOM_ALOITUSSUUNTA_HORI)) {
+                    while (sprite.a === 0) {
+                        sprite.a = ((rand() % 2 - rand() % 2) * sprite.proto.maxSpeed) / 3.5; //2;
+                    }
+                }
+                
+                if (sprite.proto.Onko_AI(EAi.AI_RANDOM_ALOITUSSUUNTA_VERT)) {
+                    while (sprite.b === 0) {
+                        sprite.b = ((rand() % 2 - rand() % 2) * sprite.proto.maxSpeed) / 3.5; //2;
+                    }
+                }
+                
+                if (sprite.proto.Onko_AI(EAi.AI_ALOITUSSUUNTA_PELAAJAA_KOHTI)) {
+                    
+                    if (sprite.x < this.player.x)
+                        sprite.a = sprite.proto.maxSpeed / 3.5;
+                    
+                    if (sprite.x > this.player.x)
+                        sprite.a = (sprite.proto.maxSpeed * -1) / 3.5;
+                }
+                
+                if (sprite.proto.Onko_AI(EAi.AI_ALOITUSSUUNTA_PELAAJAA_KOHTI_VERT)) {
+                    
+                    if (sprite.y < this.player.y)
+                        sprite.b = sprite.proto.maxSpeed / -3.5;
+                    
+                    if (sprite.y > this.player.y)
+                        sprite.b = sprite.proto.maxSpeed / 3.5;
+                }
+            }
+        }
+    }
     
     
     ///  Accessors  ///
@@ -307,6 +363,13 @@ export class SpriteManager {
      */
     public get player(): Sprite {
         return this._player;
+    }
+    
+    
+    ///  Support  ///
+    
+    private log(msg) {
+        console.debug(`Spr M  - ${ msg }`);
     }
 }
 

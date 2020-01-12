@@ -1,12 +1,12 @@
+import { PK2wSound } from '@ng/PK2wSound';
+import { PkEngine } from '@ng/PkEngine';
+import { PkFont } from '@ng/PkFont';
 import { PkInput } from '@ng/PkInput';
+import { PkLanguage } from '@ng/PkLanguage';
 import { PkResources } from '@ng/PkResources';
-import { PkEngine } from '../engine/PkEngine';
-import { PkFont } from '../engine/PkFont';
-import { PK2wSound } from '../engine/PK2wSound';
-import { PkLanguage } from '../engine/PkLanguage';
 import { GameTimer } from '../support/GameTimer';
 import { i18nSchema } from '../support/i18nSchema';
-import { int, FONTID } from '../support/types';
+import { int, FONTID, CVect, cvect, uint } from '../support/types';
 
 export abstract class PK2Context {
     // Fonts
@@ -16,36 +16,50 @@ export abstract class PK2Context {
     protected _fontti4: FONTID;
     protected _fontti5: FONTID;
     
-    // Translated texts
+    
+    ///  Entropy & trigonometry  ///
+    
+    public _degree: int = 0;
+    protected cosTable: CVect<number> = cvect(360);
+    protected sinTable: CVect<number> = cvect(360);
+    
+    public get degree(): number {
+        return this._degree;
+    }
+    public set degree(degree: number) {
+        this._degree = degree;
+    }
+    
+    public getCos(i: uint): number {
+        return this.cosTable[i];
+    }
+    
+    public getSin(i: uint): number {
+        return this.sinTable[i];
+    }
+    
+    
+    ///  Translated texts  ///
+    
     protected _tx = i18nSchema;
     
     // (Piste) _engine
     protected _engine: PkEngine;
     
-    public _degree: int = 0;
-    
     public get fontti1(): FONTID {
         return this._fontti1;
     }
-    
     public get fontti2(): FONTID {
         return this._fontti2;
     }
-    
     public get fontti3(): FONTID {
         return this._fontti3;
     }
-    
     public get fontti4(): FONTID {
         return this._fontti4;
     }
-    
     public get fontti5(): FONTID {
         return this._fontti5;
-    }
-    
-    public get degree(): number {
-        return this._degree;
     }
     
     protected get ng(): PkEngine { return this._engine; }

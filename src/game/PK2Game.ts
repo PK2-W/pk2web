@@ -1,32 +1,27 @@
 import { GiftManager } from '@game/gift/GiftManager';
-import {
-    PK2KARTTA_KARTTA_LEVEYS,
-    PK2KARTTA_KARTTA_KORKEUS,
-    PK2Map,
-    BLOCK_KYTKIN1,
-    BLOCK_KYTKIN3, BLOCK_ESTO_ALAS
-} from '@game/map/PK2Map';
+import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, PK2Map } from '@game/map/PK2Map';
 import { PK2Context } from '@game/PK2Context';
 import { PK2GameContext } from '@game/PK2GameContext';
+import { EProtoType } from '@game/sprite/PK2SpritePrototype';
 import { Sprite, EDamageType } from '@game/sprite/Sprite';
 import { SpriteManager } from '@game/sprite/SpriteManager';
-import { EProtoType } from '@game/sprite/SpritePrototype';
 import { BlockManager } from '@game/tile/BlockManager';
-import { TPK2Block, EBlocks } from '@game/tile/PK2Block';
 import { MAX_SPRITES } from '../support/constants';
-import { int, rand, CVect, cvect, bool } from '../support/types';
+import { int, rand } from '../support/types';
 
 export class PK2Game extends PK2GameContext {
     private _map: PK2Map;
+    
+    private _episodeName: string;
     
     /** Level completed */
     private _jakso_lapaisty: boolean = false;
     
     // PK2BLOCKMASKI palikkamaskit[BLOCK_MAX_MASKEJA];
     // PK2::Particle_System* Particles;
-    private _sm: SpriteManager;
-    private mGifts: GiftManager;
-    private mBlocks: BlockManager;
+    private _sprites: SpriteManager;
+    private _gifts: GiftManager;
+    private _blocks: BlockManager;
     
     // PK2Kartta* current_map;
     // char map_path[PE_PATH_SIZE];
@@ -42,6 +37,12 @@ export class PK2Game extends PK2GameContext {
     
     private _paused: boolean;
     
+    //PALIKOIHIN LIITTYV�T AJASTIMET
+    private _kytkin1: int = 0;
+    private _kytkin2: int = 0;
+    private _kytkin3: int = 0;
+    private _palikka_animaatio: int = 0;
+    
     public constructor(ctx: PK2Context) {
         super(ctx);
         
@@ -55,10 +56,11 @@ export class PK2Game extends PK2GameContext {
     // Game::Gifts = new PK2::GiftSystem();
     
     /**
-     * Source: PK_MainScreen_Change -> if (game_next_screen == SCREEN_MENU)
+     * Source: PK_MainScreen_Change -> if (game_next_screen == SCREEN_GAME)
      */
     public async xChangeToGame() {
-        //
+        // TODO temporal code
+        this._episodeName = 'rooster island 1';
         
         // PND PK_UI_Change(UI_GAME_BUTTONS);
         // PND PisteDraw2_SetXOffset(0);
@@ -72,31 +74,33 @@ export class PK2Game extends PK2GameContext {
             this._jakso_lapaisty = false;
             
             // x-> Game::Gifts->clean(); //Reset gifts
-            this.mGifts = new GiftManager();
-            this.mBlocks = new BlockManager(this);
+            this._gifts = new GiftManager();
+            this._blocks = new BlockManager(this);
             // Clear sprites
             // x-> Game::Sprites->clear(); //Reset sprites
             // x-> Game::Sprites->protot_clear_all(); //Reset prototypes
-            this._sm = new SpriteManager(this);
+            this._sprites = new SpriteManager(this);
             
-            await this._openMap(/*seuraava_kartta*/'episodes/rooster island 1/level001.map');
+            await this._openMap(/*seuraava_kartta*/'episodes/' + this._episodeName + '/level001.map');
             //  TODO try catch
             //          PK2_error = true;
             //          PK2_error_msg = "Can't load map";
             
-            this.mBlocks.calculateTiles();
+            this._blocks.calculateTiles();
             
             // x->   PK_Fadetext_Init(); //Reset fade text
             
             //      Game::Gifts->clean();
-            //      episode_started = true;
+            //    episode_started = true;
             //      music_volume = settings.music_max_volume;
-            //      degree = 0;
+            this._context.degree = 0;
             //      item_paneeli_x = -215;
             //      piste_lisays = 0;
         } else {
             // PND  degree = degree_temp;
         }
+        
+        //
     }
     
     /**
@@ -104,7 +108,7 @@ export class PK2Game extends PK2GameContext {
      */
     private async _openMap(uri: string) {
         // Open the requested map
-        this._map = await PK2Map.loadFromFile(this.mContext, uri);
+        this._map = await PK2Map.loadFromFile(this._context, uri);
         // TODO try catch
         // 		printf("PK2    - Error loading map '%s' at '%s'\n", this.seuraava_kartta, polku);
         // 		return 1;
@@ -113,25 +117,24 @@ export class PK2Game extends PK2GameContext {
         
         if (this._map.version === '1.2' || this._map.version === '1.3') {
             // TODO try catch
-            this._sm.loadPrototypes(this._map);
+            await this._sprites.loadPrototypes(this._map, 'rooster island 1');
         }
         
-        // 	PK_Palikka_Tee_Maskit();
+        // 	PK_Palikka_Tee_Maskit();  // "make masks" (draws!)
         
         // 	if (PK_Clean_TileBuffer()==1)
         // 		return 1;
         
-      //  kartta->Place_Sprites();
-        // 	kartta->Select_Start();
+        this._sprites.addMapSprites(this._map);
+        this.selectStart();
         // 	kartta->Count_Keys();
         // 	kartta->Calculate_Edges();
-        //
-        // 	PkEngine::Sprites->start_directions();
-        //
+        
+        this._sprites.startDirections();
+        
         // 	PkEngine::Particles->clear_particles();
         // 	PkEngine::Particles->load_bg_particles(kartta);
-        //
-        //
+        
         // 	if ( strcmp(kartta->musiikki, "") != 0) {
         // 		char music_path[PE_PATH_SIZE] = "";
         // 		PK_Load_EpisodeDir(music_path);
@@ -154,7 +157,6 @@ export class PK2Game extends PK2GameContext {
         // 			}
         // 		}
         // 	}
-        // 	return 0;
     }
     
     /**
@@ -348,24 +350,24 @@ export class PK2Game extends PK2GameContext {
         // 	}
     }
     
-    public Select_Start() {
+    public selectStart() {
         const startPos = this._map.getStartPosition();
         
-        const playerPosX = startPos.x + this._sm.player.proto.width / 2;
-        const playerPosY = startPos.y + this._sm.player.proto.height / 2;
+        const playerPosX = startPos.x + this._sprites.player.proto.width / 2;
+        const playerPosY = startPos.y + this._sprites.player.proto.height / 2;
         
-        this._sm.player.x = playerPosX;
+        this._sprites.player.x = playerPosX;
         this._cameraX = Math.floor(playerPosX);
         this._dcameraX = playerPosX;
         
-        this._sm.player.y = playerPosY;
+        this._sprites.player.y = playerPosY;
         this._cameraY = Math.floor(playerPosY);
         this._dcameraY = playerPosY;
     }
     
     private _PK_Update_Camera(): void {
-        this._cameraX = Math.floor(this._sm.player.x - screenWidth / 2);
-        this._cameraY = Math.floor(this._sm.player.y - screenHeight / 2);
+        this._cameraX = Math.floor(this._sprites.player.x - screenWidth / 2);
+        this._cameraY = Math.floor(this._sprites.player.y - screenHeight / 2);
         
         /*
         if (!PisteInput_Hiiri_Vasen())
@@ -435,7 +437,7 @@ export class PK2Game extends PK2GameContext {
         let sprite: Sprite;
         
         for (let i = 0; i < MAX_SPRITES; i++) { //Activate sprite if it is on screen
-            sprite = this._sm.get(i);
+            sprite = this._sprites.get(i);
             
             if (sprite.x < this._cameraX + 640 + 320 && //screen_width+screen_width/2 &&
                 sprite.x > this._cameraX - 320 && //screen_width/2 &&
@@ -452,7 +454,7 @@ export class PK2Game extends PK2GameContext {
         }
         
         for (let i = 0; i < MAX_SPRITES; i++) {
-            sprite = this._sm.get(i);
+            sprite = this._sprites.get(i);
             
             if (sprite.aktiivinen && sprite.proto.type !== EProtoType.TYYPPI_TAUSTA) {
                 if (sprite.proto.type === EProtoType.TYYPPI_BONUS) {

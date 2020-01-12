@@ -1,6 +1,8 @@
 import { PK2GameContext } from '@game/PK2GameContext';
-import { EDamageType } from '@game/sprite/Sprite';
+import { EDamageType, EDestructionType } from '@game/sprite/Sprite';
 import { EAi } from '@game/sprite/SpriteManager';
+import { Binary } from '@ng/support/Binary';
+import { pathJoin, str2num } from '@ng/support/utils';
 import {
     SPRITE_MAX_AI,
     SPRITE_MAX_FRAMEJA,
@@ -9,7 +11,7 @@ import {
 } from '../../support/constants';
 import { DWORD, int, str, BYTE, cvect, CVect } from '../../support/types';
 
-export class SpritePrototype {
+export class PK2SpritePrototype {
     private mContext: PK2GameContext;
     
     // Version
@@ -17,7 +19,7 @@ export class SpritePrototype {
     //.spr filename
     private _tiedosto: str<255>;
     //Prototype index
-    private _indeksi: int;
+    private _index: int;
     //Sprite type
     private _tyyppi: EProtoType;
     
@@ -26,14 +28,14 @@ export class SpritePrototype {
     
     // Spriteen liittyv�t ��nitehosteet
     
-    // char		aanitiedostot[MAX_AANIA][100];					// ��nitehostetiedostot
+    private _aanitiedostot: CVect<str<100>> = cvect(MAX_AANIA);					// ��nitehostetiedostot
     private _aanet: CVect<int> = cvect(MAX_AANIA);							// ��nitehosteet (indeksit buffereihin)
     
     // Spriten kuva- ja animaatio-ominaisuudet
     private _framet: CVect<int> = cvect(SPRITE_MAX_FRAMEJA);						// spriten framet (bitm�pit)
     private _framet_peilikuva: CVect<int> = cvect(SPRITE_MAX_FRAMEJA);			// spriten framet peilikuvina
     private _frameja: BYTE;										// framejen m��r�
-    private _animaatiot: CVect<PK2SPRITE_ANIMAATIO> = cvect(SPRITE_MAX_ANIMAATIOITA);	// animaatio sekvenssit
+    private _animaatiot: CVect<PK2SpriteAnimation> = cvect(SPRITE_MAX_ANIMAATIOITA);	// animaatio sekvenssit
     private _animaatioita: BYTE;									// animaatioiden m��r�
     private _frame_rate: BYTE;										// yhden framen kesto
     private _kuva_x: int;											// miss� kohtaa kuvaa sprite on
@@ -103,7 +105,7 @@ export class SpritePrototype {
     private _osaa_uida: boolean;										// vaikuttaako painovoima vedess�?
     
     public static async loadFromFile(ctx: PK2GameContext, path: string, file: string) {
-        return new SpritePrototype(ctx).loadFromFile(path, file);
+        return new PK2SpritePrototype(ctx).loadFromFile(path, file);
     }
     
     // Muodostimet
@@ -141,7 +143,7 @@ export class SpritePrototype {
         this._frame_rate = 0;
         this._hyokkays1_aika = 60;
         this._hyokkays2_aika = 60;
-        this._indeksi = 0;
+        this._index = 0;
         this._kuva_x = 0;
         this._kuva_y = 0;
         this._kuva_frame_leveys = 0;
@@ -159,7 +161,7 @@ export class SpritePrototype {
         this._suojaus = EDamageType.VAHINKO_EI;
         this._tarisee = false;
         this._tiletarkistus = true;
-        this._tuhoutuminen = TUHOUTUMINEN_ANIMAATIO;
+        this._tuhoutuminen = EDestructionType.TUHOUTUMINEN_ANIMAATIO;
         this._tyyppi = EProtoType.TYYPPI_EI_MIKAAN;
         this._vahinko = 0;
         this._vahinko_tyyppi = EDamageType.VAHINKO_ISKU;
@@ -175,19 +177,19 @@ export class SpritePrototype {
         this._osaa_uida = false;
         
         for (let i = 0; i < SPRITE_MAX_AI; i++) {
-            this._AI[i] = AI_EI;
+            this._AI[i] = EAi.AI_EI;
         }
         
         for (let i = 0; i < SPRITE_MAX_FRAMEJA; i++)
             this._framet[i] = 0;
         
-        for (let i = 0; i < SPRITE_MAX_ANIMAATIOITA; i++) {
-            for (let j = 0; j < ANIMAATIO_MAX_SEKVENSSEJA; j++)
-                this._animaatiot[i].sekvenssi[j] = 0;
-            
-            this._animaatiot[i].looppi = false;
-            this._animaatiot[i].frameja = 0;
-        }
+        // for (let i = 0; i < SPRITE_MAX_ANIMAATIOITA; i++) {
+        //     for (let j = 0; j < ANIMAATIO_MAX_SEKVENSSEJA; j++)
+        //         this._animaatiot[i].sekvenssi[j] = 0;
+        //
+        //     this._animaatiot[i].looppi = false;
+        //     this._animaatiot[i].frameja = 0;
+        // }
     }
     
     // ~PK2Sprite_Prototyyppi();
@@ -225,7 +227,7 @@ export class SpritePrototype {
         this._frame_rate = 0;
         this._hyokkays1_aika = 60;
         this._hyokkays2_aika = 60;
-        this._indeksi = 0;
+        this._index = 0;
         this._kuva_x = 0;
         this._kuva_y = 0;
         this._kuva_frame_leveys = 0;
@@ -293,12 +295,12 @@ export class SpritePrototype {
      * @param fpath
      * @param fname
      */
-    private async loadFromFile(fpath: string, fname: string) {
+    private async loadFromFile(fpath: string, fname: string): Promise<this> {
         // this->Uusi();
         
         // Ladataan itse sprite-tiedosto
         
-        const uri = fpath + fname;
+        const uri = pathJoin(fpath, fname);
         const file = await this.mContext.resources.getBinary(uri);
         
         // TODO throw...
@@ -333,6 +335,7 @@ export class SpritePrototype {
             //     strcpy(this->tiedosto,tiedoston_nimi);
             break;
         case '1.3':
+            this.loadSerialized13(file);
             //     PK2Sprite_Prototyyppi13 proto;
             //     tiedosto->read ((char *)&proto, sizeof (proto));
             //     this->SetProto13(proto);
@@ -395,6 +398,8 @@ export class SpritePrototype {
         // }
         //
         // PisteDraw2_Image_Delete(bufferi);
+        
+        return this;
     }
     
     //     void Tallenna(char *tiedoston_nimi);
@@ -412,14 +417,106 @@ export class SpritePrototype {
     //     void SetProto10(PK2Sprite_Prototyyppi10 &proto);
     //     void SetProto11(PK2Sprite_Prototyyppi11 &proto);
     //     void SetProto12(PK2Sprite_Prototyyppi12 &proto);
-    //     void SetProto13(PK2Sprite_Prototyyppi13 &proto);
-    //     PK2Sprite_Prototyyppi13 GetProto13();
+    
+    /**
+     * Source: PK2Sprite_Prototyyppi::SetProto13.
+     *
+     * @param stream
+     */
+    private loadSerialized13(stream: Binary): void {
+        this._tyyppi = stream.streamReadUint(4) as EProtoType;
+        this._kuvatiedosto = stream.streamReadCStr(100);
+        for (let i = 0; i < 7; i++) {
+            this._aanitiedostot[i] = stream.streamReadCStr(100);
+        }
+        for (let i = 0; i < 7; i++) {
+            this._aanet[i] = stream.streamReadInt(4);
+        }
+        
+        this._frameja = stream.streamReadByte();
+        for (let i = 0; i < 20; i++) {
+            this._animaatiot[i] = PK2SpriteAnimation.fromSerialized(stream);
+        }
+        this._animaatioita = stream.streamReadUint(1);
+        this._frame_rate = stream.streamReadUint(1);
+        stream.streamOffset += 1;                                 // <- 1 byte padding for struct alignment
+        this._kuva_x = stream.streamReadInt(4);
+        this._kuva_y = stream.streamReadInt(4);
+        this._kuva_frame_leveys = stream.streamReadInt(4);
+        this._kuva_frame_korkeus = stream.streamReadInt(4);
+        this._kuva_frame_vali = stream.streamReadInt(4);
+        
+        this._nimi = stream.streamReadCStr(30);
+        stream.streamOffset += 2;                                 // <- 2 bytes padding for struct alignment
+        this._leveys = stream.streamReadInt(4);
+        this._korkeus = stream.streamReadInt(4);
+        this._paino = stream.streamReadDouble(8);
+        this._vihollinen = stream.streamReadBool();
+        
+        stream.streamOffset += 3;                                 // <- 3 bytes padding for struct alignment
+        this._energia = stream.streamReadInt(4);
+        this._vahinko = stream.streamReadInt(4);
+        this._vahinko_tyyppi = stream.streamReadUint(1);
+        this._suojaus = stream.streamReadUint(1);
+        stream.streamOffset += 2;                                 // <- 2 bytes padding for struct alignment
+        this._pisteet = stream.streamReadInt(4);
+        for (let i = 0; i < 10; i++) {
+            this._AI[i] = stream.streamReadUint(4) as EAi;
+        }
+        this._max_hyppy = stream.streamReadUint(1);
+        stream.streamOffset += 3;                                 // <- 3 bytes padding for struct alignment
+        this._max_nopeus = stream.streamReadDouble(8);
+        this._latausaika = stream.streamReadInt(4);
+        this._vari = stream.streamReadUint(1);
+        this._este = stream.streamReadBool();
+        stream.streamOffset += 2;                                 // <- 2 bytes padding for struct alignment
+        this._tuhoutuminen = stream.streamReadInt(4);
+        this._avain = stream.streamReadBool();
+        this._tarisee = stream.streamReadBool();
+        this._bonusten_lkm = stream.streamReadUint(1);
+        stream.streamOffset++;                                    // <- 1 byte padding for struct alignment
+        this._hyokkays1_aika = stream.streamReadInt(4);
+        this._hyokkays2_aika = stream.streamReadInt(4);
+        this._pallarx_kerroin = stream.streamReadInt(4);
+        
+        this._muutos_sprite = stream.streamReadCStr(100);
+        this._bonus_sprite = stream.streamReadCStr(100);
+        this._ammus1_sprite = stream.streamReadCStr(100);
+        this._ammus2_sprite = stream.streamReadCStr(100);
+        
+        this._tiletarkistus = stream.streamReadBool();
+        
+        stream.streamOffset += 3;                                 // <- 3 bytes padding for struct alignment
+        this._aani_frq = stream.streamReadUint(4);
+        this._random_frq = stream.streamReadBool();
+        
+        this._este_ylos = stream.streamReadBool();
+        this._este_alas = stream.streamReadBool();
+        this._este_oikealle = stream.streamReadBool();
+        this._este_vasemmalle = stream.streamReadBool();
+        
+        this._lapinakyvyys = stream.streamReadUint(1);
+        this._hehkuu = stream.streamReadBool();
+        stream.streamOffset++;                                    // <- 1 byte padding for struct alignment
+        this._tulitauko = stream.streamReadInt(4);
+        this._liitokyky = stream.streamReadBool();
+        this._boss = stream.streamReadBool();
+        this._bonus_aina = stream.streamReadBool();
+        this._osaa_uida = stream.streamReadBool();
+    }
     
     
     ///  Accessors  ///
     
     public get type(): EProtoType {
         return this._tyyppi;
+    }
+    
+    public get index(): int {
+        return this._index;
+    }
+    public assignIndex(index: int) {
+        this._index = index;
     }
     
     /** @deprecated use width */
@@ -459,6 +556,21 @@ export class SpritePrototype {
         return this._energia;
     }
     
+    public get weight(): number {
+        return this._paino;
+    }
+    
+    public get ammus1(): number {
+        return this._ammus1;
+    }
+    public get ammus2(): number {
+        return this._ammus2;
+    }
+    
+    public isEnemy() {
+        return this._vihollinen;
+    }
+    
     /** @deprecated use maxJump */
     public get max_hyppy(): BYTE {
         return this.maxJump;
@@ -475,6 +587,27 @@ export class SpritePrototype {
     }
     private load(path: string, file: string) {
         return undefined;
+    }
+}
+
+/**
+ * Source: PK2SPRITE_ANIMAATIO.
+ */
+class PK2SpriteAnimation {
+    public sekvenssi: CVect<BYTE> = cvect(ANIMAATIO_MAX_SEKVENSSEJA);	// sequence
+    public frameja: BYTE;								// frames
+    public looppi: boolean;									// loop
+    
+    public static fromSerialized(stream: Binary) {
+        const obj = new PK2SpriteAnimation();
+        
+        for (let i = 0; i < ANIMAATIO_MAX_SEKVENSSEJA; i++) {
+            obj.sekvenssi[i] = stream.streamReadByte();
+        }
+        obj.frameja = stream.streamReadUint(1);
+        obj.looppi = stream.streamReadBool();
+        
+        return obj;
     }
 }
 
