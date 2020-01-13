@@ -27,6 +27,7 @@ export class Sprite {
     private _emosprite: int;			// jos spriten on luonut jokin toinen sprite
     private _paino: number;				// spriten oma yksil�llinen paino
     private _kytkinpaino: number;		// spriten paino + muiden spritejen panot, joihin kosketaan
+    /** Crouched. */
     private _kyykky: boolean;				// onko sprite kyykyss�
     private _isku: int;				// onko sprite saanut vahinkoa
     private _lataus: int;				// jos on ammuttu, odotetaan
@@ -408,6 +409,28 @@ export class Sprite {
     }
     public set weight(v: number) {
         this._paino = v;
+    }
+    
+    /** Crouched. */
+    public get kyykky(): boolean {
+        return this._kyykky;
+    }
+    public set kyykky(v: boolean) {
+        this._kyykky = v;
+    }
+    
+    public get reuna_vasemmalla(): boolean {
+        return this._reuna_vasemmalla;
+    }
+    public set reuna_vasemmalla(v: boolean) {
+        this._reuna_vasemmalla = v;
+    }
+    
+    public get reuna_oikealla(): boolean {
+        return this._reuna_oikealla;
+    }
+    public set reuna_oikealla(v: boolean) {
+        this._reuna_oikealla = v;
     }
     
     /** @deprecated use inWater */

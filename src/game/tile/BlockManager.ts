@@ -163,161 +163,6 @@ export class BlockManager {
     //     }
     //
     // }
-    //
-    
-    //
-    // void     PK_Calculate_MovableBlocks_Position() {
-    //     lasketut_palikat[BLOCK_HISSI_HORI].vasen = (int)cos_table[degree%360];
-    //     lasketut_palikat[BLOCK_HISSI_HORI].oikea = (int)cos_table[degree%360];
-    //
-    //     lasketut_palikat[BLOCK_HISSI_VERT].ala = (int)sin_table[degree%360];
-    //     lasketut_palikat[BLOCK_HISSI_VERT].yla = (int)sin_table[degree%360];
-    //
-    //     int kytkin1_y = 0,
-    //         kytkin2_y = 0,
-    //         kytkin3_x = 0;
-    //
-    //     if (kytkin1 > 0)
-    //     {
-    //         kytkin1_y = 64;
-    //
-    //         if (kytkin1 < 64)
-    //             kytkin1_y = kytkin1;
-    //
-    //         if (kytkin1 > KYTKIN_ALOITUSARVO-64)
-    //             kytkin1_y = KYTKIN_ALOITUSARVO - kytkin1;
-    //     }
-    //
-    //     if (kytkin2 > 0)
-    //     {
-    //         kytkin2_y = 64;
-    //
-    //         if (kytkin2 < 64)
-    //             kytkin2_y = kytkin2;
-    //
-    //         if (kytkin2 > KYTKIN_ALOITUSARVO-64)
-    //             kytkin2_y = KYTKIN_ALOITUSARVO - kytkin2;
-    //     }
-    //
-    //     if (kytkin3 > 0)
-    //     {
-    //         kytkin3_x = 64;
-    //
-    //         if (kytkin3 < 64)
-    //             kytkin3_x = kytkin3;
-    //
-    //         if (kytkin3 > KYTKIN_ALOITUSARVO-64)
-    //             kytkin3_x = KYTKIN_ALOITUSARVO - kytkin3;
-    //     }
-    //
-    //     kytkin1_y /= 2;
-    //     kytkin2_y /= 2;
-    //     kytkin3_x /= 2;
-    //
-    //     lasketut_palikat[BLOCK_KYTKIN1].ala = kytkin1_y;
-    //     lasketut_palikat[BLOCK_KYTKIN1].yla = kytkin1_y;
-    //
-    //     lasketut_palikat[BLOCK_KYTKIN2_YLOS].ala = -kytkin2_y;
-    //     lasketut_palikat[BLOCK_KYTKIN2_YLOS].yla = -kytkin2_y;
-    //
-    //     lasketut_palikat[BLOCK_KYTKIN2_ALAS].ala = kytkin2_y;
-    //     lasketut_palikat[BLOCK_KYTKIN2_ALAS].yla = kytkin2_y;
-    //
-    //     lasketut_palikat[BLOCK_KYTKIN2].ala = kytkin2_y;
-    //     lasketut_palikat[BLOCK_KYTKIN2].yla = kytkin2_y;
-    //
-    //     lasketut_palikat[BLOCK_KYTKIN3_OIKEALLE].oikea = kytkin3_x;
-    //     lasketut_palikat[BLOCK_KYTKIN3_OIKEALLE].vasen = kytkin3_x;
-    //     lasketut_palikat[BLOCK_KYTKIN3_OIKEALLE].koodi = BLOCK_HISSI_HORI;
-    //
-    //     lasketut_palikat[BLOCK_KYTKIN3_VASEMMALLE].oikea = -kytkin3_x;
-    //     lasketut_palikat[BLOCK_KYTKIN3_VASEMMALLE].vasen = -kytkin3_x;
-    //     lasketut_palikat[BLOCK_KYTKIN3_VASEMMALLE].koodi = BLOCK_HISSI_HORI;
-    //
-    //     lasketut_palikat[BLOCK_KYTKIN3].ala = kytkin3_x;
-    //     lasketut_palikat[BLOCK_KYTKIN3].yla = kytkin3_x;
-    // }
-    //
-    // int      PK_Calculate_Tiles() {
-    //     PK2BLOCK palikka;
-    //
-    //     for (int i=0;i<150;i++){
-    //         palikka = lasketut_palikat[i];
-    //
-    //         palikka.vasen  = 0;
-    //         palikka.oikea  = 0;//32
-    //         palikka.yla	   = 0;
-    //         palikka.ala    = 0;//32
-    //
-    //         palikka.koodi  = i;
-    //
-    //         if ((i < 80 || i > 139) && i != 255){
-    //             palikka.tausta = false;
-    //
-    //             palikka.oikealle	= BLOCK_SEINA;
-    //             palikka.vasemmalle	= BLOCK_SEINA;
-    //             palikka.ylos		= BLOCK_SEINA;
-    //             palikka.alas		= BLOCK_SEINA;
-    //
-    //             // Erikoislattiat
-    //
-    //             if (i > 139){
-    //                 palikka.oikealle	= BLOCK_TAUSTA;
-    //                 palikka.vasemmalle	= BLOCK_TAUSTA;
-    //                 palikka.ylos		= BLOCK_TAUSTA;
-    //                 palikka.alas		= BLOCK_TAUSTA;
-    //             }
-    //
-    //             // L�pik�velt�v� lattia
-    //
-    //             if (i == BLOCK_ESTO_ALAS){
-    //                 palikka.oikealle	= BLOCK_TAUSTA;
-    //                 palikka.ylos		= BLOCK_TAUSTA;
-    //                 palikka.alas		= BLOCK_SEINA;
-    //                 palikka.vasemmalle	= BLOCK_TAUSTA;
-    //                 palikka.ala -= 27;
-    //             }
-    //
-    //             // M�et
-    //
-    //             if (i > 49 && i < 60){
-    //                 palikka.oikealle	= BLOCK_TAUSTA;
-    //                 palikka.ylos		= BLOCK_SEINA;
-    //                 palikka.alas		= BLOCK_SEINA;
-    //                 palikka.vasemmalle	= BLOCK_TAUSTA;
-    //                 palikka.ala += 1;
-    //             }
-    //
-    //             // Kytkimet
-    //
-    //             if (i >= BLOCK_KYTKIN1 && i <= BLOCK_KYTKIN3){
-    //                 palikka.oikealle	= BLOCK_SEINA;
-    //                 palikka.ylos		= BLOCK_SEINA;
-    //                 palikka.alas		= BLOCK_SEINA;
-    //                 palikka.vasemmalle	= BLOCK_SEINA;
-    //             }
-    //         }
-    //         else{
-    //             palikka.tausta = true;
-    //
-    //             palikka.oikealle	= BLOCK_TAUSTA;
-    //             palikka.vasemmalle	= BLOCK_TAUSTA;
-    //             palikka.ylos		= BLOCK_TAUSTA;
-    //             palikka.alas		= BLOCK_TAUSTA;
-    //         }
-    //
-    //         if (i > 131 && i < 140)
-    //             palikka.vesi = true;
-    //         else
-    //             palikka.vesi = false;
-    //
-    //         lasketut_palikat[i] = palikka;
-    //     }
-    //
-    //     PK_Calculate_MovableBlocks_Position();
-    //
-    //     return 0;
-    // }
     
     /**
      * Source: PK_Calculate_Tiles.
@@ -397,7 +242,10 @@ export class BlockManager {
         this.calculateMovableBlocksPosition();
     }
     
-    private calculateMovableBlocksPosition(): void {
+    /**
+     * Source: PK_Calculate_MovableBlocks_Position.
+     */
+    public calculateMovableBlocksPosition(): void {
         this.mCalculatedBlocks[BLOCK_HISSI_HORI].vasen = Math.floor(this._context.getCos(this._context.degree % 360));
         this.mCalculatedBlocks[BLOCK_HISSI_HORI].oikea = Math.floor(this._context.getCos(this._context.degree % 360));
         
@@ -408,7 +256,6 @@ export class BlockManager {
         let kytkin2_y: int = 0;
         let kytkin3_x: int = 0;
         
-        //
         // if (kytkin1 > 0) {
         //     kytkin1_y = 64;
         //

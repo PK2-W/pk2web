@@ -33,7 +33,6 @@ export abstract class PK2Context {
     public getCos(i: uint): number {
         return this.cosTable[i];
     }
-    
     public getSin(i: uint): number {
         return this.sinTable[i];
     }
@@ -65,6 +64,15 @@ export abstract class PK2Context {
     protected get ng(): PkEngine { return this._engine; }
     
     public get resources(): PkResources { return this._engine.resources; }
+    
+    /** @deprecated tengo que buscar algo mejor */
+    public get screenWidth(): int {
+        return 800;
+    }
+    /** @deprecated tengo que buscar algo mejor */
+    public get screenHeight(): int {
+        return 600;
+    }
     
     public get tx(): PkLanguage { return this._engine.tx; }
     public get time(): GameTimer { return this._engine.gt; }

@@ -150,7 +150,6 @@ type PK2SAVE = {
 ///...
 
 
-
 //
 // //��NIEFEKTIT
 // int kytkin_aani,
@@ -233,10 +232,10 @@ export class PK2 extends PK2Context implements ITickable {
     
     // Time
     // const int TIME_FPS = 100;
-    // uint timeout = 0;
+    // uint timeout = 0;                            ----> moved to game
     private increase_time: int = 0;
     private sekunti: int = 0;
-    // bool aikaraja = false;
+    // bool aikaraja = false;                       ----> moved to game
     //
     private kytkin_tarina: int = 0;
     //
@@ -291,7 +290,6 @@ export class PK2 extends PK2Context implements ITickable {
     // PK2LEVEL jaksot[EPISODI_MAX_LEVELS];
     //private jakso_lapaisty: bool = false;
     private uusinta: bool = false;
-    private peli_ohi: bool = false;
     private lopetusajastin: uint = 0;
     private jakso_pisteet: uint = 0;
     private fake_pisteet: uint = 0;
@@ -1830,7 +1828,7 @@ export class PK2 extends PK2Context implements ITickable {
     // 	}
     // }
     //
-  
+    
     //
     // void PK2::SpriteSystem::add(int protoype_id, int is_player, double x, double y, int emo, bool isbonus) {
     // 	PK2Sprite_Prototyyppi& proto = protot[protoype_id];
@@ -4544,197 +4542,6 @@ export class PK2 extends PK2Context implements ITickable {
         //
     }
     
-    /**
-     * @deprecated in favour of {@link PK2BXGame}
-     */
-    private PK_MainScreen_InGame(): void {
-        //
-        // 	PK2Kartta_Animoi(_degree, palikka_animaatio/7, kytkin1, kytkin2, kytkin3, false);
-        // 	PK_Update_Camera();
-        //
-        // 	PkEngine::Particles->update();
-        //
-        // 	if (!paused){
-        // 		if (!jakso_lapaisty && (!aikaraja || timeout > 0))
-        // 			PK_Update_Sprites();
-        // 		PK_Fadetext_Update();
-        // 	}
-        //
-        // 	PK_Draw_InGame();
-        //
-        // 	PK_Calculate_MovableBlocks_Position();
-        //
-        // 	if (!paused){
-        // 		_degree = 1 + _degree%359;
-        //
-        // 		if (kytkin1 > 0)
-        // 			kytkin1 --;
-        //
-        // 		if (kytkin2 > 0)
-        // 			kytkin2 --;
-        //
-        // 		if (kytkin3 > 0)
-        // 			kytkin3 --;
-        //
-        // 		if (info_timer > 0)
-        // 			info_timer--;
-        //
-        // 		if (piste_lisays > 0){
-        // 			jakso_pisteet++;
-        // 			piste_lisays--;
-        // 		}
-        //
-        // 		if (aikaraja && !jakso_lapaisty){
-        // 			if (sekunti > 0)
-        // 				sekunti --;
-        // 			else{
-        // 				sekunti = TIME_FPS;
-        // 				if (timeout > 0)
-        // 					timeout--;
-        // 				else
-        // 					peli_ohi = true;
-        // 			}
-        // 		}
-        //
-        // 		if (nakymattomyys > 0)
-        // 			nakymattomyys--;
-        // 	}
-        //
-        // 	if (PkEngine::Sprites->player->energia < 1 && !peli_ohi){
-        // 		peli_ohi = true;
-        // 		key_delay = 50;
-        // 	}
-        //
-        // 	if (key_delay > 0)
-        // 		key_delay--;
-        //
-        // 	if (jakso_lapaisty || peli_ohi){
-        // 		if (lopetusajastin > 1)
-        // 			lopetusajastin--;
-        //
-        // 		if (lopetusajastin == 0)
-        // 			lopetusajastin = 800;//2000;
-        //
-        // 		if (PisteInput_Keydown(settings.control_attack1) || PisteInput_Keydown(settings.control_attack2) ||
-        // 			PisteInput_Keydown(settings.control_jump) || PisteInput_Keydown(PI_RETURN))
-        // 			if (lopetusajastin > 2 && lopetusajastin < 600/*1900*/ && key_delay == 0)
-        // 				lopetusajastin = 2;
-        //
-        // 		if (lopetusajastin == 2)
-        // 		{
-        // 			PisteDraw2_FadeOut(PD_FADE_NORMAL);
-        // 			//music_volume = 0;
-        // 		}
-        // 	}
-        // 	if (lopetusajastin == 1 && !PisteDraw2_IsFading()){
-        // 		if(test_level) PK_Fade_Quit();
-        // 		else {
-        // 			if (jakso_lapaisty) game_next_screen = SCREEN_SCORING;
-        // 			else game_next_screen = SCREEN_MAP;
-        // 		}
-        // 	}
-        //
-        // 	if (key_delay == 0){
-        // 		if (PisteInput_Keydown(settings.control_open_gift) && PkEngine::Sprites->player->energia > 0){
-        // 			PkEngine::Gifts->use();
-        // 			key_delay = 10;
-        // 		}
-        // 		if (PisteInput_Keydown(PI_P) && !jakso_lapaisty){
-        // 			paused = !paused;
-        // 			key_delay = 20;
-        // 		}
-        // 		if (PisteInput_Keydown(PI_DELETE))
-        // 			PkEngine::Sprites->player->energia = 0;
-        // 		if (PisteInput_Keydown(PI_TAB)){
-        // 			PkEngine::Gifts->change_order();
-        // 			key_delay = 10;
-        // 		}
-        // 		if (!dev_mode)
-        // 			if (PisteInput_Keydown(PI_I)) {
-        // 				show_fps = !show_fps;
-        // 				key_delay = 20;
-        // 			}
-        // 		if (PisteInput_Keydown(PI_F)) {
-        // 			show_fps = !show_fps;
-        // 			key_delay = 20;
-        // 		}
-        // 	}
-        //
-        // 	if (dev_mode){ //Debug
-        // 		if (key_delay == 0) {
-        // 			if (PisteInput_Keydown(PI_Z)) {
-        // 				if (kytkin1 < KYTKIN_ALOITUSARVO - 64) kytkin1 = KYTKIN_ALOITUSARVO;
-        // 				if (kytkin2 < KYTKIN_ALOITUSARVO - 64) kytkin2 = KYTKIN_ALOITUSARVO;
-        // 				if (kytkin3 < KYTKIN_ALOITUSARVO - 64) kytkin3 = KYTKIN_ALOITUSARVO;
-        // 				key_delay = 20;
-        // 			}
-        // 			if (PisteInput_Keydown(PI_X)) {
-        // 				if (kytkin1 > 64) kytkin1 = 64;
-        // 				if (kytkin2 > 64) kytkin2 = 64;
-        // 				if (kytkin3 > 64) kytkin3 = 64;
-        // 				key_delay = 20;
-        // 			}
-        // 			if (PisteInput_Keydown(PI_T)) {
-        // 				doublespeed = !doublespeed;
-        // 				key_delay = 20;
-        // 			}
-        // 			if (PisteInput_Keydown(PI_G)) {
-        // 				settings.lapinakyvat_objektit = !settings.lapinakyvat_objektit;
-        // 				key_delay = 20;
-        // 			}
-        // 			if (PisteInput_Keydown(PI_L)) {
-        // 				avaimia = 0;
-        // 				kartta->Open_Locks();
-        // 				key_delay = 20;
-        // 			}
-        // 			if (PisteInput_Keydown(PI_K)) {
-        // 				kartta->Change_SkullBlocks();
-        // 				key_delay = 20;
-        // 			}
-        // 			if (PisteInput_Keydown(PI_W)) {
-        // 				settings.isFullScreen = !settings.isFullScreen;
-        // 				PisteDraw2_FullScreen(settings.isFullScreen);
-        // 				key_delay = 20;
-        // 			}
-        // 			if (PisteInput_Keydown(PI_I)) {
-        // 				draw_dubug_info = !draw_dubug_info;
-        // 				key_delay = 20;
-        // 			}
-        // 			if (PisteInput_Keydown(PI_R)) {
-        // 				kartta->Select_Start();
-        // 				PkEngine::Sprites->player->energia = 10;
-        // 				key_delay = 20;
-        // 			}
-        // 			if (PisteInput_Keydown(PI_END)) {
-        // 				key_delay = 20;
-        // 				if (PisteSound_StartMusic("music/hiscore.xm") != 0){
-        // 					PK2_error = true;
-        // 					PK2_error_msg = "Can't find hiscore.xm";
-        // 				}
-        // 				jakso_lapaisty = true;
-        // 				jaksot[jakso_indeksi_nyt].lapaisty = true;
-        // 				if (jaksot[jakso_indeksi_nyt].jarjestys == jakso)
-        // 					jakso++;
-        // 				music_volume = settings.music_max_volume;
-        // 				music_volume_now = settings.music_max_volume - 1;
-        // 			}
-        // 			if (PisteInput_Keydown(PI_LSHIFT)/* && key_delay == 0*/) {
-        // 				//key_delay = 20;
-        // 				for (int r = 1; r<6; r++)
-        // 					//PkEngine::Particles->new_particle(PARTICLE_SPARK, player->x + rand() % 10 - rand() % 10, player->y + rand() % 10 - rand() % 10, 0, 0, rand() % 100, 0.1, 32);
-        // 					PkEngine::Particles->new_particle(PARTICLE_SPARK, PkEngine::Sprites->player->x + rand() % 10 - rand() % 10, PkEngine::Sprites->player->y + rand() % 10 - rand() % 10, 0, 0, rand() % 100, 0.1, 32);
-        // 				*PkEngine::Sprites->player = PK2Sprite(&PkEngine::Sprites->protot[PROTOTYYPPI_KANA], 1, false, PkEngine::Sprites->player->x, PkEngine::Sprites->player->y);
-        // 			}
-        // 		}
-        // 		if (PisteInput_Keydown(PI_U))
-        // 			PkEngine::Sprites->player->b = -10;
-        // 		if (PisteInput_Keydown(PI_E))
-        // 			PkEngine::Sprites->player->energia = PkEngine::Sprites->player->tyyppi->energia;
-        // 		if (PisteInput_Keydown(PI_V))
-        // 			nakymattomyys = 3000;
-        // 	}
-    }
-    
     private PK_MainScreen_End(): void {
         //
         // 	PK_Draw_EndGame();
@@ -5453,7 +5260,8 @@ export class PK2 extends PK2Context implements ITickable {
         // 		}
         //}
         
-        this._engine.gt.add(this.tick.bind(this));
+        console.log('GAMEFLOW IS DISABLED');
+        // this._engine.gt.add(this.tick.bind(this));
         
         //
         await this.createScreens();
@@ -5480,7 +5288,16 @@ export class PK2 extends PK2Context implements ITickable {
         console.log('RENDER IS DISABLED');
         //this.changeToIntro();
         
-        new PK2Game(this).xChangeToGame();
+        const game = new PK2Game(this);
+        await game.xChangeToGame();
+        
+        const minifn = (delta, time) => {
+            //this._engine.gt.add(minifn.bind(this));
+            game.gameLoop(delta);
+        };
+        
+        this._engine.gt.add(minifn.bind(this));
+        
         // 	if(PK2_error){
         // 		printf("PK2    - Error!\n");
         // 		PisteUtils_Show_Error(PK2_error_msg);

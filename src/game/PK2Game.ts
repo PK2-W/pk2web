@@ -7,7 +7,7 @@ import { Sprite, EDamageType } from '@game/sprite/Sprite';
 import { SpriteManager } from '@game/sprite/SpriteManager';
 import { BlockManager } from '@game/tile/BlockManager';
 import { MAX_SPRITES } from '../support/constants';
-import { int, rand } from '../support/types';
+import { int, rand, bool, uint } from '../support/types';
 
 export class PK2Game extends PK2GameContext {
     private _map: PK2Map;
@@ -35,6 +35,18 @@ export class PK2Game extends PK2GameContext {
     private _dcameraA: number;
     private _dcameraB: number;
     
+    /// >  Timing
+    
+    /** Indicates if level has countdown. */
+    private _aikaraja: boolean = false;                 // REPL
+    /** Remaining time if level has countdown. */
+    private _timeout: uint = 0;                         // REPL
+    
+    /// >  Game current status
+    
+    /** @deprecated Use gameOver instead. */
+    private _peli_ohi;
+    private _gameOver: bool = false;
     private _paused: boolean;
     
     //PALIKOIHIN LIITTYV�T AJASTIMET
@@ -42,6 +54,8 @@ export class PK2Game extends PK2GameContext {
     private _kytkin2: int = 0;
     private _kytkin3: int = 0;
     private _palikka_animaatio: int = 0;
+    
+    private _kytkin_tarina: int = 0; // "shaking switch", here for now
     
     public constructor(ctx: PK2Context) {
         super(ctx);
@@ -81,7 +95,7 @@ export class PK2Game extends PK2GameContext {
             // x-> Game::Sprites->protot_clear_all(); //Reset prototypes
             this._sprites = new SpriteManager(this);
             
-            await this._openMap(/*seuraava_kartta*/'episodes/' + this._episodeName + '/level001.map');
+            await this.loadMap(/*seuraava_kartta*/'episodes/' + this._episodeName + '/level001.map');
             //  TODO try catch
             //          PK2_error = true;
             //          PK2_error_msg = "Can't load map";
@@ -100,13 +114,13 @@ export class PK2Game extends PK2GameContext {
             // PND  degree = degree_temp;
         }
         
-        //
+        // Now game_screen = SCREEN_GAME
     }
     
     /**
      * Source: PK_Map_Open
      */
-    private async _openMap(uri: string) {
+    private async loadMap(uri: string) {
         // Open the requested map
         this._map = await PK2Map.loadFromFile(this._context, uri);
         // TODO try catch
@@ -162,99 +176,101 @@ export class PK2Game extends PK2GameContext {
     /**
      * Sourfce: PK_MainScreen_InGame
      */
-    private loop(): void {
-        //
+    private gameLoop(delta: number): void {
         // 	PK2Kartta_Animoi(_degree, palikka_animaatio/7, kytkin1, kytkin2, kytkin3, false);
-        // 	PK_Update_Camera();
-        //
+        this.updateCamera();
+        
         // 	PkEngine::Particles->update();
         
         if (!this._paused) {
-            // 		if (!jakso_lapaisty && (!aikaraja || timeout > 0))
-            this._PK_Update_Sprites();
-            // 		PK_Fadetext_Update();
+            // ---IF level is not passed AND (level is with timeout AND timeout is not dued)
+            // if (!this._jakso_lapaisty && (!aikaraja || timeout > 0))
+            this.updateSprites();
+            // PK_Fadetext_Update();
         }
         
         // 	PK_Draw_InGame();
         
-        // 	PK_Calculate_MovableBlocks_Position();
-        //
-        // 	if (!paused){
-        // 		_degree = 1 + _degree%359;
-        //
-        // 		if (kytkin1 > 0)
-        // 			kytkin1 --;
-        //
-        // 		if (kytkin2 > 0)
-        // 			kytkin2 --;
-        //
-        // 		if (kytkin3 > 0)
-        // 			kytkin3 --;
-        //
-        // 		if (info_timer > 0)
-        // 			info_timer--;
-        //
-        // 		if (piste_lisays > 0){
-        // 			jakso_pisteet++;
-        // 			piste_lisays--;
-        // 		}
-        //
-        // 		if (aikaraja && !jakso_lapaisty){
-        // 			if (sekunti > 0)
-        // 				sekunti --;
-        // 			else{
-        // 				sekunti = TIME_FPS;
-        // 				if (timeout > 0)
-        // 					timeout--;
-        // 				else
-        // 					peli_ohi = true;
-        // 			}
-        // 		}
-        //
-        // 		if (nakymattomyys > 0)
-        // 			nakymattomyys--;
-        // 	}
-        //
-        // 	if (PkEngine::Sprites->player->energia < 1 && !peli_ohi){
-        // 		peli_ohi = true;
-        // 		key_delay = 50;
-        // 	}
-        //
+        this._blocks.calculateMovableBlocksPosition();
+        
+        if (!this._paused) {
+            this._context.degree = 1 + this._context._degree % 359;
+            
+            if (this._kytkin1 > 0)
+                this._kytkin1--;
+            
+            if (this._kytkin2 > 0)
+                this._kytkin2--;
+            
+            if (this._kytkin3 > 0)
+                this._kytkin3--;
+            
+            // 		if (info_timer > 0)
+            // 			info_timer--;
+            //
+            // 		if (piste_lisays > 0){
+            // 			jakso_pisteet++;
+            // 			piste_lisays--;
+            // 		}
+            
+            // REPL: THIS IS THE LOGIC IN CHARGE OF COUNT SECONDS
+            //       THIS HAS TO BE REPLACED
+            //  if (this._aikaraja && !this._jakso_lapaisty) {
+            //   			if (sekunti > 0)
+            //   				sekunti --;
+            //   			else{
+            //   				sekunti = TIME_FPS;
+            //   				if (this._timeout > 0)
+            //   					this._timeout--;
+            //   				else
+            //   					this._peli_ohi = true;
+            //   			}
+            //  }
+            
+            // 		if (nakymattomyys > 0)
+            // 			nakymattomyys--;
+        }
+        
+        if (this._sprites.player.energia < 1 && !this._gameOver) {
+            this._gameOver = true;
+            // 		key_delay = 50;
+        }
+        
         // 	if (key_delay > 0)
         // 		key_delay--;
-        //
-        // 	if (jakso_lapaisty || peli_ohi){
-        // 		if (lopetusajastin > 1)
-        // 			lopetusajastin--;
-        //
-        // 		if (lopetusajastin == 0)
-        // 			lopetusajastin = 800;//2000;
-        //
-        // 		if (PisteInput_Keydown(settings.control_attack1) || PisteInput_Keydown(settings.control_attack2) ||
-        // 			PisteInput_Keydown(settings.control_jump) || PisteInput_Keydown(PI_RETURN))
-        // 			if (lopetusajastin > 2 && lopetusajastin < 600/*1900*/ && key_delay == 0)
-        // 				lopetusajastin = 2;
-        //
-        // 		if (lopetusajastin == 2)
-        // 		{
-        // 			PisteDraw2_FadeOut(PD_FADE_NORMAL);
-        // 			//music_volume = 0;
-        // 		}
-        // 	}
+        
+        if (this._jakso_lapaisty || this._gameOver) {
+            // 		if (lopetusajastin > 1)
+            // 			lopetusajastin--;
+            //
+            // 		if (lopetusajastin == 0)
+            // 			lopetusajastin = 800;//2000;
+            //
+            // 		if (PisteInput_Keydown(settings.control_attack1) || PisteInput_Keydown(settings.control_attack2) ||
+            // 			PisteInput_Keydown(settings.control_jump) || PisteInput_Keydown(PI_RETURN))
+            // 			if (lopetusajastin > 2 && lopetusajastin < 600/*1900*/ && key_delay == 0)
+            // 				lopetusajastin = 2;
+            //
+            // 		if (lopetusajastin == 2){
+            // 			PisteDraw2_FadeOut(PD_FADE_NORMAL);
+            // 			//music_volume = 0;
+            // 		}
+        }
         // 	if (lopetusajastin == 1 && !PisteDraw2_IsFading()){
         // 		if(test_level) PK_Fade_Quit();
         // 		else {
-        // 			if (jakso_lapaisty) game_next_screen = SCREEN_SCORING;
+        // 			if (this._jakso_lapaisty) game_next_screen = SCREEN_SCORING;
         // 			else game_next_screen = SCREEN_MAP;
         // 		}
         // 	}
-        //
+        
+        // REPL
         // 	if (key_delay == 0){
         // 		if (PisteInput_Keydown(settings.control_open_gift) && PkEngine::Sprites->player->energia > 0){
         // 			PkEngine::Gifts->use();
         // 			key_delay = 10;
         // 		}
-        // 		if (PisteInput_Keydown(PI_P) && !jakso_lapaisty){
+        // 		if (PisteInput_Keydown(PI_P) && !this._jakso_lapaisty){
         // 			paused = !paused;
         // 			key_delay = 20;
         // 		}
@@ -274,7 +290,8 @@ export class PK2Game extends PK2GameContext {
         // 			key_delay = 20;
         // 		}
         // 	}
-        //
+        
+        // REPL
         // 	if (dev_mode){ //Debug
         // 		if (key_delay == 0) {
         // 			if (PisteInput_Keydown(PI_Z)) {
@@ -326,7 +343,7 @@ export class PK2Game extends PK2GameContext {
         // 					PK2_error = true;
         // 					PK2_error_msg = "Can't find hiscore.xm";
         // 				}
-        // 				jakso_lapaisty = true;
+        // 				this._jakso_lapaisty = true;
         // 				jaksot[jakso_indeksi_nyt].lapaisty = true;
         // 				if (jaksot[jakso_indeksi_nyt].jarjestys == jakso)
         // 					jakso++;
@@ -365,21 +382,21 @@ export class PK2Game extends PK2GameContext {
         this._dcameraY = playerPosY;
     }
     
-    private _PK_Update_Camera(): void {
-        this._cameraX = Math.floor(this._sprites.player.x - screenWidth / 2);
-        this._cameraY = Math.floor(this._sprites.player.y - screenHeight / 2);
+    /**
+     * Source: PK_Update_Camera.
+     */
+    private updateCamera(): void {
+        this._cameraX = Math.floor(this._sprites.player.x - this._context.screenWidth / 2);
+        this._cameraY = Math.floor(this._sprites.player.y - this._context.screenHeight / 2);
         
-        /*
-        if (!PisteInput_Hiiri_Vasen())
-        {
-           Game::camera_x = (int)player->x-screen_width/2;
-           Game::camera_y = (int)player->y-screen_height/2;
-        }
-        else
-        {
-           Game::camera_x += PisteInput_Hiiri_X(0)*5;
-           Game::camera_y += PisteInput_Hiiri_Y(0)*5;
-        }*/
+        // Source comment:
+        // if (!PisteInput_Hiiri_Vasen()) {
+        //    Game::camera_x = (int)player->x-screen_width/2;
+        //    Game::camera_y = (int)player->y-screen_height/2;
+        // }else{
+        //    Game::camera_x += PisteInput_Hiiri_X(0)*5;
+        //    Game::camera_y += PisteInput_Hiiri_Y(0)*5;
+        // }
         
         if (this._vibration > 0) {
             this._dcameraX += (rand() % this._vibration - rand() % this._vibration) / 5;
@@ -388,11 +405,11 @@ export class PK2Game extends PK2GameContext {
             this._vibration--;
         }
         
-        if (kytkin_tarina > 0) {
+        if (this._kytkin_tarina > 0) {
             this._dcameraX += (rand() % 9 - rand() % 9); //3
             this._dcameraY += (rand() % 9 - rand() % 9);
             
-            kytkin_tarina--;
+            this._kytkin_tarina--;
         }
         
         if (this._dcameraX !== this._cameraX)
@@ -425,14 +442,17 @@ export class PK2Game extends PK2GameContext {
         if (this._cameraY < 0)
             this._cameraY = 0;
         
-        if (this._cameraX > Math.floor(PK2KARTTA_KARTTA_LEVEYS - screenWidth / 32) * 32)
-            this._cameraX = Math.floor(PK2KARTTA_KARTTA_LEVEYS - screenWidth / 32) * 32;
+        if (this._cameraX > Math.floor(PK2KARTTA_KARTTA_LEVEYS - this._context.screenWidth / 32) * 32)
+            this._cameraX = Math.floor(PK2KARTTA_KARTTA_LEVEYS - this._context.screenWidth / 32) * 32;
         
-        if (this._cameraY > Math.floor(PK2KARTTA_KARTTA_KORKEUS - screenHeight / 32) * 32)
-            this._cameraY = Math.floor(PK2KARTTA_KARTTA_KORKEUS - screenHeight / 32) * 32;
+        if (this._cameraY > Math.floor(PK2KARTTA_KARTTA_KORKEUS - this._context.screenHeight / 32) * 32)
+            this._cameraY = Math.floor(PK2KARTTA_KARTTA_KORKEUS - this._context.screenHeight / 32) * 32;
     }
     
-    public _PK_Update_Sprites(): void {
+    /**
+     * Source: PK_Update_Sprites.
+     */
+    public updateSprites(): void {
         // 	debug_active_sprites = 0;
         let sprite: Sprite;
         
@@ -458,9 +478,9 @@ export class PK2Game extends PK2GameContext {
             
             if (sprite.aktiivinen && sprite.proto.type !== EProtoType.TYYPPI_TAUSTA) {
                 if (sprite.proto.type === EProtoType.TYYPPI_BONUS) {
-                    this._PK_Sprite_Bonus_Movement(i);
+                    this.updateBonusSpriteMovement(i);
                 } else {
-                    this._PK_Sprite_Movement(i);
+                    this.updateSpriteMovement(i);
                 }
                 
                 // debug_active_sprites++;
@@ -468,15 +488,20 @@ export class PK2Game extends PK2GameContext {
         }
     }
     
-    private _PK_Sprite_Movement(i: int): void {
+    /**
+     * Source: PK_Sprite_Movement.
+     *
+     * @param i
+     */
+    private updateSpriteMovement(i: int): void {
         // 	if (i >= MAX_SPRITEJA || i < 0)
         // 		return -1;
         
-        let sprite: Sprite = null;
-        // 	PK2Sprite &sprite = Game::Sprites->spritet[i]; //address of sprite = address of spritet[i] (if change sprite, change spritet[i])
+        let sprite: Sprite = this._sprites.get(i);  // Source comment: address of sprite = address of spritet[i] (if change sprite, change spritet[i])
         
-        // 	if (!sprite.tyyppi)
-        // 		return -1;
+        // TODO - Caution with this: Dead sprites are going to be updated
+        if (sprite.proto == null)
+            return;
         
         let sprite_x = sprite.x;
         let sprite_y = sprite.y;
@@ -506,13 +531,13 @@ export class PK2Game extends PK2GameContext {
         let kartta_vasen = 0;
         let kartta_yla = 0;
         
-        // 	sprite.kyykky = false;
+        sprite.kyykky = false;
         
-        // 	sprite.reuna_vasemmalla = false;
-        // 	sprite.reuna_oikealla = false;
+        sprite.reuna_vasemmalla = false;
+        sprite.reuna_oikealla = false;
         
         
-        /* Pistet��n vauhtia tainnutettuihin spriteihin */
+        // Limit max speed if energy is to low
         if (sprite.energia < 1)
             max_nopeus = 3;
         
@@ -685,7 +710,7 @@ export class PK2Game extends PK2GameContext {
             
             if (!hyppy_maximissa) {
                 //sprite_b = (sprite.tyyppi->max_hyppy/2 - sprite.jumpTimer/2)/-2.0;//-4
-                //		   sprite_b = -sin_table[sprite.jumpTimer]/8;//(sprite.tyyppi->max_hyppy/2 - sprite.jumpTimer/2)/-2.5;  // TODO
+                sprite_b = -this._context.getSin(sprite.jumpTimer) / 8; //(sprite.tyyppi->max_hyppy/2 - sprite.jumpTimer/2)/-2.5;
                 if (sprite_b > sprite.proto.maxJump) {
                     sprite_b = sprite.proto.maxJump / 10.0;
                     sprite.jumpTimer = 90 - sprite.jumpTimer;
@@ -1186,15 +1211,17 @@ export class PK2Game extends PK2GameContext {
         sprite.down = alas;
         sprite.up = ylos;
         
+        // Source comment:
         /*
-        sprite.weight = sprite.tyyppi->paino;
-    
-        if (sprite.energia < 1 && sprite.weight == 0)
-           sprite.weight = 1;*/
+               sprite.weight = sprite.tyyppi->paino;
+           
+               if (sprite.energia < 1 && sprite.weight == 0)
+                  sprite.weight = 1;*/
         
         if (sprite.jumpTimer < 0)
             sprite.down = false;
         
+        // Source comment:
         //sprite.kyykky   = false;
         
         /*****************************************************************************************/
@@ -1563,7 +1590,7 @@ export class PK2Game extends PK2GameContext {
         // 	return 0;
     }
     
-    private _PK_Sprite_Bonus_Movement(sprite: Sprite): void {
+    private updateBonusSpriteMovement(sprite: Sprite): void {
         // 	sprite_x = 0;
         // 	sprite_y = 0;
         // 	sprite_a = 0;
