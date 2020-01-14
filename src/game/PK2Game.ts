@@ -2035,5 +2035,79 @@ export class PK2Game extends PK2GameContext {
         // 		sprite.energia = 0;
     }
     
-    
+    /**
+     * Source: PK_Draw_InGame.
+     */
+    private drawGame():void {
+        let luku:str[15];
+        // char luku[15];
+        // int vali = 20;
+        //
+        // if (!skip_frame){
+        //
+        //     PK_Draw_InGame_BG();
+        //
+        //     if (settings.tausta_spritet)
+        //         PK_Draw_InGame_BGSprites();
+        //
+        //     Game::Particles->draw_bg_particles();
+        //
+        //     kartta->Piirra_Taustat(Game::camera_x,Game::camera_y,false);
+        //
+        //     PK_Draw_InGame_Sprites();
+        //
+        //     //PK_Particles_Draw();
+        //     Game::Particles->draw_front_particles();
+        //
+        //     kartta->Piirra_Seinat(Game::camera_x,Game::camera_y, false);
+        //
+        //     if (settings.nayta_tavarat)
+        //         PK_Draw_InGame_Lower_Menu();
+        //
+        //     PK_Fadetext_Draw();
+        //
+        //     PK_Draw_InGame_UI();
+        //
+        //     if (draw_dubug_info)
+        //         PK_Draw_InGame_DebugInfo();
+        //     else {
+        //         if (dev_mode)
+        //             PK_Draw_InGame_DevKeys();
+        //         if (test_level)
+        //             PisteDraw2_Font_Write(fontti1, "testing level", 0, 480 - 20);
+        //         if (show_fps) {
+        //             if (fps >= 100)
+        //                 vali = PisteDraw2_Font_Write(fontti1, "fps:", 570, 48);
+        //             else
+        //                 vali = PisteDraw2_Font_Write(fontti1, "fps: ", 570, 48);
+        //             fps = Engine->get_fps();
+        //             itoa((int)fps, luku, 10);
+        //             PisteDraw2_Font_Write(fontti1, luku, 570 + vali, 48);
+        //         }
+        //     }
+        //
+        //     if (paused)
+        //         PisteDraw2_Font_Write(fontti2,tekstit->Hae_Teksti(PK_txt.game_paused),screen_width/2-82,screen_height/2-9);
+        //
+        //     if (jakso_lapaisty)
+        //         PK_Wavetext_Draw(tekstit->Hae_Teksti(PK_txt.game_clear),fontti2,screen_width/2-120,screen_height/2-9);
+        //     else
+        //     if (peli_ohi){
+        //         if (Game::Sprites->player->energia < 1)
+        //         PK_Wavetext_Draw(tekstit->Hae_Teksti(PK_txt.game_ko),fontti2,screen_width/2-90,screen_height/2-9-10);
+        //     else
+        //         if (timeout < 1 && aikaraja)
+        //             PK_Wavetext_Draw(tekstit->Hae_Teksti(PK_txt.game_timeout),fontti2,screen_width/2-67,screen_height/2-9-10);
+        //
+        //         PK_Wavetext_Draw(tekstit->Hae_Teksti(PK_txt.game_tryagain),fontti2,screen_width/2-75,screen_height/2-9+10);
+        //     }
+        // }
+        //
+        // if (skip_frame) Engine->ignore_frame();
+        //
+        // if (doublespeed) skip_frame = !skip_frame;
+        // else skip_frame = false;
+        //
+        // palikka_animaatio = 1 + palikka_animaatio % 34;
+    }
 }

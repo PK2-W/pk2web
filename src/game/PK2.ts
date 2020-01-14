@@ -5292,7 +5292,7 @@ export class PK2 extends PK2Context implements ITickable {
         await game.xChangeToGame();
         
         const minifn = (delta, time) => {
-            //this._engine.gt.add(minifn.bind(this));
+            this._engine.gt.add(minifn.bind(this));
             game.gameLoop(delta);
         };
         
