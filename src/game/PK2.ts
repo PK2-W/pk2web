@@ -21,7 +21,7 @@
 
 import { PK2Map } from '@game/map/PK2Map';
 import { PK2Game } from '@game/PK2Game';
-import { Sprite } from '@game/sprite/Sprite';
+import { PK2Sprite } from '@game/sprite/PK2Sprite';
 import { PK2SpritePrototype } from '@game/sprite/PK2SpritePrototype';
 import { ITickable } from '../engine/ITickable';
 import { PK2wRenderer, FADE } from '../engine/PK2wDraw';

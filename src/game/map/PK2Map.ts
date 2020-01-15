@@ -195,11 +195,41 @@ export class PK2Map extends PK2MapInfo {
             }
         }
         
+        // TODO: Moved to game/block manager
         //Lataa_PalikkaPaletti(this->palikka_bmp);
+        // TODO: Moved to game
         //Lataa_Taustakuva(this->taustakuva);
         
         console.log(this);
     }
+    
+    //     int PK2Kartta::Lataa_PalikkaPaletti(char *polku, char *filename){
+    //     int i;
+    //     int img;
+    //     char file[PE_PATH_SIZE];
+    //     strcpy(file,"");
+    //     strcpy(file,polku);
+    //     strcat(file,filename);
+    //
+    //     if (!PisteUtils_Find(file)){
+    //     //strcpy(file,PK2Kartta::pk2_hakemisto);
+    //     strcpy(file,"gfx/tiles/");
+    //     strcat(file,filename);
+    //     if (!PisteUtils_Find(file))
+    //     return 1;
+    // }
+    //
+    // img = PisteDraw2_Image_Load(file,false);
+    // if(img == -1) return 2;
+    // PisteDraw2_Image_Copy(img,this->palikat_buffer);
+    // PisteDraw2_Image_Delete(img);
+    //
+    // PisteDraw2_Image_Delete(this->palikat_vesi_buffer); //Delete last water buffer
+    // this->palikat_vesi_buffer = PisteDraw2_Image_Cut(this->palikat_buffer,0,416,320,32);
+    //
+    // strcpy(this->palikka_bmp,filename);
+    // return 0;
+    // }
     
     private _loadInfo12() {
         console.log('load map 12');
@@ -217,8 +247,6 @@ export class PK2Map extends PK2MapInfo {
         console.log('load map 01');
     }
     
-    
-    ///
     
     private load(): Promise<void> {
     

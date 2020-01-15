@@ -1,9 +1,10 @@
 import { PK2SpritePrototype } from '@game/sprite/PK2SpritePrototype';
 import { EAi } from '@game/sprite/SpriteManager';
+import { Drawable } from '@ng/drawable/Drawable';
 import { SPRITE_MAX_AI } from '../../support/constants';
 import { int, BYTE, bool } from '../../support/types';
 
-export class Sprite {
+export class PK2Sprite extends Drawable {
     private _aktiivinen: boolean;			// true / false
     private _pelaaja: int;			// 0 = ei pelaaja, 1 = pelaaja
     private _tyyppi: PK2SpritePrototype;	// osoitin spriten prototyyppiin
@@ -53,9 +54,19 @@ export class Sprite {
     private _muutos_ajastin: int;		// sprite muuttuu muutosspriteksi kun t�m� nollautuu
     
     public constructor() ;
-    public constructor(proto: PK2SpritePrototype, isPlayer: boolean, piilota: boolean, x: number, y: number);
-    public constructor(proto?: PK2SpritePrototype, isPlayer?: boolean, piilota?: boolean, x?: number, y?: number) {
-        this.reuseWith(proto, isPlayer, piilota, x, y);
+    /**
+     *
+     * @param proto
+     * @param isPlayer
+     * @param discarded - Originally "piilota".
+     * @param x
+     * @param y
+     */
+    public constructor(proto: PK2SpritePrototype, isPlayer: boolean, discarded: boolean, x: number, y: number);
+    public constructor(proto?: PK2SpritePrototype, isPlayer?: boolean, discarded?: boolean, x?: number, y?: number) {
+        super(new PIXI.Container());
+        
+        this.reuseWith(proto, isPlayer, discarded, x, y);
     }
     
     public reuse() {
@@ -104,13 +115,21 @@ export class Sprite {
         this._muutos_ajastin = 0;
     }
     
-    public reuseWith(proto: PK2SpritePrototype, isPlayer: boolean, piilota: boolean, x: number, y: number) {
+    /**
+     *
+     * @param proto
+     * @param isPlayer
+     * @param discarded - Originally "piilota".
+     * @param x
+     * @param y
+     */
+    public reuseWith(proto: PK2SpritePrototype, isPlayer: boolean, discarded: boolean, x: number, y: number) {
         this.reuse();
         
         if (proto != null) {
             this._tyyppi = proto;
             this._pelaaja = isPlayer ? 1 : 0;  // TODO Convert to boolean
-            this._piilota = piilota;
+            this._piilota = discarded;
             this._x = x;
             this._y = y;
             this._alku_x = x;
@@ -543,4 +562,13 @@ export enum EDestructionType {
     TUHOUTUMINEN_SAVU_TURKOOSI,
     TUHOUTUMINEN_SAVUPILVET,
     TUHOUTUMINEN_ANIMAATIO = 100
+}
+
+export enum EType {
+    TYYPPI_EI_MIKAAN,
+    TYYPPI_PELIHAHMO,
+    TYYPPI_BONUS,
+    TYYPPI_AMMUS,
+    TYYPPI_TELEPORTTI,
+    TYYPPI_TAUSTA
 }

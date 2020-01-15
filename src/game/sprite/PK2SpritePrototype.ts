@@ -1,5 +1,5 @@
 import { PK2GameContext } from '@game/PK2GameContext';
-import { EDamageType, EDestructionType } from '@game/sprite/Sprite';
+import { EDamageType, EDestructionType } from '@game/sprite/PK2Sprite';
 import { EAi } from '@game/sprite/SpriteManager';
 import { Binary } from '@ng/support/Binary';
 import { pathJoin, str2num } from '@ng/support/utils';

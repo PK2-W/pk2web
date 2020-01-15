@@ -1,15 +1,14 @@
 import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, PK2Map } from '@game/map/PK2Map';
 import { PK2GameContext } from '@game/PK2GameContext';
-import { Sprite } from '@game/sprite/Sprite';
 import { PK2SpritePrototype, EProtoType } from '@game/sprite/PK2SpritePrototype';
-import { ResourceFetchError } from '@ng/error/ResourceFetchError';
-import { ResourceNotFoundError } from '@ng/error/ResourceNotFoundError';
+import { PK2Sprite } from '@game/sprite/PK2Sprite';
 import { pathJoin } from '@ng/support/utils';
-import { MAX_SPRITES, MAX_SPRITE_TYPES, MAX_PROTOTYYPPEJA, MAX_AANIA } from '../../support/constants';
+import { EventEmitter, ListenerFn } from '@vendor/eventemitter3';
+import { MAX_SPRITES, MAX_SPRITE_TYPES, MAX_AANIA } from '../../support/constants';
 import { OutOfBoundsError } from '../../support/error/OutOfBoundsError';
 import { int, CVect, cvect, rand } from '../../support/types';
 
-export class SpriteManager {
+export class SpriteManager extends EventEmitter {
     private readonly _context: PK2GameContext;
     
     /**
@@ -18,15 +17,17 @@ export class SpriteManager {
      */
     private _protot: CVect<PK2SpritePrototype> = cvect(MAX_SPRITE_TYPES);
     /** Sprites pool. */
-    private _spritet: CVect<Sprite> = cvect(MAX_SPRITES);
+    private _spritet: CVect<PK2Sprite> = cvect(MAX_SPRITES);
     
     private _taustaspritet: CVect<int> = cvect(MAX_SPRITES);
     
-    private _player: Sprite;
+    private _player: PK2Sprite;
     private _nextFreeProtoIndex: int = 0;
     
     
     public constructor(context: PK2GameContext) {
+        super();
+        
         this._context = context;
         
         this.clear();
@@ -149,7 +150,7 @@ export class SpriteManager {
     
     public clear(): void {
         for (let i = 0; i < MAX_SPRITES; i++) {
-            this._spritet[i] = new Sprite();
+            this._spritet[i] = new PK2Sprite();
             this._taustaspritet[i] = -1;
         }
         
@@ -160,7 +161,7 @@ export class SpriteManager {
      * Adds the sprites from the specified map to the sprite system.
      * Source: PK2Kartta::Place_Sprites.
      */
-    public addMapSprites(map: PK2Map) {
+    public addMapSprites(map: PK2Map, middleware: (sprite: PK2Sprite) => void) {
         this.clear();
         this.addMapSprite(map.getPlayerSprite(), true, 0, 0, MAX_SPRITES, false);
         
@@ -214,6 +215,8 @@ export class SpriteManager {
                     sprite.emosprite = i;
                 
                 lisatty = true;
+                
+                this.emit(Ev.SPRITE_CREATED, sprite);
             } else {
                 i++;
             }
@@ -228,7 +231,7 @@ export class SpriteManager {
             let sprite = this._spritet[i];
             
             if (sprite.piilota) {
-                sprite = Sprite(proto, isPlayer, false, x/*-proto.leveys/2*/, y);   // TODO: Ojo! los reusa sin destruirlo porque es un pool
+                sprite = PK2Sprite(proto, isPlayer, false, x/*-proto.leveys/2*/, y);   // TODO: Ojo! los reusa sin destruirlo porque es un pool
                 
                 //sprite.x += sprite.proto.leveys;
                 //sprite.y += sprite.proto.korkeus/2;
@@ -361,8 +364,15 @@ export class SpriteManager {
     /**
      * Returns the player sprite.
      */
-    public get player(): Sprite {
+    public get player(): PK2Sprite {
         return this._player;
+    }
+    
+    
+    ///  Events  ///
+    
+    public onSpriteCreated(fn: (sprite: PK2Sprite) => void, context: any) {
+        return this.on(Ev.SPRITE_CREATED, fn, context);
     }
     
     
@@ -371,6 +381,10 @@ export class SpriteManager {
     private log(msg) {
         console.debug(`Spr M  - ${ msg }`);
     }
+}
+
+enum Ev {
+    SPRITE_CREATED = 'EV_SPRITE_CREATED'
 }
 
 export enum EAi { //AI

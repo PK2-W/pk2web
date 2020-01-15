@@ -17,6 +17,7 @@ import {
 } from '@game/map/PK2Map';
 import { PK2GameContext } from '@game/PK2GameContext';
 import { TPK2Block, EBlocks } from '@game/tile/PK2Block';
+import { pathJoin } from '@ng/support/utils';
 import { int, CVect, cvect } from '../../support/types';
 
 export class BlockManager {
@@ -313,6 +314,46 @@ export class BlockManager {
         this.mCalculatedBlocks[BLOCK_KYTKIN3].ala = kytkin3_x;
         this.mCalculatedBlocks[BLOCK_KYTKIN3].yla = kytkin3_x;
     }
+    
+    
+    ///  Graphics  ///
+    
+    /**
+     * Source: PK2Kartta::Lataa_PalikkaPaletti.
+     *
+     * @param char
+     */
+    public      loadTextures(fpath:string,fname:string):void{
+//     int i;
+//     int img;
+//     char file[PE_PATH_SIZE];
+//     strcpy(file,"");
+//     strcpy(file,polku);
+//     strcat(file,filename);
+        const path = pathJoin(fpath)
+//
+//     if (!PisteUtils_Find(file)){
+//     //strcpy(file,PK2Kartta::pk2_hakemisto);
+//     strcpy(file,"gfx/tiles/");
+//     strcat(file,filename);
+//     if (!PisteUtils_Find(file))
+//     return 1;
+// }
+//
+// img = PisteDraw2_Image_Load(file,false);
+// if(img == -1) return 2;
+// PisteDraw2_Image_Copy(img,this->palikat_buffer);
+// PisteDraw2_Image_Delete(img);
+//
+// PisteDraw2_Image_Delete(this->palikat_vesi_buffer); //Delete last water buffer
+// this->palikat_vesi_buffer = PisteDraw2_Image_Cut(this->palikat_buffer,0,416,320,32);
+//
+// strcpy(this->palikka_bmp,filename);
+// return 0;
+ }
+    
+    
+    ///  Accessors  ///
     
     public getBlock(x: int, y: int) {
         //     PK2BLOCK palikka;

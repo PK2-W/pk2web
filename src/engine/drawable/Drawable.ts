@@ -30,6 +30,10 @@ import { IDrawable } from './IDrawable';
  * @version 1.1-stable
  */
 export abstract class Drawable extends EventEmitter implements IDrawable {
+    // Instance unique identifier
+    private static IID: number = 0;
+    private readonly _instanceId: number;
+    
     // Drawable object
     protected _drawable: PIXI.DisplayObject;
     // Visibility
@@ -48,6 +52,7 @@ export abstract class Drawable extends EventEmitter implements IDrawable {
      */
     protected constructor(drawable: PIXI.DisplayObject) {
         super();
+        this._instanceId = Drawable.IID++;
         
         this._drawable = drawable;
         this._alphaFilter = new PIXI.filters.AlphaFilter(1);
@@ -133,6 +138,13 @@ export abstract class Drawable extends EventEmitter implements IDrawable {
     
     
     ///  Properties  ///
+    
+    /**
+     * Instance Unique Identifier.
+     */
+    public get __iid__(): number {
+        return this._instanceId;
+    }
     
     public get x(): number {
         return (this._drawable != null) ? this._drawable.x : 0;

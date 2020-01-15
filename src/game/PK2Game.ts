@@ -2,8 +2,9 @@ import { GiftManager } from '@game/gift/GiftManager';
 import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, PK2Map } from '@game/map/PK2Map';
 import { PK2Context } from '@game/PK2Context';
 import { PK2GameContext } from '@game/PK2GameContext';
+import { PK2GameStage } from '@game/PK2GameStage';
+import { PK2Sprite, EDamageType } from '@game/sprite/PK2Sprite';
 import { EProtoType } from '@game/sprite/PK2SpritePrototype';
-import { Sprite, EDamageType } from '@game/sprite/Sprite';
 import { SpriteManager } from '@game/sprite/SpriteManager';
 import { BlockManager } from '@game/tile/BlockManager';
 import { MAX_SPRITES } from '../support/constants';
@@ -22,6 +23,8 @@ export class PK2Game extends PK2GameContext {
     private _sprites: SpriteManager;
     private _gifts: GiftManager;
     private _blocks: BlockManager;
+    
+    private _stage: PK2GameStage;
     
     // PK2Kartta* current_map;
     // char map_path[PE_PATH_SIZE];
@@ -59,9 +62,26 @@ export class PK2Game extends PK2GameContext {
     
     public constructor(ctx: PK2Context) {
         super(ctx);
-        
+    
+        // x-> Game::Gifts->clean(); //Reset gifts
+        this._gifts = new GiftManager();
+        this._blocks = new BlockManager(this);
+        // Clear sprites
+        // x-> Game::Sprites->clear(); //Reset sprites
+        // x-> Game::Sprites->protot_clear_all(); //Reset prototypes
+        this._sprites = new SpriteManager(this);
         
         this._paused = false;
+        
+        this._stage = new PK2GameStage();
+        
+        this._sprites.onSpriteCreated((sprite) => {
+            if (sprite.proto.type === EProtoType.TYYPPI_TAUSTA) {
+                this._stage.addBgSprite(sprite);
+            } else {
+                this._stage.addSprite(sprite);
+            }
+        }, this);
     }
     
     //
@@ -87,13 +107,7 @@ export class PK2Game extends PK2GameContext {
         if (!false/*episode_started*/) {
             this._jakso_lapaisty = false;
             
-            // x-> Game::Gifts->clean(); //Reset gifts
-            this._gifts = new GiftManager();
-            this._blocks = new BlockManager(this);
-            // Clear sprites
-            // x-> Game::Sprites->clear(); //Reset sprites
-            // x-> Game::Sprites->protot_clear_all(); //Reset prototypes
-            this._sprites = new SpriteManager(this);
+         
             
             await this.loadMap(/*seuraava_kartta*/'episodes/' + this._episodeName + '/level001.map');
             //  TODO try catch
@@ -454,7 +468,7 @@ export class PK2Game extends PK2GameContext {
      */
     public updateSprites(): void {
         // 	debug_active_sprites = 0;
-        let sprite: Sprite;
+        let sprite: PK2Sprite;
         
         for (let i = 0; i < MAX_SPRITES; i++) { //Activate sprite if it is on screen
             sprite = this._sprites.get(i);
@@ -497,7 +511,7 @@ export class PK2Game extends PK2GameContext {
         // 	if (i >= MAX_SPRITEJA || i < 0)
         // 		return -1;
         
-        let sprite: Sprite = this._sprites.get(i);  // Source comment: address of sprite = address of spritet[i] (if change sprite, change spritet[i])
+        let sprite: PK2Sprite = this._sprites.get(i);  // Source comment: address of sprite = address of spritet[i] (if change sprite, change spritet[i])
         
         // TODO - Caution with this: Dead sprites are going to be updated
         if (sprite.proto == null)
@@ -1590,7 +1604,7 @@ export class PK2Game extends PK2GameContext {
         // 	return 0;
     }
     
-    private updateBonusSpriteMovement(sprite: Sprite): void {
+    private updateBonusSpriteMovement(sprite: PK2Sprite): void {
         // 	sprite_x = 0;
         // 	sprite_y = 0;
         // 	sprite_a = 0;
@@ -2038,8 +2052,8 @@ export class PK2Game extends PK2GameContext {
     /**
      * Source: PK_Draw_InGame.
      */
-    private drawGame():void {
-        let luku:str[15];
+    private drawGame(): void {
+        let luku: str[15];
         // char luku[15];
         // int vali = 20;
         //

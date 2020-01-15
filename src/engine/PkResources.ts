@@ -16,6 +16,10 @@ export class PkResources {
     //
     // }
     
+    public fileExists(uri: string): Promise<boolean> {
+        return (await this._xhrHead(uri)) === 200;
+    }
+    
     public getParamFile(uri: string): Promise<any> {
     
     }
@@ -29,7 +33,13 @@ export class PkResources {
     }
     
     public getImage(uri: string): Promise<HTMLImageElement> {
-    
+        const binary = this.getBinary(uri);
+        
+        const image = new Image();
+        image.onload = function() {
+        
+        };
+        image.src = uri;
     }
     
     public getBitmap(uri: string): Promise<HTMLImageElement> {
@@ -78,15 +88,32 @@ export class PkResources {
             req.responseType = binary ? 'arraybuffer' : 'text';
             req.onreadystatechange = (aEvt) => {
                 if (req.readyState === 4) {
-                    if (req.status !== 200) {
+                    if (req.status === 200) {
+                        return resolve(binary ? req.response : req.responseText);
+                    } else if (req.status === 404) {
                         return reject(new ResourceNotFoundError(this._root, uri));
+                    } else {
+                        return reject(new ResourceFetchError(this._root, uri, 'status: ' + req.status));
                     }
-                    
-                    return resolve(binary ? req.response : req.responseText);
                 }
             };
             req.onerror = () => {
-                return reject(new ResourceFetchError(this._root, uri));
+                return reject(new ResourceFetchError(this._root, uri, 'unknown error'));
+            };
+            req.send();
+        });
+    }
+    
+    private _xhrHead(uri: string): Promise<number> {
+        return new Promise((resolve, reject) => {
+            const req = new XMLHttpRequest();
+            req.open('HEAD', pathJoin(this._root, uri), true);
+            req.responseType = 'arraybuffer';
+            req.onreadystatechange = (aEvt) => {
+                return resolve(req.status);
+            };
+            req.onerror = () => {
+                return resolve(-1);
             };
             req.send();
         });
