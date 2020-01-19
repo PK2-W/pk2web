@@ -102,10 +102,8 @@ export class PK2Game {
             // 	PK_Palikka_Tee_Maskit();  // "make masks" (draws!)
     
             this._sprites.addMapSprites(this.map);
-            this._sprites.getKeysCount();
     
             this.selectStart();
-            // 	kartta->Count_Keys();
             // 	kartta->Calculate_Edges();
             
             //   this._sprites.startDirections();
