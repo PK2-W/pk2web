@@ -27,8 +27,8 @@ export class UIWaveText extends UIText {
         
         // For every letter...
         for (let i = 0; i < text.length; i++) {
-            ys = this.sin(((i + this._context.degree) * 8) % 360) / 7;
-            xs = this.cos(((i + this._context.degree) * 8) % 360) / 9;
+            ys = this.sin(((i + this._context.entropy.degree) * 8) % 360) / 7;
+            xs = this.cos(((i + this._context.entropy.degree) * 8) % 360) / 9;
             
             // TODO: Font shadow -> PisteDraw2_Font_Write(fontti4, kirjain, x + vali - xs + 3, y + ys + 3);
             dw = this.font.writeText(text[i]);
@@ -43,8 +43,12 @@ export class UIWaveText extends UIText {
     
     ///   Properties  ///
     
-    public isFast(): boolean { return this._fast === true; }
-    public setFast(ind: boolean = true): void { this._fast = (ind === true); }
+    public isFast(): boolean {
+        return this._fast === true;
+    }
+    public setFast(ind: boolean = true): void {
+        this._fast = (ind === true);
+    }
     
     
     ///  Timing  ///
@@ -62,11 +66,11 @@ export class UIWaveText extends UIText {
         // For every letter....
         for (let i = 0; i < this.container.children.length; i++) {
             if (this._fast || this.isFocused()) {
-                ymov = this.sin(((i + this._context.degree) * 8) % 360) / 7;
-                xmov = this.cos(((i + this._context.degree) * 8) % 360) / 9;
+                ymov = this.sin(((i + this._context.entropy.degree) * 8) % 360) / 7;
+                xmov = this.cos(((i + this._context.entropy.degree) * 8) % 360) / 9;
             } else {
-                ymov = this.sin(((i + this._context.degree) * 4) % 360) / 9;
-                xmov = this.cos(((i + this._context.degree) * 4) % 360) / 11;
+                ymov = this.sin(((i + this._context.entropy.degree) * 4) % 360) / 9;
+                xmov = this.cos(((i + this._context.entropy.degree) * 4) % 360) / 11;
             }
             
             // PisteDraw2_Font_Write(fontti4, kirjain, x + offset - xmov + 3, y + ymov + 3);

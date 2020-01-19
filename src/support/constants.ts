@@ -25,3 +25,6 @@ export const SPRITE_MAX_AI = 10;
 export const ANIMAATIO_MAX_SEKVENSSEJA = 10;
 export const MAX_AANIA = 7;
 export const VAHINKO_AIKA = 50; //Damage time?
+
+// Game loop of the original game in ticks per second
+export const PK2GAMELOOP = 100;

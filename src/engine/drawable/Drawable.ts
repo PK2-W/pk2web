@@ -29,13 +29,13 @@ import { IDrawable } from './IDrawable';
  *
  * @version 1.1-stable
  */
-export abstract class Drawable extends EventEmitter implements IDrawable {
+export abstract class Drawable<T extends PIXI.DisplayObject = PIXI.Container> extends EventEmitter implements IDrawable {
     // Instance unique identifier
     private static IID: number = 0;
     private readonly _instanceId: number;
     
     // Drawable object
-    protected _drawable: PIXI.DisplayObject;
+    protected _drawable: T;
     // Visibility
     private readonly _alphaFilter: PIXI.filters.AlphaFilter;
     
@@ -43,14 +43,14 @@ export abstract class Drawable extends EventEmitter implements IDrawable {
     // Indica si este elemento requiere redibujado o no
     private _invalidated: boolean;
     // Subelementos que requieren redibujado
-    private _childsInvalidated: Drawable[];
+    private _childsInvalidated: Array<Drawable<PIXI.DisplayObject>>;
     
     
     /**
      * Constructor base de está clase.
      * El lienzo nace invalidado por defecto.
      */
-    protected constructor(drawable: PIXI.DisplayObject) {
+    protected constructor(drawable: T) {
         super();
         this._instanceId = Drawable.IID++;
         
@@ -74,7 +74,7 @@ export abstract class Drawable extends EventEmitter implements IDrawable {
      * @param child - El subelemento que necesita redibujado.
      * @emits DwHelper.EVT_NEEDS_RELAYOUT
      */
-    protected onChildInvalidated(child: Drawable): void {
+    protected onChildInvalidated(child: Drawable<PIXI.DisplayObject>): void {
         this._childsInvalidated.push(child);
         this.emit(DwHelper.EVT_NEEDS_RELAYOUT, this);
     }

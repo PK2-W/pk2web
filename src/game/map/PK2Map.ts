@@ -1,6 +1,9 @@
 import { PK2Context } from '@game/PK2Context';
+import { TSpriteProtoCode } from '@game/sprite/SpritePrototype';
+import { TBlockProtoCode } from '@game/tile/BlockPrototype';
 import { Binary } from '@ng/support/Binary';
-import { str2num } from '@ng/support/utils';
+import { str2num, pathJoin } from '@ng/support/utils';
+import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { str, int, BYTE, uint, CVect, cvect, bool, DWORD, rand } from '../../support/types';
 
 export abstract class PK2MapInfo {
@@ -9,7 +12,8 @@ export abstract class PK2MapInfo {
 
 export class PK2Map extends PK2MapInfo {
     private _context: PK2Context;
-    private _uri: string;
+    private _fpath: string;
+    private _fname: string;
     private _raw: Binary;
     
     /** Map version. */
@@ -60,15 +64,15 @@ export class PK2Map extends PK2MapInfo {
      * Source: <code>constructor</code> + <code>PK2Kartta::Latta</code>.
      *
      * @param ctx
-     * @param uri - Resource URI (from source "polku + nimi").
+     * @param fname - Resource URI (from source "polku + nimi").
      */
-    public static loadFromFile(ctx: PK2Context, uri: string): Promise<PK2Map> {
-        return new PK2Map(ctx).loadFromFile(uri);
+    public static loadFromFile(ctx: PK2Context, fpath: string, fname: string): Promise<PK2Map> {
+        return new PK2Map(ctx).loadFromFile(fpath, fname);
     }
     
     ///
     
-    public constructor(ctx: PK2Context) {
+    private constructor(ctx: PK2Context) {
         super();
         
         this._context = ctx;
@@ -80,9 +84,12 @@ export class PK2Map extends PK2MapInfo {
      *
      * @param uri - Resource URI (from source "polku + nimi").
      */
-    private async loadFromFile(uri: string): Promise<this> {
-        this._uri = uri;
-        this._raw = await this._context.resources.getBinary(uri);
+    private async loadFromFile(fpath: string, fname: string): Promise<this> {
+        this._fpath = fpath;
+        this._fname = fname;
+        
+        const uri = pathJoin(fpath, fname);
+        this._raw = await PkAssetTk.getBinary(uri);
         
         this._loadInfo();
         
@@ -157,7 +164,7 @@ export class PK2Map extends PK2MapInfo {
         }
         
         let leveys: DWORD, korkeus: DWORD, aloitus_x: DWORD, aloitus_y: DWORD, x: DWORD, y: DWORD;
-        let tile: str<1>;
+        let tile: BYTE;
         
         // taustat (backgrounds)
         aloitus_x = str2num(this._raw.streamRead8CStr(8));
@@ -166,7 +173,7 @@ export class PK2Map extends PK2MapInfo {
         korkeus = str2num(this._raw.streamRead8CStr(8));
         for (let y = aloitus_y; y <= aloitus_y + korkeus; y++) {	// Luetaan alue tile by tile
             for (let x = aloitus_x; x <= aloitus_x + leveys; x++) {
-                tile = this._raw.streamRead8CStr(1);
+                tile = this._raw.streamRead8Byte();
                 this._taustat[x + y * PK2KARTTA_KARTTA_LEVEYS] = tile;
             }
         }
@@ -286,12 +293,25 @@ export class PK2Map extends PK2MapInfo {
     
     ///  Accessors  ///
     
-    public get version() {
+    public get fpath(): string {
+        return this._fpath;
+    }
+    
+    public get fname(): string {
+        return this._fname;
+    }
+    
+    public get version(): string {
         return this._version;
     }
     
     
     ///  Advanced accessors  ///
+    
+    public getBgBlockCode(i: number, j: number): TBlockProtoCode {
+        const idx = i /*+ kartta_x*/ + (j /*+ kartta_y*/) * PK2KARTTA_KARTTA_LEVEYS;
+        return this._taustat[idx];
+    }
     
     public getProto(i: int): str<13> {
         return this._protot[i];
@@ -301,8 +321,13 @@ export class PK2Map extends PK2MapInfo {
         return this._pelaaja_sprite;
     }
     
-    public getSprite(x: int, y: int): BYTE {
-        return this._spritet[x + y * PK2KARTTA_KARTTA_LEVEYS];
+    public getSpriteCode(x: int, y: int): TSpriteProtoCode {
+        const code = this._spritet[x + y * PK2KARTTA_KARTTA_LEVEYS];
+        return (code !== 255) ? code : 255;
+    }
+    
+    public getBlockTexturesLocation(): string {
+        return this._palikka_bmp;
     }
 }
 

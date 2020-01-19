@@ -20,9 +20,9 @@
 //#########################
 
 import { PK2Map } from '@game/map/PK2Map';
-import { PK2Game } from '@game/PK2Game';
+import { PK2Game } from '@game/game/PK2Game';
 import { PK2Sprite } from '@game/sprite/PK2Sprite';
-import { PK2SpritePrototype } from '@game/sprite/PK2SpritePrototype';
+import { SpritePrototype } from '@game/sprite/SpritePrototype';
 import { ITickable } from '../engine/ITickable';
 import { PK2wRenderer, FADE } from '../engine/PK2wDraw';
 import { PkEngine } from '../engine/PkEngine';
@@ -200,7 +200,6 @@ export class PK2 extends PK2Context implements ITickable {
     // const char* PK2_error_msg = NULL;
     
     private unload: bool = false;
-    private precalculated_sincos: bool = false;
     
     private gui_touch: int;
     private gui_egg: int;
@@ -880,11 +879,7 @@ export class PK2 extends PK2Context implements ITickable {
     
     // }
     
-    private precalculateSinCos(): void {
-        let i: int;
-        for (i = 0; i < 360; i++) this.cosTable[i] = Math.cos(Math.PI * 2 * (i % 360) / 180) * 33;
-        for (i = 0; i < 360; i++) this.sinTable[i] = Math.sin(Math.PI * 2 * (i % 360) / 180) * 33;
-    }
+  
     
     
     // int PK_Palikka_Tee_Maskit(){
@@ -4348,7 +4343,7 @@ export class PK2 extends PK2Context implements ITickable {
     private PK_MainScreen_Intro(): void {
         // this.PK_Draw_Intro();
         
-        this._degree = 1 + this._degree % 360;
+        this._entropy.degree = 1 + this._entropy.degree % 360;
         
         this.introCounter++;
         
@@ -4884,20 +4879,12 @@ export class PK2 extends PK2Context implements ITickable {
         this.jakso = 1;
         
         // TODO
-        if (!this.precalculated_sincos) {
-            this.precalculateSinCos();
-            // 			PK2Kartta_Cos_Sin(cos_table, sin_table);
-            this.precalculated_sincos = true;
-        }
-        
-        // TODO
         this.PK_Fadetext_Init();
         
         // TODO
         // PK2Kartta_Aseta_Ruudun_Mitat(screen_width, screen_height);
         
         // TODO
-        this.kartta = new PK2Kartta();
         // 		PkEngine::Particles = new PK2::Particle_System();
         // 		PkEngine::Sprites = new PK2::SpriteSystem();
         // 		PkEngine::Gifts = new PK2::GiftSystem();
@@ -5149,7 +5136,8 @@ export class PK2 extends PK2Context implements ITickable {
     // 	PK_New_Game();
     // }
     
-    private async prepare(): Promise<void> {}
+    private async prepare(): Promise<void> {
+    }
     
     private PK_Unload(): void {
         if (!this.unload) {
@@ -5189,7 +5177,7 @@ export class PK2 extends PK2Context implements ITickable {
         const diff = delta / 10; //--> 1pt every 10ms
         
         for (let i = 0; i < diff; i++) {
-            this._degree = 1 + this._degree % 360;
+            this._entropy.degree = 1 + this._entropy.degree % 360;
         }
     }
     
@@ -5288,12 +5276,20 @@ export class PK2 extends PK2Context implements ITickable {
         console.log('RENDER IS DISABLED');
         //this.changeToIntro();
         
-        const game = new PK2Game(this);
+        
+        // Open the requested map
+        const tmpEpisodeName = 'rooster island 1';
+        
+        const map = await PK2Map.loadFromFile(this, /*seuraava_kartta*/RESOURCES_PATH + 'episodes/' + tmpEpisodeName, 'level001.map');
+        // TODO try catch
+        // 		printf("PK2    - Error loading map '%s' at '%s'\n", this.seuraava_kartta, polku);
+        // 		return 1;
+        const game = new PK2Game(this, map);
         await game.xChangeToGame();
         
         const minifn = (delta, time) => {
-            this._engine.gt.add(minifn.bind(this));
-            game.gameLoop(delta);
+            //this._engine.gt.add(minifn.bind(this));
+            // game.gameLoop(delta);
         };
         
         this._engine.gt.add(minifn.bind(this));

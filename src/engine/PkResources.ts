@@ -3,6 +3,9 @@ import { ResourceNotFoundError } from '@ng/error/ResourceNotFoundError';
 import { Binary } from '@ng/support/Binary';
 import { pathJoin, cloneStruct } from '@ng/support/utils';
 
+/**
+ * @deprecated Use PkAssetTk instead.
+ */
 export class PkResources {
     private _root: string;
     
@@ -16,30 +19,37 @@ export class PkResources {
     //
     // }
     
-    public fileExists(uri: string): Promise<boolean> {
-        return (await this._xhrHead(uri)) === 200;
-    }
+    // public fileExists(uri: string): Promise<boolean> {
+    //     return (await this._xhrHead(uri)) === 200;
+    // }
     
     public getParamFile(uri: string): Promise<any> {
     
     }
     
     public async getArrayBuffer(uri: string): Promise<ArrayBuffer> {
-        return (await this._xhrGet(uri, true)) as ArrayBuffer;
+        return await this._xhrGet(uri, XHR_FMT.BINARY);
     }
     
     public async getBinary(uri: string): Promise<Binary> {
         return new Binary(await this.getArrayBuffer(uri));
     }
     
-    public getImage(uri: string): Promise<HTMLImageElement> {
-        const binary = this.getBinary(uri);
-        
-        const image = new Image();
-        image.onload = function() {
-        
-        };
-        image.src = uri;
+    public async getImage(uri: string): Promise<HTMLImageElement> {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const blob = await this.getBlob(uri);
+                
+                const url = URL.createObjectURL(blob);
+                const image = new Image();
+                image.onload = () => {
+                    resolve(image);
+                };
+                image.src = url;
+            } catch (err) {
+                reject(err);
+            }
+        });
     }
     
     public getBitmap(uri: string): Promise<HTMLImageElement> {
@@ -48,6 +58,10 @@ export class PkResources {
     
     public getSprite(uri: string): Promise<any> {
     
+    }
+    
+    private async getBlob(uri: string): Promise<Blob> {
+        return await this._xhrGet(uri, XHR_FMT.BLOB);
     }
     
     public async scanDir(uri: string, ignoreCached: boolean = false): Promise<VFsDirMapping> {
@@ -81,15 +95,18 @@ export class PkResources {
         return JSON.parse(raw as string);
     }
     
-    private _xhrGet(uri: string, binary: boolean = false): Promise<string | ArrayBuffer> {
+    private _xhrGet(uri: string, format?: XHR_FMT.TEXT): Promise<string>;
+    private _xhrGet(uri: string, format: XHR_FMT.BINARY): Promise<ArrayBuffer>;
+    private _xhrGet(uri: string, format: XHR_FMT.BLOB): Promise<Blob>;
+    private _xhrGet(uri: string, format: XHR_FMT = XHR_FMT.TEXT): Promise<string | ArrayBuffer | Blob> {
         return new Promise((resolve, reject) => {
             const req = new XMLHttpRequest();
             req.open('GET', pathJoin(this._root, uri), true);
-            req.responseType = binary ? 'arraybuffer' : 'text';
+            req.responseType = format;
             req.onreadystatechange = (aEvt) => {
                 if (req.readyState === 4) {
                     if (req.status === 200) {
-                        return resolve(binary ? req.response : req.responseText);
+                        return resolve(format === XHR_FMT.TEXT ? req.responseText : req.response);
                     } else if (req.status === 404) {
                         return reject(new ResourceNotFoundError(this._root, uri));
                     } else {
@@ -136,3 +153,9 @@ export type VFsInfo = {
     name: string,
     type: VFSTYPE
 };
+
+enum XHR_FMT {
+    BINARY = 'arraybuffer',
+    BLOB = 'blob',
+    TEXT = 'text'
+}

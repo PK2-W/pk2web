@@ -1,21 +1,21 @@
+import { GameEnv } from '@game/game/GameEnv';
 import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, PK2Map } from '@game/map/PK2Map';
-import { PK2GameContext } from '@game/PK2GameContext';
-import { PK2SpritePrototype, EProtoType } from '@game/sprite/PK2SpritePrototype';
 import { PK2Sprite } from '@game/sprite/PK2Sprite';
+import { SpritePrototype, EProtoType, TSpriteProtoCode } from '@game/sprite/SpritePrototype';
 import { pathJoin } from '@ng/support/utils';
-import { EventEmitter, ListenerFn } from '@vendor/eventemitter3';
+import { EventEmitter } from '@vendor/eventemitter3';
 import { MAX_SPRITES, MAX_SPRITE_TYPES, MAX_AANIA } from '../../support/constants';
 import { OutOfBoundsError } from '../../support/error/OutOfBoundsError';
 import { int, CVect, cvect, rand } from '../../support/types';
 
 export class SpriteManager extends EventEmitter {
-    private readonly _context: PK2GameContext;
+    private readonly _ctx: GameEnv;
     
     /**
      * List of prototypes.<br>
      * List indexes are the same indexes used in sprite matrices to point to the requiered prototype.
      */
-    private _protot: CVect<PK2SpritePrototype> = cvect(MAX_SPRITE_TYPES);
+    private _protot: CVect<SpritePrototype> = cvect(MAX_SPRITE_TYPES);
     /** Sprites pool. */
     private _spritet: CVect<PK2Sprite> = cvect(MAX_SPRITES);
     
@@ -25,10 +25,10 @@ export class SpriteManager extends EventEmitter {
     private _nextFreeProtoIndex: int = 0;
     
     
-    public constructor(context: PK2GameContext) {
+    public constructor(ctx: GameEnv) {
         super();
         
-        this._context = context;
+        this._ctx = ctx;
         
         this.clear();
     }
@@ -106,8 +106,8 @@ export class SpriteManager extends EventEmitter {
     /**
      * Source: PK2::SpriteSystem::protot_get
      */
-    private async loadProto(fpath: string, fname: string): Promise<PK2SpritePrototype> {
-        let proto: PK2SpritePrototype;
+    private async loadProto(fpath: string, fname: string): Promise<SpritePrototype> {
+        let proto: SpritePrototype;
         //     char aanipolku[255];
         //     char testipolku[255];
         //     strcpy(aanipolku,polku);
@@ -117,7 +117,7 @@ export class SpriteManager extends EventEmitter {
             throw new OutOfBoundsError('');
         
         // Check if it can be loaded, else error is elevated
-        proto = await PK2SpritePrototype.loadFromFile(this._context, fpath, fname);
+        proto = await SpritePrototype.loadFromFile(this._ctx, fpath, fname);
         
         //Load sounds
         for (let i = 0; i < MAX_AANIA; i++) {
@@ -161,15 +161,15 @@ export class SpriteManager extends EventEmitter {
      * Adds the sprites from the specified map to the sprite system.
      * Source: PK2Kartta::Place_Sprites.
      */
-    public addMapSprites(map: PK2Map, middleware: (sprite: PK2Sprite) => void) {
+    public addMapSprites(map: PK2Map) {
         this.clear();
         this.addMapSprite(map.getPlayerSprite(), true, 0, 0, MAX_SPRITES, false);
         
         for (let x = 0; x < PK2KARTTA_KARTTA_LEVEYS; x++) {
             for (let y = 0; y < PK2KARTTA_KARTTA_KORKEUS; y++) {
-                const protoId: int = map.getSprite(x, y);
+                const protoId: int = map.getSpriteCode(x, y);
                 
-                if (protoId !== 255 && this._protot[protoId].height > 0) {
+                if (protoId !== null && this._protot[protoId].height > 0) {
                     this.addMapSprite(protoId, false, x * 32, y * 32 - this._protot[protoId].height + 32, MAX_SPRITES, false);
                 }
             }
@@ -214,16 +214,21 @@ export class SpriteManager extends EventEmitter {
                 else
                     sprite.emosprite = i;
                 
-                lisatty = true;
+                // Add to the scene
+                if (proto.type === EProtoType.TYYPPI_TAUSTA) {
+                    this.ctx.composition.addBgSprite(sprite);
+                } else {
+                    this.ctx.composition.addSprite(sprite);
+                }
                 
-                this.emit(Ev.SPRITE_CREATED, sprite);
+                lisatty = true;
             } else {
                 i++;
             }
         }
     }
     
-    private addAmmo(proto: PK2SpritePrototype, isPlayer: int, x: number, y: number, emo: int) {
+    private addAmmo(proto: SpritePrototype, isPlayer: int, x: number, y: number, emo: int) {
         let lisatty: boolean = false;
         let i = 0;
         
@@ -358,8 +363,34 @@ export class SpriteManager extends EventEmitter {
         }
     }
     
+    public getKeysCount(): number {
+        let code: TSpriteProtoCode;
+        let proto: SpritePrototype;
+        let keys = 0;
+        
+        // Iterate each sprite looking for keys
+        for (let x = 0; x < PK2KARTTA_KARTTA_LEVEYS; x++) {
+            for (let y = 0; y < PK2KARTTA_KARTTA_KORKEUS; y++) {
+                code = this.ctx.map.getSpriteCode(x, y);
+                
+                if (code != null) {
+                    proto = this._protot[code]; // TODO -> Estoy podría fallar
+                    if (proto.isKey() && !proto.isDestructible()) {
+                        keys++;
+                    }
+                }
+            }
+        }
+        
+        return keys;
+    }
+    
     
     ///  Accessors  ///
+    
+    private get ctx(): GameEnv {
+        return this._ctx;
+    }
     
     /**
      * Returns the player sprite.

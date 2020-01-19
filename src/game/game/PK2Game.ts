@@ -1,17 +1,17 @@
+import { GameComposition } from '@game/game/GameComposition';
+import { GameEnv } from '@game/game/GameEnv';
 import { GiftManager } from '@game/gift/GiftManager';
 import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, PK2Map } from '@game/map/PK2Map';
 import { PK2Context } from '@game/PK2Context';
-import { PK2GameContext } from '@game/PK2GameContext';
-import { PK2GameStage } from '@game/PK2GameStage';
 import { PK2Sprite, EDamageType } from '@game/sprite/PK2Sprite';
-import { EProtoType } from '@game/sprite/PK2SpritePrototype';
+import { EProtoType } from '@game/sprite/SpritePrototype';
 import { SpriteManager } from '@game/sprite/SpriteManager';
 import { BlockManager } from '@game/tile/BlockManager';
-import { MAX_SPRITES } from '../support/constants';
-import { int, rand, bool, uint } from '../support/types';
+import { MAX_SPRITES, PK2GAMELOOP } from '../../support/constants';
+import { int, rand, bool, uint } from '../../support/types';
 
-export class PK2Game extends PK2GameContext {
-    private _map: PK2Map;
+export class PK2Game {
+    private readonly _enviroment: GameEnv;
     
     private _episodeName: string;
     
@@ -24,7 +24,7 @@ export class PK2Game extends PK2GameContext {
     private _gifts: GiftManager;
     private _blocks: BlockManager;
     
-    private _stage: PK2GameStage;
+    private _composition: GameComposition;
     
     // PK2Kartta* current_map;
     // char map_path[PE_PATH_SIZE];
@@ -52,49 +52,32 @@ export class PK2Game extends PK2GameContext {
     private _gameOver: bool = false;
     private _paused: boolean;
     
-    //PALIKOIHIN LIITTYV�T AJASTIMET
-    private _kytkin1: int = 0;
-    private _kytkin2: int = 0;
-    private _kytkin3: int = 0;
-    private _palikka_animaatio: int = 0;
     
     private _kytkin_tarina: int = 0; // "shaking switch", here for now
     
-    public constructor(ctx: PK2Context) {
-        super(ctx);
-    
-        // x-> Game::Gifts->clean(); //Reset gifts
-        this._gifts = new GiftManager();
-        this._blocks = new BlockManager(this);
-        // Clear sprites
-        // x-> Game::Sprites->clear(); //Reset sprites
-        // x-> Game::Sprites->protot_clear_all(); //Reset prototypes
-        this._sprites = new SpriteManager(this);
+    public constructor(ctx: PK2Context, map: PK2Map) {
+        this._enviroment = new GameEnv(ctx, map);
+        
+        this._gifts = new GiftManager(this._enviroment);
+        this._blocks = new BlockManager(this._enviroment);
+        this._sprites = new SpriteManager(this._enviroment);
         
         this._paused = false;
         
-        this._stage = new PK2GameStage();
-        
         this._sprites.onSpriteCreated((sprite) => {
             if (sprite.proto.type === EProtoType.TYYPPI_TAUSTA) {
-                this._stage.addBgSprite(sprite);
+                this._composition.addBgSprite(sprite);
             } else {
-                this._stage.addSprite(sprite);
+                this._composition.addSprite(sprite);
             }
         }, this);
+        
     }
-    
-    //
-    // Game::Particles = new PK2::Particle_System();
-    // Game::Sprites = new PK2::SpriteSystem();
-    // Game::Gifts = new PK2::GiftSystem();
     
     /**
      * Source: PK_MainScreen_Change -> if (game_next_screen == SCREEN_GAME)
      */
-    public async xChangeToGame() {
-        // TODO temporal code
-        this._episodeName = 'rooster island 1';
+    public async xChangeToGame() {  // "start game"
         
         // PND PK_UI_Change(UI_GAME_BUTTONS);
         // PND PisteDraw2_SetXOffset(0);
@@ -107,21 +90,66 @@ export class PK2Game extends PK2GameContext {
         if (!false/*episode_started*/) {
             this._jakso_lapaisty = false;
             
-         
+            /////  Source: PK_Map_Open --------
             
-            await this.loadMap(/*seuraava_kartta*/'episodes/' + this._episodeName + '/level001.map');
-            //  TODO try catch
-            //          PK2_error = true;
-            //          PK2_error_msg = "Can't load map";
+            // PND	PK_New_Save();
             
-            this._blocks.calculateTiles();
+            if (this.map.version === '1.2' || this.map.version === '1.3') {
+                // TODO try catch
+                await this._sprites.loadPrototypes(this.map, 'rooster island 1');
+            }
+            
+            // 	PK_Palikka_Tee_Maskit();  // "make masks" (draws!)
+    
+            this._sprites.addMapSprites(this.map);
+            this._sprites.getKeysCount();
+    
+            this.selectStart();
+            // 	kartta->Count_Keys();
+            // 	kartta->Calculate_Edges();
+            
+            //   this._sprites.startDirections();
+            
+            // 	PkEngine::Particles->clear_particles();
+            // 	PkEngine::Particles->load_bg_particles(kartta);
+            
+            // 	if ( strcmp(kartta->musiikki, "") != 0) {
+            // 		char music_path[PE_PATH_SIZE] = "";
+            // 		PK_Load_EpisodeDir(music_path);
+            // 		strcat(music_path, kartta->musiikki);
+            // 		if (PisteSound_StartMusic(music_path) != 0) {
+            //
+            // 			printf("Can't load '%s'. ", music_path);
+            // 			strcpy(music_path, "music/");
+            // 			strcat(music_path, kartta->musiikki);
+            // 			printf("Trying '%s'.\n", music_path);
+            //
+            // 			if (PisteSound_StartMusic(music_path) != 0) {
+            //
+            // 				printf("Can't load '%s'. Trying 'music/song01.xm'.\n", music_path);
+            //
+            // 				if (PisteSound_StartMusic("music/song01.xm") != 0){
+            // 					PK2_error = true;
+            // 					PK2_error_msg = "Can't find song01.xm";
+            // 				}
+            // 			}
+            // 		}
+            // 	}
+            
+            /////  --------
+            
+            // Prepare blocks
+            this._blocks.generatePrototypes();
+            await this._blocks.loadTextures(this.map.fpath, this.map.getBlockTexturesLocation());
+            this._blocks.placeBgBlocks();
+            
             
             // x->   PK_Fadetext_Init(); //Reset fade text
             
             //      Game::Gifts->clean();
             //    episode_started = true;
             //      music_volume = settings.music_max_volume;
-            this._context.degree = 0;
+            this.ctx.entropy.degree = 0;
             //      item_paneeli_x = -215;
             //      piste_lisays = 0;
         } else {
@@ -129,62 +157,6 @@ export class PK2Game extends PK2GameContext {
         }
         
         // Now game_screen = SCREEN_GAME
-    }
-    
-    /**
-     * Source: PK_Map_Open
-     */
-    private async loadMap(uri: string) {
-        // Open the requested map
-        this._map = await PK2Map.loadFromFile(this._context, uri);
-        // TODO try catch
-        // 		printf("PK2    - Error loading map '%s' at '%s'\n", this.seuraava_kartta, polku);
-        // 		return 1;
-        
-        // PND	PK_New_Save();
-        
-        if (this._map.version === '1.2' || this._map.version === '1.3') {
-            // TODO try catch
-            await this._sprites.loadPrototypes(this._map, 'rooster island 1');
-        }
-        
-        // 	PK_Palikka_Tee_Maskit();  // "make masks" (draws!)
-        
-        // 	if (PK_Clean_TileBuffer()==1)
-        // 		return 1;
-        
-        this._sprites.addMapSprites(this._map);
-        this.selectStart();
-        // 	kartta->Count_Keys();
-        // 	kartta->Calculate_Edges();
-        
-        this._sprites.startDirections();
-        
-        // 	PkEngine::Particles->clear_particles();
-        // 	PkEngine::Particles->load_bg_particles(kartta);
-        
-        // 	if ( strcmp(kartta->musiikki, "") != 0) {
-        // 		char music_path[PE_PATH_SIZE] = "";
-        // 		PK_Load_EpisodeDir(music_path);
-        // 		strcat(music_path, kartta->musiikki);
-        // 		if (PisteSound_StartMusic(music_path) != 0) {
-        //
-        // 			printf("Can't load '%s'. ", music_path);
-        // 			strcpy(music_path, "music/");
-        // 			strcat(music_path, kartta->musiikki);
-        // 			printf("Trying '%s'.\n", music_path);
-        //
-        // 			if (PisteSound_StartMusic(music_path) != 0) {
-        //
-        // 				printf("Can't load '%s'. Trying 'music/song01.xm'.\n", music_path);
-        //
-        // 				if (PisteSound_StartMusic("music/song01.xm") != 0){
-        // 					PK2_error = true;
-        // 					PK2_error_msg = "Can't find song01.xm";
-        // 				}
-        // 			}
-        // 		}
-        // 	}
     }
     
     /**
@@ -208,16 +180,12 @@ export class PK2Game extends PK2GameContext {
         this._blocks.calculateMovableBlocksPosition();
         
         if (!this._paused) {
-            this._context.degree = 1 + this._context._degree % 359;
+            // Increment degreee
+            this.ctx.entropy.degree = (delta * PK2GAMELOOP / 1000) + this.ctx.entropy.degree % 359;
             
-            if (this._kytkin1 > 0)
-                this._kytkin1--;
+            // Decrement timers
+            this.ctx.entropy.tickTimers(delta);
             
-            if (this._kytkin2 > 0)
-                this._kytkin2--;
-            
-            if (this._kytkin3 > 0)
-                this._kytkin3--;
             
             // 		if (info_timer > 0)
             // 			info_timer--;
@@ -381,8 +349,8 @@ export class PK2Game extends PK2GameContext {
         // 	}
     }
     
-    public selectStart() {
-        const startPos = this._map.getStartPosition();
+    private selectStart(): void {
+        const startPos = this.map.getStartPosition();
         
         const playerPosX = startPos.x + this._sprites.player.proto.width / 2;
         const playerPosY = startPos.y + this._sprites.player.proto.height / 2;
@@ -724,7 +692,7 @@ export class PK2Game extends PK2GameContext {
             
             if (!hyppy_maximissa) {
                 //sprite_b = (sprite.tyyppi->max_hyppy/2 - sprite.jumpTimer/2)/-2.0;//-4
-                sprite_b = -this._context.getSin(sprite.jumpTimer) / 8; //(sprite.tyyppi->max_hyppy/2 - sprite.jumpTimer/2)/-2.5;
+                sprite_b = -this.ctx.entropy.getSin(sprite.jumpTimer) / 8; //(sprite.tyyppi->max_hyppy/2 - sprite.jumpTimer/2)/-2.5;
                 if (sprite_b > sprite.proto.maxJump) {
                     sprite_b = sprite.proto.maxJump / 10.0;
                     sprite.jumpTimer = 90 - sprite.jumpTimer;
@@ -2123,5 +2091,15 @@ export class PK2Game extends PK2GameContext {
         // else skip_frame = false;
         //
         // palikka_animaatio = 1 + palikka_animaatio % 34;
+    }
+    
+    ///  Accessors  ///
+    
+    public get ctx(): GameEnv {
+        return this._enviroment;
+    }
+    
+    public get map(): PK2Map {
+        return this.ctx.map;
     }
 }

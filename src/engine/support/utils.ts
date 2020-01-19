@@ -39,7 +39,12 @@ export function pathJoin(...segments: string[]): string {
     for (let i = 0; i < segments.length; i++) {
         let segment = segments[i];
         
-        out += trim(segment).replace(DUPL_SLASH_RX, '/');
+        if (segment == null) {
+            console.warn('Segment with null value while path-joining, it will be replaced by "".');
+            continue;
+        } else {
+            out += trim(segment).replace(DUPL_SLASH_RX, '/');
+        }
         
         // Add final slash
         if (i < segments.length - 1 && segment.lastIndexOf('/') !== segment.length - 1) {
@@ -52,4 +57,14 @@ export function pathJoin(...segments: string[]): string {
 
 export function ab2str(ab) {
     return String.fromCharCode.apply(null, new Uint8Array(ab));
+}
+
+export function generate2DMatrix(width: number, height: number): null[][] ;
+export function generate2DMatrix<T>(width: number, height: number, fillFn: () => T): T[][] ;
+export function generate2DMatrix<T>(width: number, height: number, fillFn?: () => T): T[][] {
+    return new Array(height)
+        .fill(null)
+        .map(() => fillFn != null
+            ? new Array(width).fill(null).map(() => fillFn())
+            : new Array(width).fill(null));
 }

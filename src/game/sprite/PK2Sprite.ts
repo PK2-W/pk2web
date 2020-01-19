@@ -1,4 +1,4 @@
-import { PK2SpritePrototype } from '@game/sprite/PK2SpritePrototype';
+import { SpritePrototype } from '@game/sprite/SpritePrototype';
 import { EAi } from '@game/sprite/SpriteManager';
 import { Drawable } from '@ng/drawable/Drawable';
 import { SPRITE_MAX_AI } from '../../support/constants';
@@ -7,7 +7,7 @@ import { int, BYTE, bool } from '../../support/types';
 export class PK2Sprite extends Drawable {
     private _aktiivinen: boolean;			// true / false
     private _pelaaja: int;			// 0 = ei pelaaja, 1 = pelaaja
-    private _tyyppi: PK2SpritePrototype;	// osoitin spriten prototyyppiin
+    private _tyyppi: SpritePrototype;	// osoitin spriten prototyyppiin
     private _piilota: boolean;			// true = ei toiminnassa, false = toiminnassa
     private _alku_x: number;				// spriten alkuper�inen x sijainti
     private _alku_y: number;				// spriten alkuper�inen y sijainti
@@ -62,8 +62,8 @@ export class PK2Sprite extends Drawable {
      * @param x
      * @param y
      */
-    public constructor(proto: PK2SpritePrototype, isPlayer: boolean, discarded: boolean, x: number, y: number);
-    public constructor(proto?: PK2SpritePrototype, isPlayer?: boolean, discarded?: boolean, x?: number, y?: number) {
+    public constructor(proto: SpritePrototype, isPlayer: boolean, discarded: boolean, x: number, y: number);
+    public constructor(proto?: SpritePrototype, isPlayer?: boolean, discarded?: boolean, x?: number, y?: number) {
         super(new PIXI.Container());
         
         this.reuseWith(proto, isPlayer, discarded, x, y);
@@ -123,7 +123,7 @@ export class PK2Sprite extends Drawable {
      * @param x
      * @param y
      */
-    public reuseWith(proto: PK2SpritePrototype, isPlayer: boolean, discarded: boolean, x: number, y: number) {
+    public reuseWith(proto: SpritePrototype, isPlayer: boolean, discarded: boolean, x: number, y: number) {
         this.reuse();
         
         if (proto != null) {
@@ -147,7 +147,7 @@ export class PK2Sprite extends Drawable {
     //     int Animaatio(int anim_i, bool nollaus);	// Vaihtaa spriten animaation
     //     int Animoi();								// Animoi muttei piirr� sprite�
     
-    /** @deprecated use {@link PK2SpritePrototype.Onko_AI} */
+    /** @deprecated use {@link SpritePrototype.Onko_AI} */
     public Onko_AI(AI: EAi) {
         throw new Error('DEPRECATED');
     }

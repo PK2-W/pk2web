@@ -1,36 +1,98 @@
-//==================================================
-//(#10) Blocks
-//==================================================
-
+import { GameEnv } from '@game/game/GameEnv';
 import {
-    BLOCK_ESTO_ALAS,
     BLOCK_KYTKIN1,
     BLOCK_KYTKIN3,
     BLOCK_HISSI_HORI,
     BLOCK_HISSI_VERT,
-    KYTKIN_ALOITUSARVO,
     BLOCK_KYTKIN2_YLOS,
     BLOCK_KYTKIN2_ALAS,
     BLOCK_KYTKIN2,
     BLOCK_KYTKIN3_OIKEALLE,
-    BLOCK_KYTKIN3_VASEMMALLE
+    BLOCK_KYTKIN3_VASEMMALLE,
+    PK2KARTTA_KARTTA_LEVEYS,
+    PK2KARTTA_KARTTA_KORKEUS
 } from '@game/map/PK2Map';
-import { PK2GameContext } from '@game/PK2GameContext';
-import { TPK2Block, EBlocks } from '@game/tile/PK2Block';
-import { pathJoin } from '@ng/support/utils';
+import { BLOCK_RAW_SIZE, BLOCK_SIZE } from '@game/tile/BlockConstants';
+import { BlockContext } from '@game/tile/BlockContext';
+import { BlockPrototype, TBlockProtoCode } from '@game/tile/BlockPrototype';
+import { Block } from '@game/tile/Block';
+import { ResourceNotFoundError } from '@ng/error/ResourceNotFoundError';
+import { Log } from '@ng/support/log/LoggerImpl';
+import { pathJoin, generate2DMatrix } from '@ng/support/utils';
+import { PkTextureTk } from '@ng/toolkit/PkTextureTk';
 import { int, CVect, cvect } from '../../support/types';
 
 export class BlockManager {
-    private readonly _context: PK2GameContext;
+    // Game Environment
+    private readonly _ctx: GameEnv;
     
     //PALIKAT JA MASKIT
-    private _palikat: CVect<TPK2Block> = cvect(300);
+    private _palikat: CVect<Block> = cvect(300);
     /** Source: lasketut_palikat */
-    private mCalculatedBlocks: CVect<TPK2Block> = cvect(150);
+    private _prototypes: CVect<BlockPrototype> = cvect(150);
     
-    public constructor(context: PK2GameContext) {
-        this._context = context;
+    // Context to share with blocks
+    private readonly _blockCtx: BlockContext;
+    // Id in cache of the textures sheet // TODO -> Puede ser constante
+    private _texturesId: string;
+    // Map-matrix for the background blocks
+    private readonly _bgBlocks: Block[][];
+    // Map-matrix for the foreground blocks
+    private readonly _fgBlocks: Block[][];
+    
+    public constructor(ctx: GameEnv) {
+        this._ctx = ctx;
+        
+        this._blockCtx = new BlockContext(this._ctx);
+        this._bgBlocks = generate2DMatrix(PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS);
+        this._fgBlocks = generate2DMatrix(PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS);
     }
+    
+    public placeBgBlocks() {
+        for (let i = 0; i < PK2KARTTA_KARTTA_LEVEYS; i++) {
+            for (let j = 0; j < PK2KARTTA_KARTTA_KORKEUS; j++) {
+                // Get prototype from map
+                const code = this._ctx.map.getBgBlockCode(i, j);
+                
+                if (code !== 255) {
+                    const proto = this.getProto(code);
+                    
+                    // Create the block at the correct position
+                    const block = new Block(this._blockCtx, proto, this._texturesId);
+                    block.x = i * BLOCK_SIZE;
+                    block.y = j * BLOCK_SIZE;
+                    
+                    // Add to the game
+                    this.setBgBlock(i, j, block);
+                }
+            }
+        }
+        
+        console.log('Bg blocks placed.');
+        
+        // for (int x=-1;x<ruudun_leveys_palikoina;x++){
+        //     for (int y=0;y<ruudun_korkeus_palikoina;y++){
+        //         if (x + kartta_x < 0 || x + kartta_x > PK2KARTTA_KARTTA_LEVEYS) continue;
+        //         if (y + kartta_y < 0 || y + kartta_y > PK2KARTTA_KARTTA_KORKEUS) continue;
+        //
+        //         int i = x + kartta_x + (y + kartta_y)*PK2KARTTA_KARTTA_LEVEYS;
+        //         if(i<0 || i >= sizeof(taustat)) continue; //Dont access a not allowed address
+        //
+        //         palikka = taustat[i];
+        //
+        //         if (palikka != 255){
+        //             px = ((palikka%10)*32);
+        //             py = ((palikka/10)*32);
+        //
+        //             if (palikka == BLOCK_ANIM1 || palikka == BLOCK_ANIM2 || palikka == BLOCK_ANIM3 || palikka == BLOCK_ANIM4)
+        //                 px += animaatio * 32;
+        //
+        //             PisteDraw2_Image_CutClip(palikat_buffer, x*32-(kamera_x%32), y*32-(kamera_y%32), px, py, px+32, py+32);
+        //         }
+        //     }
+        // }
+    }
+    
     
     // void     PK_Block_Set_Barriers(PK2BLOCK &palikka) {
     //     palikka.tausta = false;
@@ -166,92 +228,37 @@ export class BlockManager {
     // }
     
     /**
+     * Performs the procedural generation of the block prototypes.<br>
      * Source: PK_Calculate_Tiles.
      */
-    public calculateTiles(): void {
-        let palikka: TPK2Block;
-        
+    public generatePrototypes(): void {
+        const xx = BlockPrototype.generatePrecalculatedBlocks(); //TODO SAVE
         for (let i = 0; i < 150; i++) {
-            palikka = {};
-            
-            palikka.vasen = 0;
-            palikka.oikea = 0; //32
-            palikka.yla = 0;
-            palikka.ala = 0; //32
-            
-            palikka.koodi = i;
-            
-            if ((i < 80 || i > 139) && i !== 255) {
-                palikka.tausta = false;
-                
-                palikka.oikealle = EBlocks.BLOCK_SEINA;
-                palikka.vasemmalle = EBlocks.BLOCK_SEINA;
-                palikka.ylos = EBlocks.BLOCK_SEINA;
-                palikka.alas = EBlocks.BLOCK_SEINA;
-                
-                // Erikoislattiat
-                
-                if (i > 139) {
-                    palikka.oikealle = EBlocks.BLOCK_TAUSTA;
-                    palikka.vasemmalle = EBlocks.BLOCK_TAUSTA;
-                    palikka.ylos = EBlocks.BLOCK_TAUSTA;
-                    palikka.alas = EBlocks.BLOCK_TAUSTA;
-                }
-                
-                // L�pik�velt�v� lattia
-                
-                if (i === BLOCK_ESTO_ALAS) {
-                    palikka.oikealle = EBlocks.BLOCK_TAUSTA;
-                    palikka.ylos = EBlocks.BLOCK_TAUSTA;
-                    palikka.alas = EBlocks.BLOCK_SEINA;
-                    palikka.vasemmalle = EBlocks.BLOCK_TAUSTA;
-                    palikka.ala -= 27;
-                }
-                
-                // M�et
-                
-                if (i > 49 && i < 60) {
-                    palikka.oikealle = EBlocks.BLOCK_TAUSTA;
-                    palikka.ylos = EBlocks.BLOCK_SEINA;
-                    palikka.alas = EBlocks.BLOCK_SEINA;
-                    palikka.vasemmalle = EBlocks.BLOCK_TAUSTA;
-                    palikka.ala += 1;
-                }
-                
-                // Kytkimet
-                
-                if (i >= BLOCK_KYTKIN1 && i <= BLOCK_KYTKIN3) {
-                    palikka.oikealle = EBlocks.BLOCK_SEINA;
-                    palikka.ylos = EBlocks.BLOCK_SEINA;
-                    palikka.alas = EBlocks.BLOCK_SEINA;
-                    palikka.vasemmalle = EBlocks.BLOCK_SEINA;
-                }
-            } else {
-                palikka.tausta = true;
-                
-                palikka.oikealle = EBlocks.BLOCK_TAUSTA;
-                palikka.vasemmalle = EBlocks.BLOCK_TAUSTA;
-                palikka.ylos = EBlocks.BLOCK_TAUSTA;
-                palikka.alas = EBlocks.BLOCK_TAUSTA;
-            }
-            
-            palikka.vesi = (i > 131 && i < 140);
-            
-            this.mCalculatedBlocks[i] = palikka;
+            this._prototypes[i] = xx[i];
         }
         
         this.calculateMovableBlocksPosition();
+    }
+    
+    
+    ///  Animation  ///
+    
+    /**
+     * Animates the blocks that require it.
+     */
+    public animate(oscillators: unknown): void {
+    
     }
     
     /**
      * Source: PK_Calculate_MovableBlocks_Position.
      */
     public calculateMovableBlocksPosition(): void {
-        this.mCalculatedBlocks[BLOCK_HISSI_HORI].vasen = Math.floor(this._context.getCos(this._context.degree % 360));
-        this.mCalculatedBlocks[BLOCK_HISSI_HORI].oikea = Math.floor(this._context.getCos(this._context.degree % 360));
+        this._prototypes[BLOCK_HISSI_HORI].vasen = Math.floor(this._ctx.entropy.getCos(this._ctx.entropy.degree % 360));
+        this._prototypes[BLOCK_HISSI_HORI].oikea = Math.floor(this._ctx.entropy.getCos(this._ctx.entropy.degree % 360));
         
-        this.mCalculatedBlocks[BLOCK_HISSI_VERT].ala = Math.floor(this._context.getSin(this._context.degree % 360));
-        this.mCalculatedBlocks[BLOCK_HISSI_VERT].yla = Math.floor(this._context.getSin(this._context.degree % 360));
+        this._prototypes[BLOCK_HISSI_VERT].ala = Math.floor(this._ctx.entropy.getSin(this._ctx.entropy.degree % 360));
+        this._prototypes[BLOCK_HISSI_VERT].yla = Math.floor(this._ctx.entropy.getSin(this._ctx.entropy.degree % 360));
         
         let kytkin1_y: int = 0;
         let kytkin2_y: int = 0;
@@ -291,28 +298,28 @@ export class BlockManager {
         kytkin2_y /= 2;
         kytkin3_x /= 2;
         
-        this.mCalculatedBlocks[BLOCK_KYTKIN1].ala = kytkin1_y;
-        this.mCalculatedBlocks[BLOCK_KYTKIN1].yla = kytkin1_y;
+        this._prototypes[BLOCK_KYTKIN1].ala = kytkin1_y;
+        this._prototypes[BLOCK_KYTKIN1].yla = kytkin1_y;
         
-        this.mCalculatedBlocks[BLOCK_KYTKIN2_YLOS].ala = -kytkin2_y;
-        this.mCalculatedBlocks[BLOCK_KYTKIN2_YLOS].yla = -kytkin2_y;
+        this._prototypes[BLOCK_KYTKIN2_YLOS].ala = -kytkin2_y;
+        this._prototypes[BLOCK_KYTKIN2_YLOS].yla = -kytkin2_y;
         
-        this.mCalculatedBlocks[BLOCK_KYTKIN2_ALAS].ala = kytkin2_y;
-        this.mCalculatedBlocks[BLOCK_KYTKIN2_ALAS].yla = kytkin2_y;
+        this._prototypes[BLOCK_KYTKIN2_ALAS].ala = kytkin2_y;
+        this._prototypes[BLOCK_KYTKIN2_ALAS].yla = kytkin2_y;
         
-        this.mCalculatedBlocks[BLOCK_KYTKIN2].ala = kytkin2_y;
-        this.mCalculatedBlocks[BLOCK_KYTKIN2].yla = kytkin2_y;
+        this._prototypes[BLOCK_KYTKIN2].ala = kytkin2_y;
+        this._prototypes[BLOCK_KYTKIN2].yla = kytkin2_y;
         
-        this.mCalculatedBlocks[BLOCK_KYTKIN3_OIKEALLE].oikea = kytkin3_x;
-        this.mCalculatedBlocks[BLOCK_KYTKIN3_OIKEALLE].vasen = kytkin3_x;
-        this.mCalculatedBlocks[BLOCK_KYTKIN3_OIKEALLE].koodi = BLOCK_HISSI_HORI;
+        this._prototypes[BLOCK_KYTKIN3_OIKEALLE].oikea = kytkin3_x;
+        this._prototypes[BLOCK_KYTKIN3_OIKEALLE].vasen = kytkin3_x;
+        this._prototypes[BLOCK_KYTKIN3_OIKEALLE].koodi = BLOCK_HISSI_HORI;
         
-        this.mCalculatedBlocks[BLOCK_KYTKIN3_VASEMMALLE].oikea = -kytkin3_x;
-        this.mCalculatedBlocks[BLOCK_KYTKIN3_VASEMMALLE].vasen = -kytkin3_x;
-        this.mCalculatedBlocks[BLOCK_KYTKIN3_VASEMMALLE].koodi = BLOCK_HISSI_HORI;
+        this._prototypes[BLOCK_KYTKIN3_VASEMMALLE].oikea = -kytkin3_x;
+        this._prototypes[BLOCK_KYTKIN3_VASEMMALLE].vasen = -kytkin3_x;
+        this._prototypes[BLOCK_KYTKIN3_VASEMMALLE].koodi = BLOCK_HISSI_HORI;
         
-        this.mCalculatedBlocks[BLOCK_KYTKIN3].ala = kytkin3_x;
-        this.mCalculatedBlocks[BLOCK_KYTKIN3].yla = kytkin3_x;
+        this._prototypes[BLOCK_KYTKIN3].ala = kytkin3_x;
+        this._prototypes[BLOCK_KYTKIN3].yla = kytkin3_x;
     }
     
     
@@ -321,39 +328,112 @@ export class BlockManager {
     /**
      * Source: PK2Kartta::Lataa_PalikkaPaletti.
      *
-     * @param char
+     * @throws ResourceNotFoundError
+     * @throws ResourceFetchError
      */
-    public      loadTextures(fpath:string,fname:string):void{
-//     int i;
-//     int img;
-//     char file[PE_PATH_SIZE];
-//     strcpy(file,"");
-//     strcpy(file,polku);
-//     strcat(file,filename);
-        const path = pathJoin(fpath)
-//
-//     if (!PisteUtils_Find(file)){
-//     //strcpy(file,PK2Kartta::pk2_hakemisto);
-//     strcpy(file,"gfx/tiles/");
-//     strcat(file,filename);
-//     if (!PisteUtils_Find(file))
-//     return 1;
-// }
-//
-// img = PisteDraw2_Image_Load(file,false);
-// if(img == -1) return 2;
-// PisteDraw2_Image_Copy(img,this->palikat_buffer);
-// PisteDraw2_Image_Delete(img);
-//
-// PisteDraw2_Image_Delete(this->palikat_vesi_buffer); //Delete last water buffer
-// this->palikat_vesi_buffer = PisteDraw2_Image_Cut(this->palikat_buffer,0,416,320,32);
-//
-// strcpy(this->palikka_bmp,filename);
-// return 0;
- }
+    public async loadTextures(fpath: string, fname: string): Promise<void> {
+        //     int i;
+        //     int img;
+        let uri: string;
+        let found: boolean;
+        let image: HTMLImageElement;
+        let baseTexture: PIXI.BaseTexture;
+        
+        // First, try to fetch the resource from provided location
+        uri = pathJoin(fpath, fname);
+        try {
+            image = await this._ctx.context.resources.getImage(uri);
+            found = true;
+        } catch (err) {
+            if (!(err instanceof ResourceNotFoundError)) {
+                // TODO: Improve
+                throw err;
+            }
+        }
+        
+        // If not found, try to fetch the resource from default location
+        if (!found) {
+            uri = pathJoin('gfx/tiles/', fname);
+            
+            try {
+                image = await this._ctx.context.resources.getImage(uri);
+            } catch (err) {
+                throw err;
+            }
+        }
+        
+        // Remove transparent pixel and create the base texture
+        image = PkTextureTk.imageRemoveTransparentPixel(image);
+        baseTexture = PkTextureTk.imageToBaseTexture(image);
+        
+        this.ctx.textureCache.add(fname, baseTexture);
+        
+        // Save textures sheet id for later use
+        this._texturesId = fname;
+        
+        Log.d('Blocks textures loaded.');
+        
+        // Crop final textures
+        /*for (let i = 0; i < 150; i++) {
+            const x = (i % 10) * BLOCK_RAW_SIZE;
+            const y = (Math.floor(i / 10)) * BLOCK_RAW_SIZE;
+            
+            this._textures.push(
+                PkTextureTk.textureFromBaseTexture(baseTexture, x, y, BLOCK_RAW_SIZE));
+        }*/
+        
+        
+        //console.log('Blocks textures cropped.');
+        
+        // TODO -> post-treat
+        // PisteDraw2_Image_Delete(this->palikat_vesi_buffer); //Delete last water buffer
+        // this->palikat_vesi_buffer = PisteDraw2_Image_Cut(this->palikat_buffer,0,416,320,32);
+        
+        // strcpy(this->palikka_bmp,filename);
+    }
     
     
     ///  Accessors  ///
+    
+    /**
+     * Returns the game enviroment.
+     */
+    private get ctx(): GameEnv {
+        return this._ctx;
+    }
+    
+    /**
+     * Returns the prototype for blocks of the specified type.
+     *
+     * @param code - Block type identification code.
+     */
+    private getProto(code: TBlockProtoCode): BlockPrototype {
+        return this._prototypes[code];
+    }
+    
+    /**
+     * Returns the background block at the specified position in the map.
+     *
+     * @param i - Block x coordinate in the matrix.
+     * @param j - Block y coordinate in the matrix.
+     */
+    public getBgBlock(i: number, j: number): Block {
+        return this._bgBlocks[j][i];
+    }
+    public setBgBlock(i: number, j: number, block: Block): void {
+        // Save in place
+        this._bgBlocks[j][i] = block;
+        // Add to the scene
+        this.ctx.composition.addBgBlock(block);
+    }
+    
+    public getFgBlock(i: number, j: number): Block {
+        return this._fgBlocks[j][i];
+    }
+    public setFgBlock(i: number, j: number, block: Block) {
+        this._fgBlocks[j][i] = block;
+    }
+    
     
     public getBlock(x: int, y: int) {
         //     PK2BLOCK palikka;

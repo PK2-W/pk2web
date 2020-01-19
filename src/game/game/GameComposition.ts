@@ -1,6 +1,6 @@
 import { Drawable } from '@ng/drawable/Drawable';
 
-export class PK2GameStage extends Drawable {
+export class GameComposition extends Drawable {
     private readonly _lyBackground: PIXI.Container;
     private readonly _lyBgSprites: PIXI.Container;
     private readonly _lyBgParticles: PIXI.Container;
@@ -22,14 +22,19 @@ export class PK2GameStage extends Drawable {
         
     }
     
+    public addBgBlock(dw: Drawable) {
+        this._lyBgBlocks.addChild(dw.getDrawable());
+        console.log('Blog added to the composition (bg).');
+    }
+    
     public addBgSprite(dw: Drawable) {
         this._lyBgSprites.addChild(dw.getDrawable());
-        console.log('Sprite added to stage (bg).');
+        console.log('Sprite added to the composition (bg).');
     }
     
     public addSprite(dw: Drawable) {
         this._lySprites.addChild(dw.getDrawable());
-        console.log('Sprite added to stage (fg).');
+        console.log('Sprite added to the composition (fg).');
     }
     
     protected get container(): PIXI.Container {

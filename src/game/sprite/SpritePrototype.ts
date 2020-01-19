@@ -1,8 +1,12 @@
+import { GameEnv } from '@game/game/GameEnv';
 import { PK2GameContext } from '@game/PK2GameContext';
 import { EDamageType, EDestructionType } from '@game/sprite/PK2Sprite';
 import { EAi } from '@game/sprite/SpriteManager';
+import { EBlockProtoCode } from '@game/tile/BlockConstants';
+import { PkResource } from '@ng/PkResources';
 import { Binary } from '@ng/support/Binary';
 import { pathJoin, str2num } from '@ng/support/utils';
+import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import {
     SPRITE_MAX_AI,
     SPRITE_MAX_FRAMEJA,
@@ -11,8 +15,8 @@ import {
 } from '../../support/constants';
 import { DWORD, int, str, BYTE, cvect, CVect } from '../../support/types';
 
-export class PK2SpritePrototype {
-    private mContext: PK2GameContext;
+export class SpritePrototype {
+    private mContext: GameEnv;
     
     // Version
     private _versio: str<4>;
@@ -104,12 +108,12 @@ export class PK2SpritePrototype {
     private _bonus_aina: boolean;										// j�tt�� aina bonuksen tuhoutuessa
     private _osaa_uida: boolean;										// vaikuttaako painovoima vedess�?
     
-    public static async loadFromFile(ctx: PK2GameContext, path: string, file: string) {
-        return new PK2SpritePrototype(ctx).loadFromFile(path, file);
+    public static async loadFromFile(ctx: GameEnv, path: string, file: string) {
+        return new SpritePrototype(ctx).loadFromFile(path, file);
     }
     
     // Muodostimet
-    public constructor(ctx: PK2GameContext) {
+    public constructor(ctx: GameEnv) {
         this.mContext = ctx;
         
         this._versio = PK2SPRITE_VIIMEISIN_VERSIO;
@@ -301,7 +305,7 @@ export class PK2SpritePrototype {
         // Ladataan itse sprite-tiedosto
         
         const uri = pathJoin(fpath, fname);
-        const file = await this.mContext.resources.getBinary(uri);
+        const file = await PkAssetTk.getBinary(uri);
         
         // TODO throw...
         // if (tiedosto->fail()){
@@ -585,8 +589,17 @@ export class PK2SpritePrototype {
     public get pallarx_kerroin(): number {
         return this._pallarx_kerroin;
     }
-    private load(path: string, file: string) {
-        return undefined;
+    
+    public isBackground(): boolean {
+        return this.type === EProtoType.TYYPPI_TAUSTA;
+    }
+    
+    public isKey(): boolean {
+        return this._avain === true;
+    }
+    
+    public isDestructible(): boolean {
+        return this._tuhoutuminen === EDestructionType.TUHOUTUMINEN_EI_TUHOUDU;
     }
 }
 
@@ -610,6 +623,8 @@ class PK2SpriteAnimation {
         return obj;
     }
 }
+
+export type TSpriteProtoCode = BYTE;
 
 export enum EProtoType { //Type
     TYYPPI_EI_MIKAAN,
