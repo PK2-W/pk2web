@@ -601,6 +601,10 @@ export class SpritePrototype {
     public isDestructible(): boolean {
         return this._tuhoutuminen === EDestructionType.TUHOUTUMINEN_EI_TUHOUDU;
     }
+    
+    public canSwim(): boolean {
+        return this._osaa_uida === true;
+    }
 }
 
 /**

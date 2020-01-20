@@ -18,7 +18,7 @@ export interface IDrawable {
      *
      * @param propagate - Por defecto TRUE, indica si la necesidad del redibujado se propaga hacia los elementos padre.
      */
-    invalidate(propagate: boolean);
+    invalidate(propagate: boolean): void;
     
     /**
      * Determina si el elemento necesita redibujarse, o no.

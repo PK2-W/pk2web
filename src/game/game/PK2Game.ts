@@ -1,14 +1,24 @@
+/* eslint-disable @typescript-eslint/camelcase */
 import { GameComposition } from '@game/game/GameComposition';
 import { GameEnv } from '@game/game/GameEnv';
 import { GiftManager } from '@game/gift/GiftManager';
-import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, PK2Map } from '@game/map/PK2Map';
+import {
+    PK2KARTTA_KARTTA_LEVEYS,
+    PK2KARTTA_KARTTA_KORKEUS,
+    PK2Map,
+    BLOCK_TULI,
+    KYTKIN_ALOITUSARVO
+} from '@game/map/PK2Map';
 import { PK2Context } from '@game/PK2Context';
-import { PK2Sprite, EDamageType } from '@game/sprite/PK2Sprite';
-import { EProtoType } from '@game/sprite/SpritePrototype';
+import { PK2Sprite, EDamageType, EDestructionType } from '@game/sprite/PK2Sprite';
+import { SpriteAttributes } from '@game/sprite/SpriteAttributes';
 import { SpriteManager } from '@game/sprite/SpriteManager';
+import { EProtoType } from '@game/sprite/SpritePrototype';
+import { Block, EBlocks } from '@game/tile/Block';
+import { EBlockProtoCode } from '@game/tile/BlockConstants';
 import { BlockManager } from '@game/tile/BlockManager';
 import { MAX_SPRITES, PK2GAMELOOP } from '../../support/constants';
-import { int, rand, bool, uint } from '../../support/types';
+import { int, rand, bool, uint, DWORD } from '../../support/types';
 
 export class PK2Game {
     private readonly _enviroment: GameEnv;
@@ -100,13 +110,12 @@ export class PK2Game {
             }
             
             // 	PK_Palikka_Tee_Maskit();  // "make masks" (draws!)
-    
+            
             this._sprites.addMapSprites(this.map);
-    
+            this._sprites.startDirections();
+            
             this.selectStart();
             // 	kartta->Calculate_Edges();
-            
-            //   this._sprites.startDirections();
             
             // 	PkEngine::Particles->clear_particles();
             // 	PkEngine::Particles->load_bg_particles(kartta);
@@ -141,7 +150,6 @@ export class PK2Game {
             await this._blocks.loadTextures(this.map.fpath, this.map.getBlockTexturesLocation());
             this._blocks.placeBgBlocks();
             
-            
             // x->   PK_Fadetext_Init(); //Reset fade text
             
             //      Game::Gifts->clean();
@@ -160,7 +168,7 @@ export class PK2Game {
     /**
      * Sourfce: PK_MainScreen_InGame
      */
-    private gameLoop(delta: number): void {
+    public gameLoop(delta: number): void {
         // 	PK2Kartta_Animoi(_degree, palikka_animaatio/7, kytkin1, kytkin2, kytkin3, false);
         this.updateCamera();
         
@@ -366,8 +374,8 @@ export class PK2Game {
      * Source: PK_Update_Camera.
      */
     private updateCamera(): void {
-        this._cameraX = Math.floor(this._sprites.player.x - this._context.screenWidth / 2);
-        this._cameraY = Math.floor(this._sprites.player.y - this._context.screenHeight / 2);
+        this._cameraX = Math.floor(this._sprites.player.x - this.ctx.screenWidth / 2);
+        this._cameraY = Math.floor(this._sprites.player.y - this.ctx.screenHeight / 2);
         
         // Source comment:
         // if (!PisteInput_Hiiri_Vasen()) {
@@ -422,11 +430,11 @@ export class PK2Game {
         if (this._cameraY < 0)
             this._cameraY = 0;
         
-        if (this._cameraX > Math.floor(PK2KARTTA_KARTTA_LEVEYS - this._context.screenWidth / 32) * 32)
-            this._cameraX = Math.floor(PK2KARTTA_KARTTA_LEVEYS - this._context.screenWidth / 32) * 32;
+        if (this._cameraX > Math.floor(PK2KARTTA_KARTTA_LEVEYS - this.ctx.screenWidth / 32) * 32)
+            this._cameraX = Math.floor(PK2KARTTA_KARTTA_LEVEYS - this.ctx.screenWidth / 32) * 32;
         
-        if (this._cameraY > Math.floor(PK2KARTTA_KARTTA_KORKEUS - this._context.screenHeight / 32) * 32)
-            this._cameraY = Math.floor(PK2KARTTA_KARTTA_KORKEUS - this._context.screenHeight / 32) * 32;
+        if (this._cameraY > Math.floor(PK2KARTTA_KARTTA_KORKEUS - this.ctx.screenHeight / 32) * 32)
+            this._cameraY = Math.floor(PK2KARTTA_KARTTA_KORKEUS - this.ctx.screenHeight / 32) * 32;
     }
     
     /**
@@ -458,9 +466,9 @@ export class PK2Game {
             
             if (sprite.aktiivinen && sprite.proto.type !== EProtoType.TYYPPI_TAUSTA) {
                 if (sprite.proto.type === EProtoType.TYYPPI_BONUS) {
-                    this.updateBonusSpriteMovement(i);
+                    this.updateBonusSpriteMovement(sprite);
                 } else {
-                    this.updateSpriteMovement(i);
+                    this.updateSpriteMovement(sprite);
                 }
                 
                 // debug_active_sprites++;
@@ -473,40 +481,15 @@ export class PK2Game {
      *
      * @param i
      */
-    private updateSpriteMovement(i: int): void {
-        // 	if (i >= MAX_SPRITEJA || i < 0)
-        // 		return -1;
-        
-        let sprite: PK2Sprite = this._sprites.get(i);  // Source comment: address of sprite = address of spritet[i] (if change sprite, change spritet[i])
-        
+    private updateSpriteMovement(sprite: PK2Sprite): void {
         // TODO - Caution with this: Dead sprites are going to be updated
         if (sprite.proto == null)
             return;
         
-        let sprite_x = sprite.x;
-        let sprite_y = sprite.y;
-        let sprite_a = sprite.a;
-        let sprite_b = sprite.b;
-        
-        let spriteWidth = sprite.proto.width;
-        let spriteHeight = sprite.proto.height;
-        
-        let sprite_vasen = sprite_x - spriteWidth / 2;
-        let sprite_oikea = sprite_x + spriteWidth / 2;
-        let sprite_yla = sprite_y - spriteHeight / 2;
-        let sprite_ala = sprite_y + spriteHeight / 2;
-        
-        let max_nopeus = sprite.proto.maxSpeed;
-        
-        let vedessa = sprite.inWater;
+        const future = sprite.getPackedAttributes();
         
         let x = 0;
         let y = 0;
-        
-        let oikealle = true;
-        let vasemmalle = true;
-        let ylos = true;
-        let alas = true;
         
         let kartta_vasen = 0;
         let kartta_yla = 0;
@@ -519,7 +502,7 @@ export class PK2Game {
         
         // Limit max speed if energy is to low
         if (sprite.energia < 1)
-            max_nopeus = 3;
+            future.maxSpeed = 3;
         
         // Calculate the remainder of the sprite towards
         
@@ -570,7 +553,7 @@ export class PK2Game {
             
             // 			if (lisavauhti) {
             // 				if (rand()%20 == 1 && sprite.animaatio_index == ANIMAATIO_KAVELY) // Draw dust
-            // 					Game::Particles->new_particle(PARTICLE_DUST_CLOUDS,sprite_x-8,sprite_ala-8,0.25,-0.25,40,0,0);
+            // 					Game::Particles->new_particle(PARTICLE_DUST_CLOUDS,future.x-8,sprite_ala-8,0.25,-0.25,40,0,0);
             
             // 				a_lisays += 0.09;//0.05
             // 			}
@@ -587,7 +570,7 @@ export class PK2Game {
             
             // 			if (lisavauhti) {
             // 				if (rand()%20 == 1 && sprite.animaatio_index == ANIMAATIO_KAVELY) { // Draw dust
-            // 					Game::Particles->new_particle(PARTICLE_DUST_CLOUDS,sprite_x-8,sprite_ala-8,-0.25,-0.25,40,0,0);
+            // 					Game::Particles->new_particle(PARTICLE_DUST_CLOUDS,future.x-8,sprite_ala-8,-0.25,-0.25,40,0,0);
             // 				}
             
             // 				a_lisays -= 0.09;
@@ -609,7 +592,7 @@ export class PK2Game {
             // 			if (PisteInput_Keydown(settings.control_jump)) {
             // 				if (!sprite.kyykky) {
             // 					if (sprite.jumpTimer == 0)
-            // 						PK_Play_Sound(hyppy_aani, 100, (int)sprite_x, (int)sprite_y,
+            // 						PK_Play_Sound(hyppy_aani, 100, (int)future.x, (int)sprite_y,
             // 									  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
             //
             // 					if (sprite.jumpTimer <= 0)
@@ -690,12 +673,11 @@ export class PK2Game {
             
             if (!hyppy_maximissa) {
                 //sprite_b = (sprite.tyyppi->max_hyppy/2 - sprite.jumpTimer/2)/-2.0;//-4
-                sprite_b = -this.ctx.entropy.getSin(sprite.jumpTimer) / 8; //(sprite.tyyppi->max_hyppy/2 - sprite.jumpTimer/2)/-2.5;
-                if (sprite_b > sprite.proto.maxJump) {
-                    sprite_b = sprite.proto.maxJump / 10.0;
+                future.b = -this.ctx.entropy.getSin(sprite.jumpTimer) / 8; //(sprite.tyyppi->max_hyppy/2 - sprite.jumpTimer/2)/-2.5;
+                if (future.b > sprite.proto.maxJump) {
+                    future.b = sprite.proto.maxJump / 10.0;
                     sprite.jumpTimer = 90 - sprite.jumpTimer;
                 }
-                
             }
             
             if (sprite.jumpTimer < 180)
@@ -705,7 +687,7 @@ export class PK2Game {
         if (sprite.jumpTimer < 0)
             sprite.jumpTimer++;
         
-        if (sprite_b > 0 && !hyppy_maximissa)
+        if (future.b > 0 && !hyppy_maximissa)
             sprite.jumpTimer = 90; //sprite.tyyppi->max_hyppy*2;
         
         /*****************************************************************************************/
@@ -720,10 +702,10 @@ export class PK2Game {
         /*****************************************************************************************/
         
         if (sprite.weight !== 0 && (sprite.jumpTimer <= 0 || sprite.jumpTimer >= 45))
-            sprite_b += sprite.weight / 1.25; // + sprite_b/1.5;
+            future.b += sprite.weight / 1.25; // + future.b/1.5;
         
-        if (hidastus && sprite_b > 0) // If gliding
-            sprite_b /= 1.3; //1.5; //3
+        if (hidastus && future.b > 0) // If gliding
+            future.b /= 1.3; //1.5; //3
         
         /*****************************************************************************************/
         /* By default, the sprite is not in the water and not hidden                             */
@@ -736,80 +718,84 @@ export class PK2Game {
         /* Speed limits                                                                          */
         /*****************************************************************************************/
         
-        if (sprite_b > 4.0) //4
-            sprite_b = 4.0; //4
+        if (future.b > 4.0) //4
+            future.b = 4.0; //4
         
-        if (sprite_b < -4.0)
-            sprite_b = -4.0;
+        if (future.b < -4.0)
+            future.b = -4.0;
         
-        if (sprite_a > max_nopeus)
-            sprite_a = max_nopeus;
+        if (future.a > future.maxSpeed)
+            future.a = future.maxSpeed;
         
-        if (sprite_a < -max_nopeus)
-            sprite_a = -max_nopeus;
+        if (future.a < -future.maxSpeed)
+            future.a = -future.maxSpeed;
         
         /*****************************************************************************************/
         /* Blocks colision -                                                                     */
         /*****************************************************************************************/
         
-        // 	int palikat_x_lkm,
-        // 	    palikat_y_lkm,
-        // 	    palikat_lkm;
-        // 	DWORD p;
-        //
-        // 	if (sprite.tyyppi->tiletarkistus){ //Find the tiles that the sprite occupies
-        //
-        // 		palikat_x_lkm = (int)((spriteWidth) /32)+4; //Number of blocks
-        // 		palikat_y_lkm = (int)((spriteHeight)/32)+4;
-        //
-        // 		kartta_vasen = (int)(sprite_vasen)/32;	//Position in tile map
-        // 		kartta_yla	 = (int)(sprite_yla)/32;
-        //
-        // 		for (y=0;y<palikat_y_lkm;y++)
-        // 			for (x=0;x<palikat_x_lkm;x++) //For each block, create a array of blocks around the sprite
-        // 				palikat[x+(y*palikat_x_lkm)] = PK_Block_Get(kartta_vasen+x-1,kartta_yla+y-1); //x = 0, y = 0
-        //
-        // 		/*****************************************************************************************/
-        // 		/* Going through the blocks around the sprite.                                           */
-        // 		/*****************************************************************************************/
-        //
-        // 		palikat_lkm = palikat_y_lkm*palikat_x_lkm;
-        // 		for (y=0;y<palikat_y_lkm;y++){
-        // 			for (x=0;x<palikat_x_lkm;x++) {
-        // 				p = x+y*palikat_x_lkm;
-        // 				if (p<300)// && p>=0)//{
-        // 					//if(sprite.pelaaja == 1) printf("%i\n",palikat_lkm);
-        // 					PK_Check_Blocks(sprite, palikat[p]);
-        // 				//}
-        // 			}
-        // 		}
-        // 	}
-        // 	/*****************************************************************************************/
-        // 	/* If the sprite is under water                                                          */
-        // 	/*****************************************************************************************/
-        //
-        // 	if (sprite.vedessa) {
-        //
-        // 		if (!sprite.tyyppi->osaa_uida || sprite.energia < 1) {
-        // 			/*
-        // 			if (sprite_b > 0)
-        // 				sprite_b /= 2.0;
-        //
-        // 			sprite_b -= (1.5-sprite.weight)/10;*/
-        // 			sprite_b /= 2.0;
-        // 			sprite_a /= 1.05;
-        //
-        // 			if (sprite.jumpTimer > 0 && sprite.jumpTimer < 90)
-        // 				sprite.jumpTimer--;
-        // 		}
-        //
-        // 		if (rand()%80 == 1)
-        // 			Game::Particles->new_particle(PARTICLE_SPARK,sprite_x-4,sprite_y,0,-0.5-rand()%2,rand()%30+30,0,32);
-        // 	}
-        //
-        // 	if (vedessa != sprite.vedessa) { // Sprite comes in or out from water
-        // 		Effect::Splash((int)sprite_x,(int)sprite_y,32);
-        // 	}
+        let palikat_x_lkm: int;
+        let palikat_y_lkm: int;
+        let palikat_lkm: int;
+        let p: DWORD;  // coordiante of the current block
+        
+        if (/* TODO sprite.proto.tiletarkistus*/ true) { //Find the tiles that the sprite occupies
+            // Number of blocks to check
+            palikat_x_lkm = Math.floor((future.width) / 32) + 4; //Number of blocks
+            palikat_y_lkm = Math.floor((future.height) / 32) + 4;
+            
+            // Position in tile map (upper-left corner)
+            kartta_vasen = Math.floor((future.left) / 32);
+            kartta_yla = Math.floor((future.top) / 32);
+            
+            // Not necessary
+            // 		for (y=0;y<palikat_y_lkm;y++)
+            // 			for (x=0;x<palikat_x_lkm;x++) //For each block, create a array of blocks around the sprite
+            // 				// palikat[x+(y*palikat_x_lkm)] = PK_Block_Get(kartta_vasen+x-1,kartta_yla+y-1); //x = 0, y = 0
+            //this._blocks.getFgBlock(x, y);
+            
+            /*****************************************************************************************/
+            /* Going through the blocks around the sprite.                                           */
+            /*****************************************************************************************/
+            
+            palikat_lkm = palikat_y_lkm * palikat_x_lkm;
+            for (y = 0; y < palikat_y_lkm; y++) {
+                for (x = 0; x < palikat_x_lkm; x++) {
+                    const block = this._blocks.getFgBlock(x, y);
+                    p = x + y * palikat_x_lkm;
+                    // 				if (p<300)// && p>=0)//{
+                    // 					//if(sprite.pelaaja == 1) printf("%i\n",palikat_lkm);
+                    this.checkBlocks(sprite, future, block);
+                    // 				//}
+                }
+            }
+        }
+        /*****************************************************************************************/
+        /* If the sprite is under water                                                          */
+        /*****************************************************************************************/
+        
+        if (sprite.inWater) {
+            if (!sprite.proto.canSwim() || sprite.energia < 1) {
+                /*
+                if (future.b > 0)
+                   future.b /= 2.0;
+
+                sprite_b -= (1.5-sprite.weight)/10;*/
+                future.b /= 2.0;
+                future.a /= 1.05;
+                
+                if (sprite.jumpTimer > 0 && sprite.jumpTimer < 90)
+                    sprite.jumpTimer--;
+            }
+            
+            // 		if (rand()%80 == 1)
+            // 			Game::Particles->new_particle(PARTICLE_SPARK,future.x-4,sprite_y,0,-0.5-rand()%2,rand()%30+30,0,32);
+        }
+        
+        // If sprite enters or exist from water
+        if (future.inWater !== sprite.inWater) {
+            // 		Effect::Splash((int)future.x,(int)future.y,32);
+        }
         
         /*****************************************************************************************/
         /* Sprite weight                                                                         */
@@ -843,8 +829,8 @@ export class PK2Game {
         //
         // 			if (sprite2->tyyppi->este && sprite.tyyppi->tiletarkistus) { //If there is a block sprite active
         //
-        // 				if (sprite_x-spriteWidth/2 +sprite_a  <= sprite2->x + sprite2->tyyppi->leveys /2 &&
-        // 					sprite_x+spriteWidth/2 +sprite_a  >= sprite2->x - sprite2->tyyppi->leveys /2 &&
+        // 				if (future.x-spriteWidth/2 +sprite_a  <= sprite2->x + sprite2->tyyppi->leveys /2 &&
+        // 					future.x+spriteWidth/2 +sprite_a  >= sprite2->x - sprite2->tyyppi->leveys /2 &&
         // 					sprite_y-spriteHeight/2+sprite_b <= sprite2->y + sprite2->tyyppi->korkeus/2 &&
         // 					sprite_y+spriteHeight/2+sprite_b >= sprite2->y - sprite2->tyyppi->korkeus/2)
         // 				{
@@ -896,8 +882,8 @@ export class PK2Game {
         // 				}
         // 			}
         //
-        // 			if (sprite_x <= sprite2->x + sprite2->tyyppi->leveys /2 &&
-        // 				sprite_x >= sprite2->x - sprite2->tyyppi->leveys /2 &&
+        // 			if (future.x <= sprite2->x + sprite2->tyyppi->leveys /2 &&
+        // 				future.x >= sprite2->x - sprite2->tyyppi->leveys /2 &&
         // 				sprite_y/*yla*/ <= sprite2->y + sprite2->tyyppi->korkeus/2 &&
         // 				sprite_y/*ala*/ >= sprite2->y - sprite2->tyyppi->korkeus/2 + sprite2_yla)
         // 			{
@@ -1008,7 +994,7 @@ export class PK2Game {
         // 		sprite.saatu_vahinko = 0;
         // 		sprite.saatu_vahinko_tyyppi = VAHINKO_EI;
         // 	}
-        //
+        
         // 	if (sprite.saatu_vahinko != 0 && sprite.energia > 0 && sprite.tyyppi->tuhoutuminen != TUHOUTUMINEN_EI_TUHOUDU){
         // 		if (sprite.tyyppi->suojaus != sprite.saatu_vahinko_tyyppi || sprite.tyyppi->suojaus == VAHINKO_EI){
         // 			sprite.energia -= sprite.saatu_vahinko;
@@ -1024,9 +1010,9 @@ export class PK2Game {
         // 				Effect::Destruction(TUHOUTUMINEN_HOYHENET, (DWORD)sprite.x, (DWORD)sprite.y);
         //
         // 			if (sprite.tyyppi->tyyppi != TYYPPI_AMMUS){
-        // 				Game::Particles->new_particle(PARTICLE_STAR,sprite_x,sprite_y,-1,-1,60,0.01,128);
-        // 				Game::Particles->new_particle(PARTICLE_STAR,sprite_x,sprite_y, 0,-1,60,0.01,128);
-        // 				Game::Particles->new_particle(PARTICLE_STAR,sprite_x,sprite_y, 1,-1,60,0.01,128);
+        // 				Game::Particles->new_particle(PARTICLE_STAR,future.x,sprite_y,-1,-1,60,0.01,128);
+        // 				Game::Particles->new_particle(PARTICLE_STAR,future.x,sprite_y, 0,-1,60,0.01,128);
+        // 				Game::Particles->new_particle(PARTICLE_STAR,future.x,sprite_y, 1,-1,60,0.01,128);
         // 			}
         //
         // 			if (sprite.Onko_AI(AI_VAIHDA_KALLOT_JOS_OSUTTU))
@@ -1059,7 +1045,7 @@ export class PK2Game {
             // 				if (sprite.tyyppi->bonus > -1 && sprite.tyyppi->bonusten_lkm > 0)
             // 					if (sprite.tyyppi->bonus_aina || rand()%4 == 1)
             // 						for (int bi=0; bi<sprite.tyyppi->bonusten_lkm; bi++)
-            // 							Game::Sprites->add(sprite.tyyppi->bonus,0,sprite_x-11+(10-rand()%20),
+            // 							Game::Sprites->add(sprite.tyyppi->bonus,0,future.x-11+(10-rand()%20),
             // 											  sprite_ala-16-(10+rand()%20), i, true);
             //
             // 				if (sprite.Onko_AI(AI_VAIHDA_KALLOT_JOS_TYRMATTY) && !sprite.Onko_AI(AI_VAIHDA_KALLOT_JOS_OSUTTU))
@@ -1090,78 +1076,78 @@ export class PK2Game {
         // 	}
         
         if (sprite.knockTimer === 0)
-            sprite.recivedDamageType = EDamageType.VAHINKO_EI;
+            sprite.receivedDamageType = EDamageType.VAHINKO_EI;
         
         
         /*****************************************************************************************/
         /* Revisions                                                                             */
         /*****************************************************************************************/
         
-        if (!oikealle)
-            if (sprite_a > 0)
-                sprite_a = 0;
+        if (!future.toTheRight)
+            if (future.a > 0)
+                future.a = 0;
         
-        if (!vasemmalle)
-            if (sprite_a < 0)
-                sprite_a = 0;
+        if (!future.toTheLeft)
+            if (future.a < 0)
+                future.a = 0;
         
-        if (!ylos) {
-            if (sprite_b < 0)
-                sprite_b = 0;
+        if (!future.toTheTop) {
+            if (future.b < 0)
+                future.b = 0;
             
             if (!hyppy_maximissa)
                 sprite.jumpTimer = 95; //sprite.tyyppi->max_hyppy * 2;
         }
         
-        // 	if (!alas)
-        // 		if (sprite_b >= 0){ //If sprite is falling
-        // 			if (sprite.jumpTimer > 0){
-        // 				if (sprite.jumpTimer >= 90+10){
-        // 					PK_Play_Sound(tomahdys_aani,30,(int)sprite_x, (int)sprite_y,
-        // 				                  int(25050-sprite.weight*3000),true);
-        //
-        // 					//Game::Particles->new_particle(	PARTICLE_DUST_CLOUDS,sprite_x+rand()%5-rand()%5-10,sprite_ala+rand()%3-rand()%3,
-        // 					//			  0,-0.2,rand()%50+20,0,0);
-        //
-        // 					if (rand()%7 == 1) {
-        // 						Game::Particles->new_particle(PARTICLE_SMOKE,sprite_x+rand()%5-rand()%5-10,sprite_ala+rand()%3-rand()%3,
-        // 									  	   0.3,-0.1,450,0,0);
-        // 						Game::Particles->new_particle(PARTICLE_SMOKE,sprite_x+rand()%5-rand()%5-10,sprite_ala+rand()%3-rand()%3,
-        // 									  	   -0.3,-0.1,450,0,0);
-        // 					}
-        //
-        // 					if (sprite.weight > 1)
-        // 						this._vibration = 34 + int(sprite.weight * 20);
-        // 				}
-        //
-        // 				sprite.jumpTimer = 0;
-        // 			}
-        //
-        // 			sprite_b = 0;
-        // 		}
+        if (!future.toTheBottom)
+            if (future.b >= 0) { //If sprite is falling
+                if (sprite.jumpTimer > 0) {
+                    if (sprite.jumpTimer >= 90 + 10) {
+                        // 					PK_Play_Sound(tomahdys_aani,30,(int)future.x, (int)sprite_y,
+                        // 				                  int(25050-sprite.weight*3000),true);
+                        //
+                        // 					//Game::Particles->new_particle(	PARTICLE_DUST_CLOUDS,sprite_x+rand()%5-rand()%5-10,sprite_ala+rand()%3-rand()%3,
+                        // 					//			  0,-0.2,rand()%50+20,0,0);
+                        //
+                        // 					if (rand()%7 == 1) {
+                        // 						Game::Particles->new_particle(PARTICLE_SMOKE,sprite_x+rand()%5-rand()%5-10,sprite_ala+rand()%3-rand()%3,
+                        // 									  	   0.3,-0.1,450,0,0);
+                        // 						Game::Particles->new_particle(PARTICLE_SMOKE,sprite_x+rand()%5-rand()%5-10,sprite_ala+rand()%3-rand()%3,
+                        // 									  	   -0.3,-0.1,450,0,0);
+                        // 					}
+                        //
+                        if (sprite.weight > 1)
+                            this._vibration = 34 + Math.floor(sprite.weight * 20);
+                    }
+                    
+                    sprite.jumpTimer = 0;
+                }
+                
+                future.b = 0;
+            }
         
         /*****************************************************************************************/
         /* Set correct values                                                                    */
         /*****************************************************************************************/
         
-        if (sprite_b > 4.0)
-            sprite_b = 4.0;
+        if (future.b > 4.0)
+            future.b = 4.0;
         
-        if (sprite_b < -4.0)
-            sprite_b = -4.0;
+        if (future.b < -4.0)
+            future.b = -4.0;
         
-        if (sprite_a > max_nopeus)
-            sprite_a = max_nopeus;
+        if (future.a > future.maxSpeed)
+            future.a = future.maxSpeed;
         
-        if (sprite_a < -max_nopeus)
-            sprite_a = -max_nopeus;
+        if (future.a < -future.maxSpeed)
+            future.a = -future.maxSpeed;
         
         if (sprite.energia > sprite.proto.energy)
             sprite.energia = sprite.proto.energy;
         
         if (sprite.knockTimer === 0 || sprite.pelaaja === 1) {
-            sprite_x += sprite_a;
-            sprite_y += sprite_b;
+            future.x += future.a;
+            future.y += future.b;
         }
         
         // 	if (&sprite == Game::Sprites->player || sprite.energia < 1) {
@@ -1181,15 +1167,15 @@ export class PK2Game {
         // 		sprite_b /= 1.25;
         // 	}
         
-        sprite.x = sprite_x;
-        sprite.y = sprite_y;
-        sprite.a = sprite_a;
-        sprite.b = sprite_b;
+        sprite.x = future.x;
+        sprite.y = future.y;
+        sprite.a = future.a;
+        sprite.b = future.b;
         
-        sprite.right = oikealle;
-        sprite.left = vasemmalle;
-        sprite.down = alas;
-        sprite.up = ylos;
+        sprite.toTheRight = future.toTheRight;
+        sprite.toTheLeft = future.toTheLeft;
+        sprite.toTheBottom = future.toTheBottom;
+        sprite.toTheTop = future.toTheTop;
         
         // Source comment:
         /*
@@ -1199,7 +1185,7 @@ export class PK2Game {
                   sprite.weight = 1;*/
         
         if (sprite.jumpTimer < 0)
-            sprite.down = false;
+            sprite.toTheBottom = false;
         
         // Source comment:
         //sprite.kyykky   = false;
@@ -1432,8 +1418,8 @@ export class PK2Game {
         if (sprite.x < 0)
             sprite.x = 0;
         
-        if (sprite.y < -spriteHeight)
-            sprite.y = -spriteHeight;
+        if (sprite.y < -future.height)
+            sprite.y = -future.height;
         
         if (sprite.x > PK2KARTTA_KARTTA_LEVEYS * 32)
             sprite.x = PK2KARTTA_KARTTA_LEVEYS * 32;
@@ -1441,9 +1427,9 @@ export class PK2Game {
         //if(sprite.x != sprite_x) printf("%f, %f\n", sprite.x, sprite_x);
         
         // If the sprite falls under the lower edge of the map
-        if (sprite.y > PK2KARTTA_KARTTA_KORKEUS * 32 + spriteHeight) {
+        if (sprite.y > PK2KARTTA_KARTTA_KORKEUS * 32 + future.height) {
             
-            sprite.y = PK2KARTTA_KARTTA_KORKEUS * 32 + spriteHeight;
+            sprite.y = PK2KARTTA_KARTTA_KORKEUS * 32 + future.height;
             sprite.energia = 0;
             sprite.piilota = true;
             
@@ -1451,11 +1437,11 @@ export class PK2Game {
             // 	this._vibration = 50;
         }
         
-        if (sprite.a > max_nopeus)
-            sprite.a = max_nopeus;
+        if (sprite.a > future.maxSpeed)
+            sprite.a = future.maxSpeed;
         
-        if (sprite.a < -max_nopeus)
-            sprite.a = -max_nopeus;
+        if (sprite.a < -future.maxSpeed)
+            sprite.a = -future.maxSpeed;
         
         
         /*****************************************************************************************/
@@ -2014,6 +2000,219 @@ export class PK2Game {
         // 	if (sprite.pelaaja != 0)
         // 		sprite.energia = 0;
     }
+    
+    /**
+     * Source: PK_Check_Blocks.
+     */
+    private checkBlocks(sprite: PK2Sprite, future: SpriteAttributes, block: Block) {
+        let mask_index: int;
+        
+        //If sprite is in the block
+        if (future.x <= block.right && future.x >= block.left && future.y <= block.bottom && future.y >= block.top) {
+            
+            /**********************************************************************/
+            /* Examine if block is water background                               */
+            /**********************************************************************/
+            if (block.isWater())
+                sprite.inWater = true;
+            
+            /**********************************************************************/
+            /* Examine if it touches the fire                                     */
+            /**********************************************************************/
+            if (block.code === BLOCK_TULI && this.ctx.entropy.switcher1 === 0 && sprite.knockTimer === 0) {
+                sprite.receivedDamage = 2;
+                sprite.receivedDamageType = EDamageType.VAHINKO_TULI;
+            }
+            
+            /**********************************************************************/
+            /* Examine if bloc is hideway                                         */
+            /**********************************************************************/
+            if (block.code === EBlockProtoCode.BLOCK_PIILO)
+                sprite.piilossa = true;
+            
+            /**********************************************************************/
+            /* Examine if block is the exit                                       */
+            /**********************************************************************/
+            if (block.code === EBlockProtoCode.BLOCK_LOPETUS && sprite.isPlayer()) {
+                // if (!jakso_lapaisty){
+                // 	if (PisteSound_StartMusic("music/hiscore.xm") != 0){
+                // 		PK2_error = true;
+                // 		PK2_error_msg = "Can't find hiscore.xm";
+                // 	}
+                // 	jakso_lapaisty = true;
+                // 	jaksot[jakso_indeksi_nyt].lapaisty = true;
+                // 	if (jaksot[jakso_indeksi_nyt].jarjestys == jakso)
+                // 		jakso++; //Increase level
+                // 	music_volume = settings.music_max_volume;
+                // 	music_volume_now = settings.music_max_volume - 1;
+                // }
+                console.log('FIN DEL JUEGO! :)');
+            }
+        }
+        
+        // If sprite is thouching the block
+        if (future.left <= block.right - 4 && future.right >= block.left + 4 && future.top <= block.bottom && future.bottom >= block.top + 16) {
+            /**********************************************************************/
+            /* Examine if it touches the fire                                     */
+            /**********************************************************************/
+            if (block.code === BLOCK_TULI && this.ctx.entropy.switcher1 === 0 && sprite.knockTimer === 0) {
+                sprite.receivedDamage = 2;
+                sprite.receivedDamageType = EDamageType.VAHINKO_TULI;
+            }
+        }
+        
+        // Examine if there is a block on bottom
+        if ((block.code < 80 || block.code > 139) && block.code !== EBlockProtoCode.BLOCK_ESTO_ALAS && block.code < 150) {
+            mask_index = Math.floor((future.x + future.a) - block.left);
+            
+            if (mask_index < 0)
+                mask_index = 0;
+            
+            if (mask_index > 31)
+                mask_index = 31;
+            
+            // block.top += palikkamaskit[block.code].alas[mask_index];
+            //
+            // if (block.top >= block.bottom - 2)
+            //     block.toTheBottom = EBlocks.BLOCK_TAUSTA;
+            //
+            // block.bottom -= palikkamaskit[block.code].ylos[mask_index];
+        }
+        
+        // If sprite is thouching the block (again?)
+        if (future.left <= block.right + 2 && future.right >= block.left - 2 && future.top <= block.bottom && future.bottom >= block.top) {
+            /**********************************************************************/
+            /* Examine if it is a key and touches lock wall                       */
+            /**********************************************************************/
+            if (block.code === EBlockProtoCode.BLOCK_LUKKO && sprite.proto.isKey()) {
+                //	kartta->seinat[block.vasen/32+(block.yla/32)*PK2KARTTA_KARTTA_LEVEYS] = 255;
+                //	kartta->Calculate_Edges();
+                
+                sprite.piilota = true;
+                
+                if (sprite.proto.tuhoutuminen !== EDestructionType.TUHOUTUMINEN_EI_TUHOUDU) {
+                    avaimia--;
+                    // if (avaimia < 1)
+                    // 	kartta->Open_Locks();
+                }
+                
+                //Effect::Explosion(block.vasen+16, block.yla+10, 0);
+                //PK_Play_Sound(avaa_lukko_aani,100, (int)future.x, (int)sprite_y, SOUND_SAMPLERATE, false);
+            }
+            
+            /**********************************************************************/
+            /* Make wind effects                                                  */
+            /**********************************************************************/
+            if (block.code === EBlockProtoCode.BLOCK_VIRTA_VASEMMALLE && future.toTheLeft)
+                future.a -= 0.02;
+            
+            if (block.code === EBlockProtoCode.BLOCK_VIRTA_OIKEALLE && future.toTheRight)
+                future.a += 0.02;	//0.05
+            
+            /*********************************************************************/
+            /* Examine if sprite is on the border to fall                        */
+            /*********************************************************************/
+            if (block.reuna && sprite.jumpTimer <= 0 && future.y < block.bottom && future.y > block.top) {
+                /* && sprite_ala <= block.ala+2)*/ // onko sprite tullut reunalle
+                if (future.left > block.left)
+                    sprite.reuna_vasemmalla = true;
+                
+                if (future.right < block.right)
+                    sprite.reuna_oikealla = true;
+            }
+        }
+        
+        // Examine walls on left and right
+        
+        if (future.top < block.bottom && future.bottom - 1 > block.top) {
+            if (future.right + future.a - 1 > block.left && future.left + future.a < block.right) {
+                // Examine whether the sprite going in the right side of the block.
+                if (future.right + future.a < block.right) {
+                    // Onko palikka sein�?
+                    if (block.toTheRight === EBlocks.BLOCK_SEINA) {
+                        future.toTheRight = false;
+                        
+                        if (block.code === EBlockProtoCode.BLOCK_HISSI_HORI)
+                            future.x = block.left - future.width / 2;
+                    }
+                }
+                // Examine whether the sprite going in the left side of the block.
+                if (future.left + future.a > block.left) {
+                    if (block.toTheLeft === EBlocks.BLOCK_SEINA) {
+                        future.toTheLeft = false;
+                        
+                        if (block.code === EBlockProtoCode.BLOCK_HISSI_HORI)
+                            future.x = block.right + future.width / 2;
+                    }
+                }
+            }
+        }
+        
+        future.left = future.x - future.width / 2;
+        future.right = future.x + future.width / 2;
+        
+        // Examine walls on up and down
+        if (future.left < block.right && future.right - 1 > block.left) { //Remove the left and right blocks
+            if (future.bottom + future.b - 1 >= block.top && future.top + future.b <= block.bottom) { //Get the up and down blocks
+                if (future.bottom + future.b - 1 <= block.bottom) { //Just in the sprite's foot
+                    if (block.toTheBottom === EBlocks.BLOCK_SEINA) { //If it is a wall
+                        future.toTheBottom = false;
+                        if (block.code === EBlockProtoCode.BLOCK_HISSI_VERT)
+                            future.y = block.top - future.height / 2;
+                        
+                        if (future.bottom - 1 >= block.top && future.b >= 0) {
+                            //sprite_y -= sprite_ala - block.yla;
+                            if (block.code !== EBlockProtoCode.BLOCK_HISSI_HORI) {
+                                future.y = block.top - future.height / 2;
+                            }
+                        }
+                        
+                        if (sprite.kytkinpaino >= 1) { // Sprite can press the buttons
+                            if (block.code === EBlockProtoCode.BLOCK_KYTKIN1 && this.ctx.entropy.switcher1 === 0) {
+                                this.ctx.entropy.switcher1 = KYTKIN_ALOITUSARVO;
+                                kytkin_tarina = 64;
+                                //PK_Play_Sound(kytkin_aani, 100, (int)future.x, (int)sprite_y, SOUND_SAMPLERATE, false);
+                            }
+                            
+                            if (block.code === EBlockProtoCode.BLOCK_KYTKIN2 && this.ctx.entropy.switcher2 === 0) {
+                                this.ctx.entropy.switcher2 = KYTKIN_ALOITUSARVO;
+                                kytkin_tarina = 64;
+                                //PK_Play_Sound(kytkin_aani, 100, (int)future.x, (int)sprite_y, SOUND_SAMPLERATE, false);
+                            }
+                            
+                            if (block.code === EBlockProtoCode.BLOCK_KYTKIN3 && this.ctx.entropy.switcher3 === 0) {
+                                this.ctx.entropy.switcher3 = KYTKIN_ALOITUSARVO;
+                                kytkin_tarina = 64;
+                                //PK_Play_Sound(kytkin_aani, 100, (int)future.x, (int)sprite_y, SOUND_SAMPLERATE, false);
+                            }
+                        }
+                    }
+                }
+                
+                if (future.top + future.b > block.top) {
+                    if (block.toTheTop === EBlocks.BLOCK_SEINA) {
+                        future.toTheTop = false;
+                        
+                        if (future.top < block.bottom) {
+                            if (block.code === EBlockProtoCode.BLOCK_HISSI_VERT && sprite.kyykky) {
+                                sprite.receivedDamage = 2;
+                                sprite.receivedDamageType = EDamageType.VAHINKO_ISKU;
+                            }
+                            
+                            if (block.code !== EBlockProtoCode.BLOCK_HISSI_HORI) {
+                                // Source commented:
+                                // if (sprite.kyykky)
+                                //	sprite_y = block.ala + sprite_korkeus /2;
+                                
+                                sprite.kyykky = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
     
     /**
      * Source: PK_Draw_InGame.

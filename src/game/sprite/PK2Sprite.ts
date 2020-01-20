@@ -1,3 +1,4 @@
+import { SpriteAttributes } from '@game/sprite/SpriteAttributes';
 import { SpritePrototype } from '@game/sprite/SpritePrototype';
 import { EAi } from '@game/sprite/SpriteManager';
 import { Drawable } from '@ng/drawable/Drawable';
@@ -259,7 +260,9 @@ export class PK2Sprite extends Drawable {
     
     ///  Accessors  ///
     
-    public get proto() { return this._tyyppi; }
+    public get proto() {
+        return this._tyyppi;
+    }
     
     public get x(): number {
         return this._x;
@@ -311,31 +314,44 @@ export class PK2Sprite extends Drawable {
         this._b = v;
     }
     
-    public get up(): boolean {
+    public get top(): number {
+        return this.y - this.proto.height / 2;
+    }
+    public get right(): number {
+        return this.x + this.proto.width / 2;
+    }
+    public get bottom(): number {
+        return this.y + this.proto.height / 2;
+    }
+    public get left(): number {
+        return this.x - this.proto.width / 2;
+    }
+    
+    public get toTheTop(): boolean {
         return this._ylos;
     }
-    public set up(v: boolean) {
+    public set toTheTop(v: boolean) {
         this._ylos = v;
     }
     
-    public get down(): boolean {
+    public get toTheBottom(): boolean {
         return this._alas;
     }
-    public set down(v: boolean) {
+    public set toTheBottom(v: boolean) {
         this._alas = v;
     }
     
-    public get left(): boolean {
+    public get toTheLeft(): boolean {
         return this._vasemmalle;
     }
-    public set left(v: boolean) {
+    public set toTheLeft(v: boolean) {
         this._vasemmalle = v;
     }
     
-    public get right(): boolean {
+    public get toTheRight(): boolean {
         return this._oikealle;
     }
-    public set right(v: boolean) {
+    public set toTheRight(v: boolean) {
         this._oikealle = v;
     }
     
@@ -359,6 +375,9 @@ export class PK2Sprite extends Drawable {
     
     public get pelaaja(): int {
         return this._pelaaja;
+    }
+    public isPlayer(): boolean {
+        return this._pelaaja !== 0;
     }
     
     /** @deprecated use remainingAttack1 */
@@ -470,6 +489,9 @@ export class PK2Sprite extends Drawable {
         this._emosprite = v;
     }
     
+    /**
+     * Escondido, en un espcondite
+     */
     public get piilossa(): boolean {
         return this._piilossa;
     }
@@ -495,15 +517,55 @@ export class PK2Sprite extends Drawable {
         this._aktiivinen = v;
     }
     
+    /** @deprecated use recivedDamage */
+    public get saatu_vahinko(): int {
+        return this.receivedDamage;
+    }
+    public get receivedDamage(): int {
+        return this._saatu_vahinko;
+    }
+    public set receivedDamage(v: int) {
+        this._saatu_vahinko = v;
+    }
+    
     /** @deprecated use recivedDamageType */
     public get saatu_vahinko_tyyppi(): TODO {
-        return this.recivedDamageType;
+        return this.receivedDamageType;
     }
-    public get recivedDamageType(): TODO {
+    public get receivedDamageType(): TODO {
         return this._saatu_vahinko_tyyppi;
     }
-    public set recivedDamageType(v: TODO) {
+    public set receivedDamageType(v: TODO) {
         this._saatu_vahinko_tyyppi = v;
+    }
+    
+    public getPackedAttributes(): SpriteAttributes {
+        return {
+            x: this.x,
+            y: this.y,
+            a: this.a,
+            b: this.b,
+            
+            width: this.proto.width,
+            height: this.proto.height,
+            
+            left: this.left,
+            right: this.right,
+            top: this.top,
+            bottom: this.bottom,
+            
+            inWater: this.inWater,
+            
+            maxSpeed: this.proto.maxSpeed,
+            
+            toTheRight: true,
+            toTheLeft: true,
+            toTheTop: true,
+            toTheBottom: true
+            
+            // let kartta_vasen = 0;
+            // let kartta_yla = 0;
+        };
     }
 }
 

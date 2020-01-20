@@ -321,9 +321,16 @@ export class PK2Map extends PK2MapInfo {
         return this._pelaaja_sprite;
     }
     
+    /**
+     * Returns the prototype code of the sprite placed in the specified position.<br>
+     * If there is no sprite, null is returned.
+     *
+     * @param x
+     * @param y
+     */
     public getSpriteCode(x: int, y: int): TSpriteProtoCode {
         const code = this._spritet[x + y * PK2KARTTA_KARTTA_LEVEYS];
-        return (code !== 255) ? code : 255;
+        return (code !== 255) ? code : null;
     }
     
     public getBlockTexturesLocation(): string {

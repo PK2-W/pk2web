@@ -3,6 +3,7 @@ import { GameComposition } from '@game/game/GameComposition';
 import { TextureCache } from '@game/game/TextureCache';
 import { PK2Map } from '@game/map/PK2Map';
 import { PK2Context } from '@game/PK2Context';
+import { int } from '../../support/types';
 
 /**
  * The game environment is shared with all game related elements.
@@ -34,7 +35,14 @@ export class GameEnv {
         return this._composition;
     }
     
-    ///  Accessors  ///
+    /** @deprecated tengo que buscar algo mejor */
+    public get screenWidth(): int {
+        return 800;
+    }
+    /** @deprecated tengo que buscar algo mejor */
+    public get screenHeight(): int {
+        return 600;
+    }
     
     public get map(): PK2Map {
         return this._map;
