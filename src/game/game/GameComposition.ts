@@ -1,7 +1,7 @@
 import { Drawable } from '@ng/drawable/Drawable';
 
 export class GameComposition extends Drawable {
-    private readonly _lyBackground: PIXI.Container;
+    private readonly _lyBgImage: PIXI.Container;
     private readonly _lyBgSprites: PIXI.Container;
     private readonly _lyBgParticles: PIXI.Container;
     private readonly _lyBgBlocks: PIXI.Container;
@@ -12,7 +12,7 @@ export class GameComposition extends Drawable {
     public constructor() {
         super(new PIXI.Container());
         
-        this._lyBackground = this.container.addChild(new PIXI.Container());
+        this._lyBgImage = this.container.addChild(new PIXI.Container());
         this._lyBgSprites = this.container.addChild(new PIXI.Container());
         this._lyBgParticles = this.container.addChild(new PIXI.Container());
         this._lyBgBlocks = this.container.addChild(new PIXI.Container());
@@ -20,6 +20,10 @@ export class GameComposition extends Drawable {
         this._lyParticles = this.container.addChild(new PIXI.Container());
         this._lyBlocks = this.container.addChild(new PIXI.Container());
         
+    }
+    
+    public addBgImage(obj: PIXI.DisplayObject) {
+        this._lyBgImage.addChild(obj);
     }
     
     public addBgBlock(dw: Drawable) {

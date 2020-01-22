@@ -36,6 +36,7 @@ export class Block extends BlockPrototype implements IDrawable {
         this._context = context;
         this._textureId = textureId;
         
+        this._drawable = new PIXI.Container();
         this.relayout();
     }
     
@@ -86,7 +87,7 @@ export class Block extends BlockPrototype implements IDrawable {
     ///  Graphics  ///
     
     public relayout(): void {
-        const texture = this._context.textureCache.getTexture(this._textureId, this._proto.getTextureArea());
+        const texture = this._context.textureCache.getTexture(this._textureId, this.getTextureArea());
         const tile = new PIXI.Sprite(texture);
         this._drawable.addChild(tile);
     }

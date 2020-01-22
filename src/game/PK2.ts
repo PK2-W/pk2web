@@ -2395,49 +2395,7 @@ export class PK2 extends PK2Context implements ITickable {
     //
     // 	return 0;
     // }
-    // int PK_Draw_InGame_BG(){
-    // 	int pallarx = (PkEngine::camera_x%(640*3))/3;
-    // 	int pallary = (PkEngine::camera_y%(480*3))/3;
-    //
-    // 	PisteDraw2_ScreenFill(34);//0
-    //
-    // 	if (kartta->tausta == TAUSTA_STAATTINEN){
-    // 		PisteDraw2_Image_Clip(kartta->taustakuva_buffer,0,0);
-    // 		PisteDraw2_Image_Clip(kartta->taustakuva_buffer,640,0);
-    // 	}
-    //
-    // 	if (kartta->tausta == TAUSTA_PALLARX_HORI){
-    // 		PisteDraw2_Image_Clip(kartta->taustakuva_buffer,0   - pallarx,0);
-    // 		PisteDraw2_Image_Clip(kartta->taustakuva_buffer,640 - pallarx,0);
-    //
-    // 		if (screen_width > 640)
-    // 			PisteDraw2_Image_Clip(kartta->taustakuva_buffer,640*2 - pallarx,0);
-    // 	}
-    //
-    // 	if (kartta->tausta == TAUSTA_PALLARX_VERT){
-    // 		PisteDraw2_Image_Clip(kartta->taustakuva_buffer,0,0   - pallary);
-    // 		PisteDraw2_Image_Clip(kartta->taustakuva_buffer,0,480 - pallary);
-    //
-    // 		if (screen_width > 640){
-    // 			PisteDraw2_Image_Clip(kartta->taustakuva_buffer,640,0   - pallary);
-    // 			PisteDraw2_Image_Clip(kartta->taustakuva_buffer,640,480 - pallary);
-    // 		}
-    // 	}
-    //
-    // 	if (kartta->tausta == TAUSTA_PALLARX_VERT_JA_HORI){
-    // 		PisteDraw2_Image_Clip(kartta->taustakuva_buffer,0   - pallarx, 0-pallary);
-    // 		PisteDraw2_Image_Clip(kartta->taustakuva_buffer,640 - pallarx, 0-pallary);
-    // 		PisteDraw2_Image_Clip(kartta->taustakuva_buffer,0   - pallarx, 480-pallary);
-    // 		PisteDraw2_Image_Clip(kartta->taustakuva_buffer,640 - pallarx, 480-pallary);
-    //
-    // 		if (screen_width > 640){
-    // 			PisteDraw2_Image_Clip(kartta->taustakuva_buffer,640*2 - pallarx,0-pallary);
-    // 			PisteDraw2_Image_Clip(kartta->taustakuva_buffer,640*2 - pallarx,480-pallary);
-    // 		}
-    // 	}
-    //
-    // 	return 0;
-    // }
+  
     //
     // int PK_Draw_InGame_Gifts(){
     // 	int x,y;

@@ -332,8 +332,6 @@ export class BlockManager {
      * @throws ResourceFetchError
      */
     public async loadTextures(fpath: string, fname: string): Promise<void> {
-        //     int i;
-        //     int img;
         let uri: string;
         let found: boolean;
         let image: HTMLImageElement;

@@ -1,6 +1,7 @@
 import { ResourceFetchError } from '@ng/error/ResourceFetchError';
 import { ResourceNotFoundError } from '@ng/error/ResourceNotFoundError';
 import { Binary } from '@ng/support/Binary';
+import { Log } from '@ng/support/log/LoggerImpl';
 
 export class PkAssetTk {
     private constructor() {
@@ -34,6 +35,7 @@ export class PkAssetTk {
                 const url = URL.createObjectURL(blob);
                 const image = new Image();
                 image.onload = () => {
+                    Log.d('Loaded image: ' + uri);
                     resolve(image);
                 };
                 image.src = url;
@@ -99,7 +101,7 @@ export class PkAssetTk {
                     if (req.status === 200) {
                         return resolve(format === XHR_FMT.TEXT ? req.responseText : req.response);
                     } else if (req.status === 404) {
-                        return reject(new ResourceNotFoundError(uri));
+                        return reject(new ResourceNotFoundError(null, uri));
                     } else {
                         return reject(new ResourceFetchError(uri, 'status: ' + req.status));
                     }

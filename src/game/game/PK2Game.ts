@@ -7,7 +7,7 @@ import {
     PK2KARTTA_KARTTA_KORKEUS,
     PK2Map,
     BLOCK_TULI,
-    KYTKIN_ALOITUSARVO
+    KYTKIN_ALOITUSARVO, EBgMovement
 } from '@game/map/PK2Map';
 import { PK2Context } from '@game/PK2Context';
 import { PK2Sprite, EDamageType, EDestructionType } from '@game/sprite/PK2Sprite';
@@ -17,7 +17,11 @@ import { EProtoType } from '@game/sprite/SpritePrototype';
 import { Block, EBlocks } from '@game/tile/Block';
 import { EBlockProtoCode } from '@game/tile/BlockConstants';
 import { BlockManager } from '@game/tile/BlockManager';
-import { MAX_SPRITES, PK2GAMELOOP } from '../../support/constants';
+import { ResourceNotFoundError } from '@ng/error/ResourceNotFoundError';
+import { pathJoin } from '@ng/support/utils';
+import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
+import { PkTextureTk } from '@ng/toolkit/PkTextureTk';
+import { MAX_SPRITES, PK2GAMELOOP, RESOURCES_PATH } from '../../support/constants';
 import { int, rand, bool, uint, DWORD } from '../../support/types';
 
 export class PK2Game {
@@ -28,13 +32,12 @@ export class PK2Game {
     /** Level completed */
     private _jakso_lapaisty: boolean = false;
     
+    private _bgImage: PIXI.Container;
     // PK2BLOCKMASKI palikkamaskit[BLOCK_MAX_MASKEJA];
     // PK2::Particle_System* Particles;
     private _sprites: SpriteManager;
     private _gifts: GiftManager;
     private _blocks: BlockManager;
-    
-    private _composition: GameComposition;
     
     // PK2Kartta* current_map;
     // char map_path[PE_PATH_SIZE];
@@ -81,7 +84,6 @@ export class PK2Game {
                 this._composition.addSprite(sprite);
             }
         }, this);
-        
     }
     
     /**
@@ -101,6 +103,8 @@ export class PK2Game {
             this._jakso_lapaisty = false;
             
             /////  Source: PK_Map_Open --------
+            
+            this.loadBgImage(this.map.fpath, this.map.bgImageFilename);
             
             // PND	PK_New_Save();
             
@@ -145,6 +149,9 @@ export class PK2Game {
             
             /////  --------
             
+            // Background image
+            this.addBackground();
+            
             // Prepare blocks
             this._blocks.generatePrototypes();
             await this._blocks.loadTextures(this.map.fpath, this.map.getBlockTexturesLocation());
@@ -181,7 +188,8 @@ export class PK2Game {
             // PK_Fadetext_Update();
         }
         
-        // 	PK_Draw_InGame();
+        // 	PK_Draw_InGame(); ¬
+        this.updateBackground();
         
         this._blocks.calculateMovableBlocksPosition();
         
@@ -368,6 +376,52 @@ export class PK2Game {
         this._sprites.player.y = playerPosY;
         this._cameraY = Math.floor(playerPosY);
         this._dcameraY = playerPosY;
+    }
+    
+    private async loadBgImage(fpath: string, fname: string): void {
+        let uri: string;
+        let found: boolean;
+        let image: HTMLImageElement;
+        let baseTexture: PIXI.BaseTexture;
+        
+        // First, try to fetch the resource from provided location
+        uri = pathJoin(pathJoin(RESOURCES_PATH, fpath), fname);
+        try {
+            image = await PkAssetTk.getImage(uri);
+            found = true;
+        } catch (err) {
+            if (!(err instanceof ResourceNotFoundError)) {
+                // TODO: Improve
+                throw err;
+            }
+        }
+        
+        // If not found, try to fetch the resource from default location
+        if (!found) {
+            uri = pathJoin(pathJoin(RESOURCES_PATH, 'gfx/scenery/'), fname);
+            
+            try {
+                image = await PkAssetTk.getImage(uri);
+            } catch (err) {
+                throw err;
+            }
+        }
+        
+        // for (x=0;x<640;x++)
+        //     for (y=0;y<480;y++)
+        //     {
+        //         color = buffer[x+y*leveys];
+        //
+        //         if (color == 255)
+        //             color--;
+        //
+        //         buffer[x+y*leveys] = color;
+        //     }
+        
+        // Create the base texture
+        baseTexture = PkTextureTk.imageToBaseTexture(image);
+        
+        this.ctx.textureCache.add(TEXTURE_ID_BGIMAGE, baseTexture);
     }
     
     /**
@@ -2290,6 +2344,44 @@ export class PK2Game {
         // palikka_animaatio = 1 + palikka_animaatio % 34;
     }
     
+    /**
+     * Source: PK_Draw_InGame_BG (1/2).
+     */
+    private addBackground(): void {
+        const texture = this._enviroment.textureCache.getTexture(TEXTURE_ID_BGIMAGE);
+        this._bgImage = new PIXI.extras.TilingSprite(texture, this.ctx.screenWidth, this.ctx.screenHeight);
+        this._enviroment.composition.addBgImage(this._bgImage);
+        
+        this.updateBackground();
+    }
+    
+    /**
+     * Source: PK_Draw_InGame_BG (2/2).
+     */
+    private updateBackground(): void {
+        let pallarx: int = (this._cameraX % (640 * 3)) / 3;
+        let pallary: int = (this._cameraY % (480 * 3)) / 3;
+        
+        switch (this.map.bgMovement) {
+        case EBgMovement.TAUSTA_STAATTINEN:
+            this._bgImage.x = 0;
+            this._bgImage.y = 0;
+            break;
+        case EBgMovement.TAUSTA_PALLARX_HORI:
+            this._bgImage.x = -pallarx;
+            this._bgImage.y = 0;
+            break;
+        case EBgMovement.TAUSTA_PALLARX_VERT:
+            this._bgImage.x = 0;
+            this._bgImage.y = -pallary;
+            break;
+        case EBgMovement.TAUSTA_PALLARX_VERT_JA_HORI:
+            this._bgImage.x = -pallarx;
+            this._bgImage.y = -pallary;
+            break;
+        }
+    }
+    
     ///  Accessors  ///
     
     public get ctx(): GameEnv {
@@ -2300,3 +2392,6 @@ export class PK2Game {
         return this.ctx.map;
     }
 }
+
+export const TEXTURE_ID_BGIMAGE = 'PK·BGIMAGE';
+export const TEXTURE_ID_BLOCKS = 'PK·BLOCKS';

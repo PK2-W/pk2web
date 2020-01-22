@@ -46,7 +46,7 @@ export class TextureCache {
             }
             
             // Create the requested texture
-            texture = new PIXI.Texture(bt, area.getNative() as PIXI.Rectangle);
+            texture = new PIXI.Texture(bt, (area != null ? area.getNative() : null) as PIXI.Rectangle);
             
             // Cache the texture
             this._textures.set(key, texture);

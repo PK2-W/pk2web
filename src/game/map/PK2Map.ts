@@ -33,7 +33,7 @@ export class PK2Map extends PK2MapInfo {
     public _ilma: int;				// map climate
     public _aika: int;				// map time
     public _extra: BYTE;				// extra config - not used
-    public _tausta: BYTE;				// bg movemant type
+    public _tausta: EBgMovement;				// bg movemant type
     public _kytkin1_aika: uint;		// button 1 time - not used
     public _kytkin2_aika: uint;		// button 2 time - not used
     public _kytkin3_aika: uint;		// button 3 time - not used
@@ -49,8 +49,11 @@ export class PK2Map extends PK2MapInfo {
     public _protot: CVect<str<13>> = cvect(PK2KARTTA_KARTTA_MAX_PROTOTYYPPEJA);
     public _reunat: bool[] = new Array(PK2KARTTA_KARTTA_KOKO); // map edges - calculated during game
     
+    /** @deprecated Map stores data only. */
     public _palikat_buffer: int;		// index of block palette
+    /** @deprecated Map stores data only. */
     public _taustakuva_buffer: int;	// index of bg image
+    /** @deprecated Map stores data only. */
     public _palikat_vesi_buffer: int; // index of water palette
     
     public _x: int;					// map icon pos
@@ -305,6 +308,14 @@ export class PK2Map extends PK2MapInfo {
         return this._version;
     }
     
+    public get bgImageFilename(): string {
+        return this._taustakuva;
+    }
+    
+    public get bgMovement(): EBgMovement {
+        return this._tausta;
+    }
+    
     
     ///  Advanced accessors  ///
     
@@ -383,7 +394,9 @@ export const ILMA_METSA: BYTE = 2;
 export const ILMA_SADEMETSA: BYTE = 3;
 export const ILMA_LUMISADE: BYTE = 4;
 
-export const TAUSTA_STAATTINEN: BYTE = 0;
-export const TAUSTA_PALLARX_VERT: BYTE = 1;
-export const TAUSTA_PALLARX_HORI: BYTE = 2;
-export const TAUSTA_PALLARX_VERT_JA_HORI: BYTE = 3;
+export enum EBgMovement {
+    TAUSTA_STAATTINEN,
+    TAUSTA_PALLARX_VERT,
+    TAUSTA_PALLARX_HORI,
+    TAUSTA_PALLARX_VERT_JA_HORI
+}

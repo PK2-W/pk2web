@@ -11,6 +11,7 @@
     "webpack-notifier": "^1.7.0",
     "ts-loader": "^5.3.3",
     "eslint": "^6.8.0",
+    "pixi.js": "^4.8.9",
     "typescript": "^3.4.2",
     "fork-ts-checker-webpack-plugin": "^1.0.2",
     "hotkeys-js": "^3.6.2",

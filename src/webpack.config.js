@@ -8,7 +8,7 @@ module.exports = {
     entry: path.join(__dirname, 'pk2w.ts'),
     mode: 'development',
     watch: true,
-    devtool: 'inline-source-map',
+    devtool: 'source-map',
     optimization: {
         removeAvailableModules: false,
         removeEmptyChunks: false,
