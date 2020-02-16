@@ -1,7 +1,9 @@
 import { ResourceFetchError } from '@ng/error/ResourceFetchError';
 import { ResourceNotFoundError } from '@ng/error/ResourceNotFoundError';
-import { Binary } from '@ng/support/Binary';
+import { PkImageImpl } from '@ng/types/pixi/PkImageImpl';
+import { PkBinary } from '@ng/types/PkBinary';
 import { Log } from '@ng/support/log/LoggerImpl';
+import { PkImage } from '@ng/types/PkImage';
 
 export class PkAssetTk {
     private constructor() {
@@ -23,11 +25,11 @@ export class PkAssetTk {
         return await PkAssetTk.xhrGet(uri, XHR_FMT.BINARY);
     }
     
-    public static async getBinary(uri: string): Promise<Binary> {
-        return new Binary(await this.getArrayBuffer(uri));
+    public static async getBinary(uri: string): Promise<PkBinary> {
+        return new PkBinary(await this.getArrayBuffer(uri));
     }
     
-    public static async getImage(uri: string): Promise<HTMLImageElement> {
+    public static async getImage(uri: string): Promise<PkImage> {
         return new Promise(async (resolve, reject) => {
             try {
                 const blob = await this.getBlob(uri);
@@ -36,7 +38,7 @@ export class PkAssetTk {
                 const image = new Image();
                 image.onload = () => {
                     Log.d('Loaded image: ' + uri);
-                    resolve(image);
+                    resolve(PkImageImpl.from(image)); //TODO Generalizar
                 };
                 image.src = url;
             } catch (err) {

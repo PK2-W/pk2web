@@ -1,5 +1,5 @@
 import { RESOURCES_PATH } from '../../support/constants';
-import * as PIXI from '../../vendor/pixi';
+import * as PIXI from 'pixi.js';
 import { PK2wLoader } from './PK2wLoader';
 
 export class PK2wImageLoader extends PK2wLoader {
@@ -45,7 +45,7 @@ export class PK2wImageLoader extends PK2wLoader {
                 this._texture = new PIXI.BaseTexture(this.__canvas);
                 
                 // In case of instant load
-                if (this._texture.hasLoaded) {
+                if (this._texture.valid) {
                     return resolve(this);
                 }
                 

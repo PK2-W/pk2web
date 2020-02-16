@@ -1,4 +1,4 @@
-import { settings } from '../vendor/pixi';
+import { settings } from 'pixi.js';
 import { str, bool, uint, BYTE, int } from './types';
 
 export class PK2Settings {
@@ -9,11 +9,11 @@ export class PK2Settings {
         return tmp.loadFromClient();
     }
     
-    constructor() {
+    public constructor() {
         this.initialize();
     }
     
-    public initialize() {
+    public initialize(): void {
         // settings={
         // };
     }

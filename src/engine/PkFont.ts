@@ -3,8 +3,8 @@
 //by Janne Kivilahti from Piste Gamez
 //#########################
 
+import * as PIXI from 'pixi.js';
 import { int, FONTID } from '../support/types';
-import * as PIXI from '../vendor/pixi';
 import { PK2wImageLoader } from './support/PK2wImageLoader';
 import { PkParamLoader } from './support/PkParamLoader';
 

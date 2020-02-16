@@ -1,4 +1,4 @@
-import * as PIXI from '@vendor/pixi';
+import * as PIXI from 'pixi.js';
 import { PK2wImageLoader } from '../../../engine/support/PK2wImageLoader';
 import { RESOURCES_PATH } from '../../../support/constants';
 import { clipTSprite } from '../../../engine/drawable/DwHelper';

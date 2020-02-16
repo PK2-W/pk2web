@@ -6,7 +6,7 @@ import { clipTSprite } from '@ng/drawable/DwHelper';
 import { PkScreen } from '@ng/screen/PkScreen';
 import { PkUIComponent } from '@ng/screen/PkUIComponent';
 import { PK2wImageLoader } from '@ng/support/PK2wImageLoader';
-import * as PIXI from '@vendor/pixi';
+import * as PIXI from 'pixi.js';
 import { int } from '../../../support/types';
 import { PK2Context } from '../../PK2Context';
 import { TX } from '../../texts';

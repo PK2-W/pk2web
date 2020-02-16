@@ -2,10 +2,10 @@ const path = require('path');
 const WebpackNotifierPlugin = require('webpack-notifier');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 
-const to = p => path.resolve(__dirname, p);
+const to = p => path.resolve(__dirname, 'src', p);
 
 module.exports = {
-    entry: path.join(__dirname, 'pk2w.ts'),
+    entry: to('pk2w.ts'),
     mode: 'development',
     watch: true,
     devtool: 'source-map',
@@ -16,7 +16,7 @@ module.exports = {
     },
     output: {
         pathinfo: false,
-        path: path.join(__dirname, '../dist/pk2w'),
+        path: path.join(__dirname, 'dist/pk2w'),
         filename: 'pk2web.min.js',
         libraryTarget: 'umd'
     },
@@ -39,7 +39,7 @@ module.exports = {
     },
     module: {
         rules: [
-            {test: /\.tsx?$/, loader: 'ts-loader', options: {transpileOnly: true}}
+            { test: /\.tsx?$/, loader: 'ts-loader', options: { transpileOnly: true } }
             //{test: /\.(vert|frag)$/, loader: 'glslx-loader'}
         ]
     },
@@ -49,7 +49,7 @@ module.exports = {
             alwaysNotify: true,
             sound: 'Pop'
         }),
-        new ForkTsCheckerWebpackPlugin()
+        new ForkTsCheckerWebpackPlugin({ tsconfig: to('tsconfig.json') })
     ],
     externals: {}
 };

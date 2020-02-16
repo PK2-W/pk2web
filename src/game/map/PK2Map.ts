@@ -1,7 +1,7 @@
 import { PK2Context } from '@game/PK2Context';
 import { TSpriteProtoCode } from '@game/sprite/SpritePrototype';
 import { TBlockProtoCode } from '@game/tile/BlockPrototype';
-import { Binary } from '@ng/support/Binary';
+import { PkBinary } from '@ng/types/PkBinary';
 import { str2num, pathJoin } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { str, int, BYTE, uint, CVect, cvect, bool, DWORD, rand } from '../../support/types';
@@ -14,7 +14,7 @@ export class PK2Map extends PK2MapInfo {
     private _context: PK2Context;
     private _fpath: string;
     private _fname: string;
-    private _raw: Binary;
+    private _raw: PkBinary;
     
     /** Map version. */
     private _version: str<5>;
@@ -188,7 +188,7 @@ export class PK2Map extends PK2MapInfo {
         korkeus = str2num(this._raw.streamRead8CStr(8));
         for (let y = aloitus_y; y <= aloitus_y + korkeus; y++) {	// Luetaan alue tile by tile
             for (let x = aloitus_x; x <= aloitus_x + leveys; x++) {
-                tile = this._raw.streamRead8CStr(1);
+                tile = this._raw.streamRead8Byte();
                 this._seinat[x + y * PK2KARTTA_KARTTA_LEVEYS] = tile;
             }
         }
@@ -200,8 +200,8 @@ export class PK2Map extends PK2MapInfo {
         korkeus = str2num(this._raw.streamRead8CStr(8));
         for (let y = aloitus_y; y <= aloitus_y + korkeus; y++) {	// Luetaan alue tile by tile
             for (let x = aloitus_x; x <= aloitus_x + leveys; x++) {
-                tile = this._raw.streamRead8CStr(1);
-                this._spritet[x + y * PK2KARTTA_KARTTA_LEVEYS] = tile.charCodeAt(0);
+                tile = this._raw.streamRead8Byte();
+                this._spritet[x + y * PK2KARTTA_KARTTA_LEVEYS] = tile;
             }
         }
         
@@ -322,6 +322,11 @@ export class PK2Map extends PK2MapInfo {
     public getBgBlockCode(i: number, j: number): TBlockProtoCode {
         const idx = i /*+ kartta_x*/ + (j /*+ kartta_y*/) * PK2KARTTA_KARTTA_LEVEYS;
         return this._taustat[idx];
+    }
+    
+    public getFgBlockCode(i: number, j: number): TBlockProtoCode {
+        const idx = i /*+ kartta_x*/ + (j /*+ kartta_y*/) * PK2KARTTA_KARTTA_LEVEYS;
+        return this._seinat[idx];
     }
     
     public getProto(i: int): str<13> {

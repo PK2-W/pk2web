@@ -1,9 +1,9 @@
 import { SpriteAttributes } from '@game/sprite/SpriteAttributes';
-import { SpritePrototype } from '@game/sprite/SpritePrototype';
 import { EAi } from '@game/sprite/SpriteManager';
+import { SpritePrototype } from '@game/sprite/SpritePrototype';
 import { Drawable } from '@ng/drawable/Drawable';
-import { SPRITE_MAX_AI } from '../../support/constants';
-import { int, BYTE, bool } from '../../support/types';
+import * as PIXI from 'pixi.js';
+import { int, BYTE } from '../../support/types';
 
 export class PK2Sprite extends Drawable {
     private _aktiivinen: boolean;			// true / false
@@ -141,6 +141,15 @@ export class PK2Sprite extends Drawable {
             this._vihollinen = proto.isEnemy();
             this._ammus1 = proto.ammus1;
             this._ammus2 = proto.ammus2;
+            
+            this._drawable.removeChildren();
+            const graphics = new PIXI.Graphics();
+            if (isPlayer)
+                graphics.lineStyle(3, 0xbb0000, 0.75);
+            else
+                graphics.lineStyle(2, 0xce1de5, 0.6);
+            graphics.drawRect(-proto.width / 2, -proto.height / 2, proto.width, proto.height);
+            this._drawable.addChild(graphics);
         }
     }
     
@@ -269,6 +278,7 @@ export class PK2Sprite extends Drawable {
     }
     public set x(v: number) {
         this._x = v;
+        this._drawable.x = v;
     }
     
     /** @deprecated use initialX */
@@ -298,6 +308,7 @@ export class PK2Sprite extends Drawable {
     }
     public set y(v: number) {
         this._y = v;
+        this._drawable.y = v;
     }
     
     public get a(): number {

@@ -1,4 +1,4 @@
-import * as PIXI from '@vendor/pixi';
+import * as PIXI from 'pixi.js';
 import { EventEmitter } from 'eventemitter3';
 import { minmax } from '../support/utils';
 import { DwHelper } from './DwHelper';

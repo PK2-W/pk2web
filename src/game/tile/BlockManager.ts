@@ -1,4 +1,5 @@
 import { GameEnv } from '@game/game/GameEnv';
+import { TEXTURE_ID_BLOCKS } from '@game/game/PK2Game';
 import {
     BLOCK_KYTKIN1,
     BLOCK_KYTKIN3,
@@ -12,14 +13,18 @@ import {
     PK2KARTTA_KARTTA_LEVEYS,
     PK2KARTTA_KARTTA_KORKEUS
 } from '@game/map/PK2Map';
-import { BLOCK_RAW_SIZE, BLOCK_SIZE } from '@game/tile/BlockConstants';
+import { Block } from '@game/tile/Block';
+import { BLOCK_RAW_SIZE, BLOCK_SIZE, EBlockProtoCode, BLOCK_TYPES } from '@game/tile/BlockConstants';
 import { BlockContext } from '@game/tile/BlockContext';
 import { BlockPrototype, TBlockProtoCode } from '@game/tile/BlockPrototype';
-import { Block } from '@game/tile/Block';
+import { DwBlock } from '@game/tile/DwBlock';
 import { ResourceNotFoundError } from '@ng/error/ResourceNotFoundError';
 import { Log } from '@ng/support/log/LoggerImpl';
-import { pathJoin, generate2DMatrix } from '@ng/support/utils';
+import { pathJoin, generate2DMatrix, ifnul } from '@ng/support/utils';
+import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { PkTextureTk } from '@ng/toolkit/PkTextureTk';
+import { PkImage } from '@ng/types/PkImage';
+import { MAX_BLOCK_MASKS, RESOURCES_PATH } from '../../support/constants';
 import { int, CVect, cvect } from '../../support/types';
 
 export class BlockManager {
@@ -27,28 +32,29 @@ export class BlockManager {
     private readonly _ctx: GameEnv;
     
     //PALIKAT JA MASKIT
-    private _palikat: CVect<Block> = cvect(300);
+    private _palikat: CVect<DwBlock> = cvect(300);
     /** Source: lasketut_palikat */
     private _prototypes: CVect<BlockPrototype> = cvect(150);
     
     // Context to share with blocks
     private readonly _blockCtx: BlockContext;
-    // Id in cache of the textures sheet // TODO -> Puede ser constante
-    private _texturesId: string;
     // Map-matrix for the background blocks
-    private readonly _bgBlocks: Block[][];
+    private readonly _bgBlocks: DwBlock[];
     // Map-matrix for the foreground blocks
-    private readonly _fgBlocks: Block[][];
+    private readonly _fgBlocks: DwBlock[];
+    // Map-matrix for the edge blocks (?)
+    private readonly _edges: boolean[];
     
     public constructor(ctx: GameEnv) {
         this._ctx = ctx;
         
         this._blockCtx = new BlockContext(this._ctx);
-        this._bgBlocks = generate2DMatrix(PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS);
-        this._fgBlocks = generate2DMatrix(PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS);
+        this._bgBlocks = new Array(PK2KARTTA_KARTTA_LEVEYS * PK2KARTTA_KARTTA_KORKEUS).fill(null);
+        this._fgBlocks = new Array(PK2KARTTA_KARTTA_LEVEYS * PK2KARTTA_KARTTA_KORKEUS).fill(null);
+        this._edges = new Array(PK2KARTTA_KARTTA_LEVEYS * PK2KARTTA_KARTTA_KORKEUS).fill(null);
     }
     
-    public placeBgBlocks() {
+    public placeBgBlocks(): void {
         for (let i = 0; i < PK2KARTTA_KARTTA_LEVEYS; i++) {
             for (let j = 0; j < PK2KARTTA_KARTTA_KORKEUS; j++) {
                 // Get prototype from map
@@ -58,17 +64,15 @@ export class BlockManager {
                     const proto = this.getProto(code);
                     
                     // Create the block at the correct position
-                    const block = new Block(this._blockCtx, proto, this._texturesId);
-                    block.x = i * BLOCK_SIZE;
-                    block.y = j * BLOCK_SIZE;
+                    const block = new DwBlock(this._blockCtx, proto, i, j, TEXTURE_ID_BLOCKS);
                     
                     // Add to the game
-                    this.setBgBlock(i, j, block);
+                    this.setBgBlock(block);
                 }
             }
         }
         
-        console.log('Bg blocks placed.');
+        console.log('BG Blocks placed.');
         
         // for (int x=-1;x<ruudun_leveys_palikoina;x++){
         //     for (int y=0;y<ruudun_korkeus_palikoina;y++){
@@ -93,6 +97,181 @@ export class BlockManager {
         // }
     }
     
+    /**
+     * Source: PK2Kartta::Piirra_Seinat.
+     */
+    public placeFgBlocks(): void {
+        for (let i = 0; i < PK2KARTTA_KARTTA_LEVEYS; i++) {
+            for (let j = 0; j < PK2KARTTA_KARTTA_KORKEUS; j++) {
+                // Get prototype from map
+                const code = this._ctx.map.getFgBlockCode(i, j);
+                
+                if (code !== 255) {
+                    const proto = this.getProto(code);
+                    
+                    // Create the block at the correct position
+                    const block = new DwBlock(this._blockCtx, proto, i, j, TEXTURE_ID_BLOCKS);
+                    
+                    // Add to the game
+                    this.setFgBlock(block);
+                }
+            }
+        }
+        
+        console.log('FG Blocks placed.');
+        
+        // //int PK2Kartta::Piirra_Seinat(int kamera_x, int kamera_y, bool editor){
+        //     int palikka;
+        //     int px = 0,
+        //         py = 0,
+        //         ay = 0,
+        //         ax = 0,
+        //         by = 0, bx = 0,
+        //         kartta_x = kamera_x/32,
+        //         kartta_y = kamera_y/32;
+        //
+        //     int ajastin1_y = 0,
+        //         ajastin2_y = 0,
+        //         ajastin3_x = 0;
+        //
+        //     if (ajastin1 > 0){
+        //         ajastin1_y = 64;
+        //
+        //         if (ajastin1 < 64)
+        //             ajastin1_y = ajastin1;
+        //
+        //         if (ajastin1 > KYTKIN_ALOITUSARVO-64)
+        //             ajastin1_y = KYTKIN_ALOITUSARVO - ajastin1;
+        //     }
+        //
+        //     if (ajastin2 > 0){
+        //         ajastin2_y = 64;
+        //
+        //         if (ajastin2 < 64)
+        //             ajastin2_y = ajastin2;
+        //
+        //         if (ajastin2 > KYTKIN_ALOITUSARVO-64)
+        //             ajastin2_y = KYTKIN_ALOITUSARVO - ajastin2;
+        //     }
+        //
+        //     if (ajastin3 > 0){
+        //         ajastin3_x = 64;
+        //
+        //         if (ajastin3 < 64)
+        //             ajastin3_x = ajastin3;
+        //
+        //         if (ajastin3 > KYTKIN_ALOITUSARVO-64)
+        //             ajastin3_x = KYTKIN_ALOITUSARVO - ajastin3;
+        //     }
+        //
+        //
+        //     for (int x=-1; x < ruudun_leveys_palikoina + 1; x++){
+        //         for (int y=-1; y < ruudun_korkeus_palikoina + 1; y++){
+        //             if (x + kartta_x < 0 || x + kartta_x > PK2KARTTA_KARTTA_LEVEYS) continue;
+        //             if (y + kartta_y < 0 || y + kartta_y > PK2KARTTA_KARTTA_KORKEUS) continue;
+        //
+        //             int i = x + kartta_x + (y + kartta_y)*PK2KARTTA_KARTTA_LEVEYS;
+        //             if(i<0 || i >= sizeof(seinat)) continue; //Dont access a not allowed address
+        //
+        //             palikka = seinat[i];
+        //
+        //             if (palikka != 255 && !(!editor && palikka == BLOCK_ESTO_ALAS)){
+        //                 px = ((palikka%10)*32);
+        //                 py = ((palikka/10)*32);
+        //                 ay = 0;
+        //                 ax = 0;
+        //
+        //                 if (!editor){
+        //                     if (palikka == BLOCK_HISSI_VERT)
+        //                         ay = (int)kartta_sin_table[aste%360];
+        //
+        //                     if (palikka == BLOCK_HISSI_HORI)
+        //                         ax = (int)kartta_cos_table[aste%360];
+        //
+        //                     if (palikka == BLOCK_KYTKIN1)
+        //                         ay = ajastin1_y/2;
+        //
+        //                     if (palikka == BLOCK_KYTKIN2_YLOS)
+        //                         ay = -ajastin2_y/2;
+        //
+        //                     if (palikka == BLOCK_KYTKIN2_ALAS)
+        //                         ay = ajastin2_y/2;
+        //
+        //                     if (palikka == BLOCK_KYTKIN2)
+        //                         ay = ajastin2_y/2;
+        //
+        //                     if (palikka == BLOCK_KYTKIN3_OIKEALLE)
+        //                         ax = ajastin3_x/2;
+        //
+        //                     if (palikka == BLOCK_KYTKIN3_VASEMMALLE)
+        //                         ax = -ajastin3_x/2;
+        //
+        //                     if (palikka == BLOCK_KYTKIN3)
+        //                         ay = ajastin3_x/2;
+        //                 }
+        //
+        //                 if (palikka == BLOCK_ANIM1 || palikka == BLOCK_ANIM2 || palikka == BLOCK_ANIM3 || palikka == BLOCK_ANIM4)
+        //                     px += animaatio * 32;
+        //
+        //                 PisteDraw2_Image_CutClip(palikat_buffer, x*32-(kamera_x%32)+ax, y*32-(kamera_y%32)+ay, px, py, px+32, py+32);
+        //             }
+        //         }
+    }
+    
+    /**
+     * Source: PK2Kartta::Calculate_Edges.
+     */
+    public calculateEdges() {
+        let block: DwBlock;
+        let tile1: TBlockProtoCode;
+        let tile2: TBlockProtoCode;
+        let tile3: TBlockProtoCode;
+        let isEdge: boolean;
+        
+        //     memset(this->reunat, false, sizeof(this->reunat));
+        
+        for (let x = 1; x < PK2KARTTA_KARTTA_LEVEYS - 1; x++) {
+            for (let y = 0; y < PK2KARTTA_KARTTA_KORKEUS - 1; y++) {
+                isEdge = false;
+                
+                tile1 = this.getFgBlockCode(x, y);
+                
+                //TODO
+                // if (tile1 >= BLOCK_TYPES)
+                //     this->seinat[x+y*PK2KARTTA_KARTTA_LEVEYS] = 255;
+                
+                tile2 = this.getFgBlockCode(x, y + 1);              // Bottom
+                
+                tile1 = (tile1 > 79 || tile1 === EBlockProtoCode.BLOCK_ESTO_ALAS) ? tile1 = 1 : tile1 = 0;
+                tile2 = (tile2 > 79) ? tile2 = 1 : tile2 = 0;
+                
+                if (tile1 === 1 && tile2 === 1) {
+                    tile1 = this.getFgBlockCode(x + 1, y + 1);   // Right bottom
+                    tile2 = this.getFgBlockCode(x - 1, y + 1);   // Left bottom
+                    
+                    tile1 = (tile1 < 80 && !(tile1 < 60 && tile1 > 49)) ? 1 : 0;
+                    tile2 = (tile2 < 80 && !(tile2 < 60 && tile2 > 49)) ? 1 : 0;
+                    
+                    if (tile1 === 1) {
+                        tile3 = this.getFgBlockCode(x + 1, y);      // Right
+                        
+                        if (tile3 > 79 || (tile3 < 60 && tile3 > 49) || tile3 === EBlockProtoCode.BLOCK_ESTO_ALAS)
+                            isEdge = true;
+                    }
+                    
+                    if (tile2 === 1) {
+                        tile3 = this.getFgBlockCode(x - 1, y);      // Left
+                        
+                        if (tile3 > 79 || (tile3 < 60 && tile3 > 49) || tile3 === EBlockProtoCode.BLOCK_ESTO_ALAS)
+                            isEdge = true;
+                    }
+                    
+                    this.setEdge(x, y, isEdge);
+                    //this->taustat[x+y*PK2KARTTA_KARTTA_LEVEYS] = 49; //Debug
+                }
+            }
+        }
+    }
     
     // void     PK_Block_Set_Barriers(PK2BLOCK &palikka) {
     //     palikka.tausta = false;
@@ -232,7 +411,7 @@ export class BlockManager {
      * Source: PK_Calculate_Tiles.
      */
     public generatePrototypes(): void {
-        const xx = BlockPrototype.generatePrecalculatedBlocks(); //TODO SAVE
+        const xx = BlockPrototype.generatePrototypes(this._blockCtx); //TODO SAVE
         for (let i = 0; i < 150; i++) {
             this._prototypes[i] = xx[i];
         }
@@ -334,13 +513,13 @@ export class BlockManager {
     public async loadTextures(fpath: string, fname: string): Promise<void> {
         let uri: string;
         let found: boolean;
-        let image: HTMLImageElement;
+        let image: PkImage;
         let baseTexture: PIXI.BaseTexture;
         
         // First, try to fetch the resource from provided location
         uri = pathJoin(fpath, fname);
         try {
-            image = await this._ctx.context.resources.getImage(uri);
+            image = await PkAssetTk.getImage(uri);
             found = true;
         } catch (err) {
             if (!(err instanceof ResourceNotFoundError)) {
@@ -351,23 +530,19 @@ export class BlockManager {
         
         // If not found, try to fetch the resource from default location
         if (!found) {
-            uri = pathJoin('gfx/tiles/', fname);
+            uri = pathJoin(RESOURCES_PATH, 'gfx/tiles/', fname);
             
             try {
-                image = await this._ctx.context.resources.getImage(uri);
+                image = await PkAssetTk.getImage(uri);
             } catch (err) {
                 throw err;
             }
         }
         
         // Remove transparent pixel and create the base texture
-        image = PkTextureTk.imageRemoveTransparentPixel(image);
-        baseTexture = PkTextureTk.imageToBaseTexture(image);
+        image.removeTransparentPixel();
         
-        this.ctx.textureCache.add(fname, baseTexture);
-        
-        // Save textures sheet id for later use
-        this._texturesId = fname;
+        this.ctx.textureCache.add(TEXTURE_ID_BLOCKS, image);
         
         Log.d('Blocks textures loaded.');
         
@@ -409,77 +584,122 @@ export class BlockManager {
         return this._prototypes[code];
     }
     
+    private static get1DIdx(i: number, j: number): number {
+        return j * PK2KARTTA_KARTTA_LEVEYS + i;
+    }
+    
+    public getBgBlockCode(i: number, j: number): TBlockProtoCode {
+        const block = this._bgBlocks[BlockManager.get1DIdx(i, j)];
+        return (block != null) ? block.code : 255;
+    }
     /**
      * Returns the background block at the specified position in the map.
      *
      * @param i - Block x coordinate in the matrix.
      * @param j - Block y coordinate in the matrix.
      */
-    public getBgBlock(i: number, j: number): Block {
-        return this._bgBlocks[j][i];
+    public getBgBlock(i: number, j: number): DwBlock {
+        return this._bgBlocks[BlockManager.get1DIdx(i, j)];
     }
-    public setBgBlock(i: number, j: number, block: Block): void {
+    public setBgBlock(block: DwBlock): void {
         // Save in place
-        this._bgBlocks[j][i] = block;
+        this._bgBlocks[BlockManager.get1DIdx(block.i, block.j)] = block;
         // Add to the scene
         this.ctx.composition.addBgBlock(block);
     }
     
-    public getFgBlock(i: number, j: number): Block {
-        return this._fgBlocks[j][i];
+    /**
+     * Returns the prototype code for the foreground block at the specified position.<br>
+     * If the block doesn't exist, it returns 255.
+     *
+     * @param i - Coordinate i.
+     * @param j - Coordinate j.
+     */
+    public getFgBlockCode(i: number, j: number): TBlockProtoCode {
+        const block = this._fgBlocks[BlockManager.get1DIdx(i, j)];
+        return (block != null) ? block.code : 255;
     }
-    public setFgBlock(i: number, j: number, block: Block) {
-        this._fgBlocks[j][i] = block;
+    public getFgBlock(i: number, j: number): DwBlock {
+        return this._fgBlocks[BlockManager.get1DIdx(i, j)];
+    }
+    public setFgBlock(block: DwBlock): void {
+        // Save in place
+        this._fgBlocks[BlockManager.get1DIdx(block.i, block.j)] = block;
+        // Add to the scene
+        this.ctx.composition.addFgBlock(block);
     }
     
+    private setEdge(i: number, j: number, edge: boolean = true): void {
+        this._edges[BlockManager.get1DIdx(i, j)] = (edge === true);
+    }
+    private isEdge(i: number, j: number): boolean {
+        return this._edges[BlockManager.get1DIdx(i, j)] === true;
+    }
     
-    public getBlock(x: int, y: int) {
-        //     PK2BLOCK palikka;
-        //
-        //     if (x < 0 || x > PK2KARTTA_KARTTA_LEVEYS || y < 0 || y > PK2KARTTA_KARTTA_LEVEYS) {
-        //         palikka.koodi  = 255;
-        //         palikka.tausta = true;
-        //         palikka.vasen  = x*32;
-        //         palikka.oikea  = x*32+32;
-        //         palikka.yla	   = y*32;
-        //         palikka.ala    = y*32+32;
-        //         palikka.vesi   = false;
-        //         palikka.reuna  = true;
-        //         return palikka;
-        //     }
-        //
-        //     BYTE i = kartta->seinat[x+y*PK2KARTTA_KARTTA_LEVEYS];
-        //
-        //     if (i<150){ //If it is ground
-        //         palikka = lasketut_palikat[i];
-        //         palikka.vasen  = x*32+lasketut_palikat[i].vasen;
-        //         palikka.oikea  = x*32+32+lasketut_palikat[i].oikea;
-        //         palikka.yla	   = y*32+lasketut_palikat[i].yla;
-        //         palikka.ala    = y*32+32+lasketut_palikat[i].ala;
-        //     }
-        //     else{ //If it is sky - Need to reset
-        //         palikka.koodi  = 255;
-        //         palikka.tausta = true;
-        //         palikka.vasen  = x*32;
-        //         palikka.oikea  = x*32+32;
-        //         palikka.yla	   = y*32;
-        //         palikka.ala    = y*32+32;
-        //         palikka.vesi   = false;
-        //
-        //         palikka.vasemmalle = 0;
-        //         palikka.oikealle = 0;
-        //         palikka.ylos = 0;
-        //         palikka.alas = 0;
-        //     }
-        //
-        //     i = kartta->taustat[x+y*PK2KARTTA_KARTTA_LEVEYS];
-        //
-        //     if (i>131 && i<140)
-        //         palikka.vesi = true;
-        //
-        //     palikka.reuna = kartta->reunat[x+y*PK2KARTTA_KARTTA_LEVEYS];
-        //
-        //
-        //     return palikka;
+    public getVoidBlock(i: int, j: int): Block {
+        return {
+            code: 255,
+            
+            i: i,
+            j: j,
+            x: i * BLOCK_SIZE,
+            y: j * BLOCK_SIZE,
+            
+            top: j * BLOCK_SIZE,
+            right: i + BLOCK_SIZE + BLOCK_SIZE,
+            bottom: j * BLOCK_SIZE + BLOCK_SIZE,
+            left: i * BLOCK_SIZE,
+            
+            toTheTop: 0,    // In C, int's initial value is random
+            toTheRight: 0,  // In C, int's initial value is random
+            toTheBottom: 0, // In C, int's initial value is random
+            toTheLeft: 0,   // In C, int's initial value is random
+            
+            tausta: false,
+            edge: true,
+            water: false
+        };
+    }
+    
+    /**
+     * Source: PK_Block_Get.
+     *
+     * @param i
+     * @param j
+     */
+    public getBlockCollider(i: int, j: int): Block {
+        // Block out of limits
+        if (i < 0 || i > PK2KARTTA_KARTTA_LEVEYS || j < 0 || j > PK2KARTTA_KARTTA_LEVEYS) {
+            return this.getVoidBlock(i, j);
+        }
+        
+        let plain: Block;
+        let block = this.getFgBlock(i, j);
+        
+        // If it is ground
+        if (block != null && block.code < 150) {
+            plain = block.getPlainData();
+        }
+        // If it is sky, need to reset
+        else {
+            plain = this.getVoidBlock(i, j);
+            
+            plain.tausta = true;   // why?
+            plain.edge = false;
+            plain.water = false;
+        }
+        
+        // Assign edge indicator from the edges map
+        plain.edge = this.isEdge(i, j);
+        
+        // If background block for this position is water,
+        // mark this plain block as water
+        const bgCode = this.getBgBlockCode(i, j);
+        
+        if (bgCode > 131 && bgCode < 140) {
+            plain.water = true;
+        }
+        
+        return plain;
     }
 }

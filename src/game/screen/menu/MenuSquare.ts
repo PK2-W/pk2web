@@ -1,6 +1,6 @@
 import { Drawable } from '@ng/drawable/Drawable';
 import { ITickable } from '@ng/ITickable';
-import * as PIXI from '@vendor/pixi';
+import * as PIXI from 'pixi.js';
 import { int, t_color } from '../../../support/types';
 
 

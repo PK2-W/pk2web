@@ -8,8 +8,8 @@ import { WEB_CANVAS_QS } from '../support/constants';
 // #pragma once
 //
 import { uint, int, bool, FONTID } from '../support/types';
-import * as PIXI from '../vendor/pixi';
 import { PkFont } from './PkFont';
+import * as PIXI from 'pixi.js';
 
 // #include <SDL2/SDL.h>
 // #include <vector>
@@ -43,7 +43,7 @@ export class PK2wRenderer {
     private static instance: PK2wRenderer;
     
     private readonly _canvas: HTMLCanvasElement;
-    private readonly _renderer: PIXI.SystemRenderer;
+    private readonly _renderer: PIXI.Renderer;
     private readonly _stage: PIXI.Container;
     
     private _activeScreen: PkScreen;

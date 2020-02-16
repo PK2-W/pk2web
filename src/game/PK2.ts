@@ -19,25 +19,21 @@
 //	Starts the level13.map on dev mode
 //#########################
 
-import { PK2Map } from '@game/map/PK2Map';
 import { PK2Game } from '@game/game/PK2Game';
-import { PK2Sprite } from '@game/sprite/PK2Sprite';
-import { SpritePrototype } from '@game/sprite/SpritePrototype';
-import { ITickable } from '../engine/ITickable';
-import { PK2wRenderer, FADE } from '../engine/PK2wDraw';
-import { PkEngine } from '../engine/PkEngine';
-import { PkLanguage } from '../engine/PkLanguage';
-import { RESOURCES_PATH, MAX_SPRITES } from '../support/constants';
-import { i18nSchema } from '../support/i18nSchema';
+import { PK2Map } from '@game/map/PK2Map';
+import { ITickable } from '@ng/ITickable';
+import { PK2wRenderer, FADE } from '@ng/PK2wDraw';
+import { PkEngine } from '@ng/PkEngine';
+import { PkLanguage } from '@ng/PkLanguage';
+import { PkScreen } from '@ng/screen/PkScreen';
+import { RESOURCES_PATH } from '../support/constants';
 import { PK2Settings } from '../support/PK2Settings';
 import { int, bool, BYTE, uint, str, cvect, CVect } from '../support/types';
-import { settings } from '../vendor/pixi';
-import { BLOCK_ESTO_ALAS, BLOCK_KYTKIN1, BLOCK_KYTKIN3, RECT } from './Map_';
+import { RECT } from './Map_';
 import { PK2Context } from './PK2Context';
 import { IntroScreen } from './screen/intro/IntroScreen';
 import { MapScreen } from './screen/map/MapScreen';
 import { MenuScreen } from './screen/menu/MenuScreen';
-import { PkScreen } from '../engine/screen/PkScreen';
 import { TX } from './texts';
 
 // #ifndef _WIN32
@@ -879,35 +875,7 @@ export class PK2 extends PK2Context implements ITickable {
     
     // }
     
-    
-    // int PK_Palikka_Tee_Maskit(){
-    // 	BYTE *buffer = NULL;
-    // 	uint leveys;
-    // 	int x,y;
-    // 	BYTE color;
-    //
-    // 	PisteDraw2_DrawImage_Start(kartta->palikat_buffer,*&buffer,(uint &)leveys);
-    // 	for (int mask=0; mask<BLOCK_MAX_MASKEJA; mask++){
-    // 		for (x=0; x<32; x++){
-    // 			y=0;
-    // 			while (y<31 && (color = buffer[x+(mask%10)*32 + (y+(mask/10)*32)*leveys])==255)
-    // 				y++;
-    //
-    // 			palikkamaskit[mask].alas[x] = y;
-    // 		}
-    //
-    // 		for (x=0; x<32; x++){
-    // 			y=31;
-    // 			while (y>=0 && (color = buffer[x+(mask%10)*32 + (y+(mask/10)*32)*leveys])==255)
-    // 				y--;
-    //
-    // 			palikkamaskit[mask].ylos[x] = 31-y;
-    // 		}
-    // 	}
-    // 	PisteDraw2_DrawImage_End(kartta->palikat_buffer);
-    //
-    // 	return 0;
-    // }
+ 
     
     // int PK_Clean_TileBuffer(){
     // 	BYTE *buffer = NULL;
@@ -2138,7 +2106,6 @@ export class PK2 extends PK2Context implements ITickable {
     // 	}
     // }
     //
-  
     
     
     // //==================================================
@@ -2395,7 +2362,7 @@ export class PK2 extends PK2Context implements ITickable {
     //
     // 	return 0;
     // }
-  
+    
     //
     // int PK_Draw_InGame_Gifts(){
     // 	int x,y;
@@ -5035,10 +5002,11 @@ export class PK2 extends PK2Context implements ITickable {
         await game.xChangeToGame();
         
         const minifn = (delta, time) => {
-            //this._engine.gt.add(minifn.bind(this));
+            this._engine.gt.add(minifn.bind(this));
             game.gameLoop(delta);
         };
         
+        this.renderer._stage.addChild(game.composition.getDrawable());
         this._engine.gt.add(minifn.bind(this));
         
         // 	if(PK2_error){

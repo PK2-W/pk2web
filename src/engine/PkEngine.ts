@@ -48,7 +48,7 @@ export class PkEngine {
         // 		return;
         // 	}
         
-        this._gameTimer = new GameTimer(60);
+        this._gameTimer = new GameTimer(100);
         this._language = new PkLanguage();
         this._resources = new PkResources(RESOURCES_PATH);
         this._rendr = new PK2wRenderer(width, height);

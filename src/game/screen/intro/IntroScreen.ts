@@ -1,6 +1,6 @@
 import { PkScreen } from '@ng/screen/PkScreen';
 import { PK2wImageLoader } from '@ng/support/PK2wImageLoader';
-import * as PIXI from '@vendor/pixi';
+import * as PIXI from 'pixi.js';
 import { INTRO_DURATION } from '../../../support/constants';
 import { clipTSprite } from '../../../engine/drawable/DwHelper';
 import { PK2Context } from '../../PK2Context';

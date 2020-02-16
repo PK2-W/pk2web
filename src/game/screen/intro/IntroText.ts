@@ -1,7 +1,7 @@
 import { PK2Context } from '@game/PK2Context';
 import { Drawable } from '@ng/drawable/Drawable';
 import { PkFont } from '@ng/PkFont';
-import * as PIXI from '@vendor/pixi';
+import * as PIXI from 'pixi.js';
 
 export class IntroText extends Drawable {
     private readonly _context: any;

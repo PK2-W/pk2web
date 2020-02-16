@@ -1,7 +1,7 @@
 import { Drawable } from '@ng/drawable/Drawable';
 import { PkLanguage } from '@ng/PkLanguage';
 import { PkUIComponent } from '@ng/screen/PkUIComponent';
-import * as PIXI from '@vendor/pixi';
+import * as PIXI from 'pixi.js';
 import { PK2Context } from '../../game/PK2Context';
 import { int } from '../../support/types';
 import { mod } from '../support/utils';

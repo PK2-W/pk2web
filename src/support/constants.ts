@@ -18,6 +18,7 @@ export const MAX_SPRITES = 800;
 /** @deprecated use MAX_SPRITE_TYPES */
 export const MAX_PROTOTYYPPEJA = 100;
 export const MAX_SPRITE_TYPES = 100;
+export const MAX_BLOCK_MASKS = 150;
 
 export const SPRITE_MAX_FRAMEJA = 50;
 export const SPRITE_MAX_ANIMAATIOITA = 20;
@@ -28,3 +29,10 @@ export const VAHINKO_AIKA = 50; //Damage time?
 
 // Game loop of the original game in ticks per second
 export const PK2GAMELOOP = 100;
+
+export enum InputAction {
+    INPUT_LEFT,
+    INPUT_RIGHT,
+    INPUT_JUMP,
+    INPUT_DOWN
+}

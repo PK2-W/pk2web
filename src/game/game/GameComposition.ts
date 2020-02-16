@@ -1,4 +1,7 @@
 import { Drawable } from '@ng/drawable/Drawable';
+import { IDrawable } from '@ng/drawable/IDrawable';
+import { Log } from '@ng/support/log/LoggerImpl';
+import * as PIXI from 'pixi.js';
 
 export class GameComposition extends Drawable {
     private readonly _lyBgImage: PIXI.Container;
@@ -16,9 +19,10 @@ export class GameComposition extends Drawable {
         this._lyBgSprites = this.container.addChild(new PIXI.Container());
         this._lyBgParticles = this.container.addChild(new PIXI.Container());
         this._lyBgBlocks = this.container.addChild(new PIXI.Container());
-        this._lySprites = this.container.addChild(new PIXI.Container());
+        //
         this._lyParticles = this.container.addChild(new PIXI.Container());
         this._lyBlocks = this.container.addChild(new PIXI.Container());
+        this._lySprites = this.container.addChild(new PIXI.Container());
         
     }
     
@@ -26,19 +30,24 @@ export class GameComposition extends Drawable {
         this._lyBgImage.addChild(obj);
     }
     
-    public addBgBlock(dw: Drawable) {
+    public addBgBlock(dw: IDrawable) {
         this._lyBgBlocks.addChild(dw.getDrawable());
-        console.log('Blog added to the composition (bg).');
+        Log.d('Block added to the composition (bg).');
     }
     
-    public addBgSprite(dw: Drawable) {
+    public addFgBlock(dw: IDrawable) {
+        this._lyBlocks.addChild(dw.getDrawable());
+        Log.d('Block added to the composition (fg).');
+    }
+    
+    public addBgSprite(dw: IDrawable) {
         this._lyBgSprites.addChild(dw.getDrawable());
-        console.log('Sprite added to the composition (bg).');
+        Log.d('Sprite added to the composition (bg).');
     }
     
-    public addSprite(dw: Drawable) {
+    public addSprite(dw: IDrawable) {
         this._lySprites.addChild(dw.getDrawable());
-        console.log('Sprite added to the composition (fg).');
+        Log.d('Sprite added to the composition (fg).');
     }
     
     protected get container(): PIXI.Container {

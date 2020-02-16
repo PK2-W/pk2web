@@ -1,7 +1,7 @@
 import { Drawable } from '@ng/drawable/Drawable';
 import { ITickable } from '@ng/ITickable';
 import { PkScreen } from '@ng/screen/PkScreen';
-import * as PIXI from '@vendor/pixi';
+import * as PIXI from 'pixi.js';
 import { PK2Context } from '../../game/PK2Context';
 
 export abstract class PkUIComponent extends Drawable implements ITickable {

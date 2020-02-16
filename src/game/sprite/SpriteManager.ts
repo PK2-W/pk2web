@@ -4,7 +4,7 @@ import { PK2Sprite } from '@game/sprite/PK2Sprite';
 import { SpritePrototype, EProtoType, TSpriteProtoCode } from '@game/sprite/SpritePrototype';
 import { pathJoin } from '@ng/support/utils';
 import { EventEmitter } from '@vendor/eventemitter3';
-import { MAX_SPRITES, MAX_SPRITE_TYPES, MAX_AANIA } from '../../support/constants';
+import { MAX_SPRITES, MAX_SPRITE_TYPES, MAX_AANIA, RESOURCES_PATH } from '../../support/constants';
 import { OutOfBoundsError } from '../../support/error/OutOfBoundsError';
 import { int, CVect, cvect, rand } from '../../support/types';
 
@@ -70,7 +70,7 @@ export class SpriteManager extends EventEmitter {
             
             if (protoName !== '') {
                 lastProtoIndex = i;
-                let path = pathJoin('episodes', tmpEpidoseName);
+                let path = pathJoin(RESOURCES_PATH, 'episodes', tmpEpidoseName);
                 
                 try {
                     proto = await this.loadProto(path, protoName);
@@ -79,7 +79,7 @@ export class SpriteManager extends EventEmitter {
                 } catch (err) {
                     // TODO specify error
                     try {
-                        proto = await this.loadProto('sprites', protoName);
+                        proto = await this.loadProto(pathJoin(RESOURCES_PATH, 'sprites'), protoName);
                         proto.assignIndex(this._nextFreeProtoIndex);
                         this._protot[this._nextFreeProtoIndex] = proto;
                         

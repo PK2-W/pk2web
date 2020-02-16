@@ -1,6 +1,6 @@
 import { PkFont } from '@ng/PkFont';
 import { PkUIComponent } from '@ng/screen/PkUIComponent';
-import * as PIXI from '@vendor/pixi';
+import * as PIXI from 'pixi.js';
 import { TEXTID, FONTID } from '../../support/types';
 import { PK2Context } from '../PK2Context';
 

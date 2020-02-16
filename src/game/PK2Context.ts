@@ -63,11 +63,11 @@ export abstract class PK2Context {
     
     /** @deprecated tengo que buscar algo mejor */
     public get screenWidth(): int {
-        return 800;
+        return 640;
     }
     /** @deprecated tengo que buscar algo mejor */
     public get screenHeight(): int {
-        return 600;
+        return 480;
     }
     
     public get tx(): PkLanguage {

@@ -4,7 +4,7 @@ import { EDamageType, EDestructionType } from '@game/sprite/PK2Sprite';
 import { EAi } from '@game/sprite/SpriteManager';
 import { EBlockProtoCode } from '@game/tile/BlockConstants';
 import { PkResource } from '@ng/PkResources';
-import { Binary } from '@ng/support/Binary';
+import { PkBinary } from '@ng/types/PkBinary';
 import { pathJoin, str2num } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import {
@@ -427,7 +427,7 @@ export class SpritePrototype {
      *
      * @param stream
      */
-    private loadSerialized13(stream: Binary): void {
+    private loadSerialized13(stream: PkBinary): void {
         this._tyyppi = stream.streamReadUint(4) as EProtoType;
         this._kuvatiedosto = stream.streamReadCStr(100);
         for (let i = 0; i < 7; i++) {
@@ -590,6 +590,10 @@ export class SpritePrototype {
         return this._pallarx_kerroin;
     }
     
+    public get tiletarkistus(): boolean {
+        return this._tiletarkistus;
+    }
+    
     public isBackground(): boolean {
         return this.type === EProtoType.TYYPPI_TAUSTA;
     }
@@ -615,7 +619,7 @@ class PK2SpriteAnimation {
     public frameja: BYTE;								// frames
     public looppi: boolean;									// loop
     
-    public static fromSerialized(stream: Binary) {
+    public static fromSerialized(stream: PkBinary) {
         const obj = new PK2SpriteAnimation();
         
         for (let i = 0; i < ANIMAATIO_MAX_SEKVENSSEJA; i++) {

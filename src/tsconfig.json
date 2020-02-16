@@ -1,12 +1,14 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "ESNext",
     "target": "ES2017",
+    "moduleResolution": "Node",
     "lib": [
-      "es6",
-      "dom"
+      "ES2017",
+      "DOM"
     ],
+    "allowJs": true,
     "sourceMap": true,
     "alwaysStrict": true,
     "watch": false,
@@ -31,6 +33,6 @@
   ],
   "exclude": [
     "./vendor/**/*",
-    "./node_modules/**/*"
+    "../node_modules"
   ]
 }

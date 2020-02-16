@@ -3,7 +3,7 @@
  *
  * @version 1.1-stable
  */
-import * as PIXI from '@vendor/pixi';
+import * as PIXI from 'pixi.js';
 
 export const clipDSprite = (baseTexture: PIXI.BaseTexture, x, y, w, h) => {
     const texture = new PIXI.Texture(baseTexture, new PIXI.Rectangle(x, y, w, h));

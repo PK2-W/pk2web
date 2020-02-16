@@ -25,6 +25,10 @@ export function minmax(n: number, min: number, max: number): number {
     return n;
 }
 
+export function ifnul<T>(nullable: T | null, replacement: T): T {
+    return nullable != null ? nullable : replacement;
+}
+
 export function trim(str: string) {
     return str.replace(TRIM_RX, '');
 }

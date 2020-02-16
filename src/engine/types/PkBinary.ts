@@ -1,7 +1,7 @@
 import { ab2str } from '@ng/support/utils';
 import { int, uint, uint8 } from '../../support/types';
 
-export class Binary {
+export class PkBinary {
     private _ab: ArrayBuffer;
     
     private _streamOffset: number;
@@ -66,7 +66,7 @@ export class Binary {
     }
     
     public streamRead8C(byteCount: number): Uint8Array {
-        return Binary.truncateToNullChar(this.streamRead8(byteCount));
+        return PkBinary.truncateToNullChar(this.streamRead8(byteCount));
     }
     
     /**

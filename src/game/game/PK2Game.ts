@@ -7,21 +7,28 @@ import {
     PK2KARTTA_KARTTA_KORKEUS,
     PK2Map,
     BLOCK_TULI,
-    KYTKIN_ALOITUSARVO, EBgMovement
+    KYTKIN_ALOITUSARVO,
+    EBgMovement
 } from '@game/map/PK2Map';
 import { PK2Context } from '@game/PK2Context';
 import { PK2Sprite, EDamageType, EDestructionType } from '@game/sprite/PK2Sprite';
 import { SpriteAttributes } from '@game/sprite/SpriteAttributes';
 import { SpriteManager } from '@game/sprite/SpriteManager';
 import { EProtoType } from '@game/sprite/SpritePrototype';
-import { Block, EBlocks } from '@game/tile/Block';
+import { Block } from '@game/tile/Block';
 import { EBlockProtoCode } from '@game/tile/BlockConstants';
 import { BlockManager } from '@game/tile/BlockManager';
+import { EBlocks } from '@game/tile/DwBlock';
 import { ResourceNotFoundError } from '@ng/error/ResourceNotFoundError';
 import { pathJoin } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { PkTextureTk } from '@ng/toolkit/PkTextureTk';
-import { MAX_SPRITES, PK2GAMELOOP, RESOURCES_PATH } from '../../support/constants';
+import { PkImageImpl } from '@ng/types/pixi/PkImageImpl';
+import { PkImageTextureImpl } from '@ng/types/pixi/PkImageTextureImpl';
+import { PkImage } from '@ng/types/PkImage';
+import { PkImageTexture } from '@ng/types/PkImageTexture';
+import * as PIXI from 'pixi.js';
+import { MAX_SPRITES, PK2GAMELOOP, RESOURCES_PATH, InputAction, MAX_BLOCK_MASKS } from '../../support/constants';
 import { int, rand, bool, uint, DWORD } from '../../support/types';
 
 export class PK2Game {
@@ -113,8 +120,6 @@ export class PK2Game {
                 await this._sprites.loadPrototypes(this.map, 'rooster island 1');
             }
             
-            // 	PK_Palikka_Tee_Maskit();  // "make masks" (draws!)
-            
             this._sprites.addMapSprites(this.map);
             this._sprites.startDirections();
             
@@ -152,10 +157,19 @@ export class PK2Game {
             // Background image
             this.addBackground();
             
-            // Prepare blocks
-            this._blocks.generatePrototypes();
+            // Prepare blocks (load textures, generate prototypes and masks)
             await this._blocks.loadTextures(this.map.fpath, this.map.getBlockTexturesLocation());
+            this._blocks.generatePrototypes();
+            
+            // BG Blocks
             this._blocks.placeBgBlocks();
+            
+            
+            // FG Blocks
+            this._blocks.placeFgBlocks();
+            
+            
+            this._blocks.calculateEdges();
             
             // x->   PK_Fadetext_Init(); //Reset fade text
             
@@ -176,6 +190,7 @@ export class PK2Game {
      * Sourfce: PK_MainScreen_InGame
      */
     public gameLoop(delta: number): void {
+        document.getElementById('delta').innerHTML = '' + delta;
         // 	PK2Kartta_Animoi(_degree, palikka_animaatio/7, kytkin1, kytkin2, kytkin3, false);
         this.updateCamera();
         
@@ -378,10 +393,10 @@ export class PK2Game {
         this._dcameraY = playerPosY;
     }
     
-    private async loadBgImage(fpath: string, fname: string): void {
+    private async loadBgImage(fpath: string, fname: string): Promise<void> {
         let uri: string;
         let found: boolean;
-        let image: HTMLImageElement;
+        let image: PkImage;
         let baseTexture: PIXI.BaseTexture;
         
         // First, try to fetch the resource from provided location
@@ -418,10 +433,7 @@ export class PK2Game {
         //         buffer[x+y*leveys] = color;
         //     }
         
-        // Create the base texture
-        baseTexture = PkTextureTk.imageToBaseTexture(image);
-        
-        this.ctx.textureCache.add(TEXTURE_ID_BGIMAGE, baseTexture);
+        this.ctx.textureCache.add(TEXTURE_ID_BGIMAGE, image);
     }
     
     /**
@@ -489,6 +501,10 @@ export class PK2Game {
         
         if (this._cameraY > Math.floor(PK2KARTTA_KARTTA_KORKEUS - this.ctx.screenHeight / 32) * 32)
             this._cameraY = Math.floor(PK2KARTTA_KARTTA_KORKEUS - this.ctx.screenHeight / 32) * 32;
+        
+        // Apply
+        this._enviroment.composition.getDrawable().x = -this._cameraX;
+        this._enviroment.composition.getDrawable().y = -this._cameraY;
     }
     
     /**
@@ -580,101 +596,101 @@ export class PK2Game {
         let hidastus = false;  // "slow motion"
         
         // 	PisteInput_Lue_Eventti();
-        if (/*sprite.pelaaja != 0 && sprite.energia > 0*/1 === 1) {
-            // 		/* SLOW WALK */
+        if (sprite.pelaaja !== 0 && sprite.energia > 0) {
+            /* SLOW WALK */
             // 		if (PisteInput_Keydown(settings.control_walk_slow))
             // 			lisavauhti = false;
             
-            // 		/* ATTACK 1 */
+            /* ATTACK 1 */
             // 		if (PisteInput_Keydown(settings.control_attack1) && sprite.lataus == 0 && sprite.ammus1 != -1)
             // 			sprite.hyokkays1 = sprite.tyyppi->hyokkays1_aika;
             // 		/* ATTACK 2 */
             // 		else if (PisteInput_Keydown(settings.control_attack2) && sprite.lataus == 0 && sprite.ammus2 != -1)
             // 				sprite.hyokkays2 = sprite.tyyppi->hyokkays2_aika;
             
-            // 		/* CROUCH */
-            // 		sprite.kyykky = false;
+            /* CROUCH */
+            sprite.kyykky = false;
             // 		if (PisteInput_Keydown(settings.control_down) && !sprite.alas) {
             // 			sprite.kyykky = true;
             // 			sprite_yla += spriteHeight/1.5;
             // 		}
             
-            // 		double a_lisays = 0;
+            let a_lisays: number = 0;
             
-            // 		/* NAVIGATING TO RIGHT */
-            // 		if (PisteInput_Keydown(settings.control_right)) {
-            // 			a_lisays = 0.04;//0.08;
+            /* NAVIGATING TO RIGHT */
+            if (this.env.context.input.isActing(InputAction.INPUT_RIGHT)) {
+                a_lisays = 0.04;//0.08;
+                
+                // 			if (lisavauhti) {
+                // 				if (rand()%20 == 1 && sprite.animaatio_index == ANIMAATIO_KAVELY) // Draw dust
+                // 					Game::Particles->new_particle(PARTICLE_DUST_CLOUDS,future.x-8,sprite_ala-8,0.25,-0.25,40,0,0);
+                
+                // 				a_lisays += 0.09;//0.05
+                // 			}
+                
+                if (sprite.toTheBottom)
+                    a_lisays /= 1.5;//2.0
+                
+                //sprite.flip_x = false;
+            }
             
-            // 			if (lisavauhti) {
-            // 				if (rand()%20 == 1 && sprite.animaatio_index == ANIMAATIO_KAVELY) // Draw dust
-            // 					Game::Particles->new_particle(PARTICLE_DUST_CLOUDS,future.x-8,sprite_ala-8,0.25,-0.25,40,0,0);
+            /* NAVIGATING TO LEFT */
+            if (this.env.context.input.isActing(InputAction.INPUT_LEFT)) {
+                a_lisays = -0.04;
+                
+                // 			if (lisavauhti) {
+                // 				if (rand()%20 == 1 && sprite.animaatio_index == ANIMAATIO_KAVELY) { // Draw dust
+                // 					Game::Particles->new_particle(PARTICLE_DUST_CLOUDS,future.x-8,sprite_ala-8,-0.25,-0.25,40,0,0);
+                // 				}
+                
+                // 				a_lisays -= 0.09;
+                // 			}
+                
+                if (sprite.toTheBottom)	// spriten koskettaessa maata kitka vaikuttaa
+                    a_lisays /= 1.5;//2.0
+                
+                // 			sprite.flip_x = true;
+            }
             
-            // 				a_lisays += 0.09;//0.05
-            // 			}
+            if (sprite.kyykky)	// Slow when couch
+                a_lisays /= 10;
             
-            // 			if (sprite.alas)
-            // 				a_lisays /= 1.5;//2.0
-            //
-            // 			sprite.flip_x = false;
-            // 		}
-            //
-            // 		/* NAVIGATING TO LEFT */
-            // 		if (PisteInput_Keydown(settings.control_left)) {
-            // 			a_lisays = -0.04;
+            future.a += a_lisays;
             
-            // 			if (lisavauhti) {
-            // 				if (rand()%20 == 1 && sprite.animaatio_index == ANIMAATIO_KAVELY) { // Draw dust
-            // 					Game::Particles->new_particle(PARTICLE_DUST_CLOUDS,future.x-8,sprite_ala-8,-0.25,-0.25,40,0,0);
-            // 				}
+            /* JUMPING */
+            if (sprite.proto.weight > 0) {
+                if (this.env.context.input.isActing(InputAction.INPUT_JUMP)) {
+                    if (!sprite.kyykky) {
+                        if (sprite.jumpTimer == 0)
+                            // 						PK_Play_Sound(hyppy_aani, 100, (int)future.x, (int)sprite_y,
+                            // 									  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
+                            
+                            if (sprite.jumpTimer <= 0)
+                                sprite.jumpTimer = 1; //10;
+                    }
+                } else {
+                    if (sprite.jumpTimer > 0 && sprite.jumpTimer < 45)
+                        sprite.jumpTimer = 55;
+                }
+                
+                /* tippuminen hiljaa alasp�in */
+                //if (PisteInput_Keydown(settings.control_jump) && sprite.jumpTimer >= 150/*90+20*/ &&
+                //	sprite.tyyppi->liitokyky)
+                //	hidastus = true;
+            }
+            /* MOVING UP AND DOWN */
+            else { // if the player sprite-weight is 0 - like birds
+                
+                if (this.env.context.input.isActing(InputAction.INPUT_JUMP))
+                    future.b -= 0.15;
+                
+                if (this.env.context.input.isActing(InputAction.INPUT_DOWN))
+                    future.b += 0.15;
+                
+                sprite.jumpTimer = 0;
+            }
             
-            // 				a_lisays -= 0.09;
-            // 			}
-            
-            // 			if (sprite.alas)	// spriten koskettaessa maata kitka vaikuttaa
-            // 				a_lisays /= 1.5;//2.0
-            
-            // 			sprite.flip_x = true;
-            // 		}
-            
-            // 		if (sprite.kyykky)	// Slow when couch
-            // 			a_lisays /= 10;
-            //
-            // 		sprite_a += a_lisays;
-            //
-            // 		/* JUMPING */
-            // 		if (sprite.tyyppi->paino > 0) {
-            // 			if (PisteInput_Keydown(settings.control_jump)) {
-            // 				if (!sprite.kyykky) {
-            // 					if (sprite.jumpTimer == 0)
-            // 						PK_Play_Sound(hyppy_aani, 100, (int)future.x, (int)sprite_y,
-            // 									  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
-            //
-            // 					if (sprite.jumpTimer <= 0)
-            // 						sprite.jumpTimer = 1; //10;
-            // 				}
-            // 			} else {
-            // 				if (sprite.jumpTimer > 0 && sprite.jumpTimer < 45)
-            // 					sprite.jumpTimer = 55;
-            // 			}
-            //
-            // 			/* tippuminen hiljaa alasp�in */
-            // 			if (PisteInput_Keydown(settings.control_jump) && sprite.jumpTimer >= 150/*90+20*/ &&
-            // 				sprite.tyyppi->liitokyky)
-            // 				hidastus = true;
-            // 		}
-            // 		/* MOVING UP AND DOWN */
-            // 		else { // if the player sprite-weight is 0 - like birds
-            //
-            // 			if (PisteInput_Keydown(settings.control_jump))
-            // 				sprite_b -= 0.15;
-            //
-            // 			if (PisteInput_Keydown(settings.control_down))
-            // 				sprite_b += 0.15;
-            //
-            // 			sprite.jumpTimer = 0;
-            // 		}
-            //
-            // 		/* AI */
+            /* AI */
             // 		for (int ai=0;ai < SPRITE_MAX_AI;ai++)
             // 			switch (sprite.tyyppi->AI[ai]){
             //
@@ -705,10 +721,11 @@ export class PK2Game {
             //
             // 			default: break;
             // 			}
-            //
-            // 		/* It is not acceptable that a player is anything other than the game character */
-            // 		if (sprite.tyyppi->tyyppi != TYYPPI_PELIHAHMO)
-            // 			sprite.energia = 0;
+            
+            /* It is not acceptable that a player is anything other than the game character */ //TODO Este no es el lugar para esto...
+            if (sprite.proto.type !== EProtoType.TYYPPI_PELIHAHMO) {
+                sprite.energia = 0;
+            }
         }
         
         /*****************************************************************************************/
@@ -719,8 +736,8 @@ export class PK2Game {
         
         // Jos ollaan hyp�tty / ilmassa:
         if (sprite.jumpTimer > 0) {
-            if (sprite.jumpTimer < 50 - sprite.proto.max_hyppy)
-                sprite.jumpTimer = 50 - sprite.proto.max_hyppy;
+            if (sprite.jumpTimer < 50 - sprite.proto.maxJump)
+                sprite.jumpTimer = 50 - sprite.proto.maxJump;
             
             if (sprite.jumpTimer < 10)
                 sprite.jumpTimer = 10;
@@ -793,7 +810,7 @@ export class PK2Game {
         let palikat_lkm: int;
         let p: DWORD;  // coordiante of the current block
         
-        if (/* TODO sprite.proto.tiletarkistus*/ true) { //Find the tiles that the sprite occupies
+        if (sprite.proto.tiletarkistus) { //Find the tiles that the sprite occupies
             // Number of blocks to check
             palikat_x_lkm = Math.floor((future.width) / 32) + 4; //Number of blocks
             palikat_y_lkm = Math.floor((future.height) / 32) + 4;
@@ -806,21 +823,22 @@ export class PK2Game {
             // 		for (y=0;y<palikat_y_lkm;y++)
             // 			for (x=0;x<palikat_x_lkm;x++) //For each block, create a array of blocks around the sprite
             // 				// palikat[x+(y*palikat_x_lkm)] = PK_Block_Get(kartta_vasen+x-1,kartta_yla+y-1); //x = 0, y = 0
-            //this._blocks.getFgBlock(x, y);
+            // this._blocks.getFgBlock(x, y);
             
             /*****************************************************************************************/
             /* Going through the blocks around the sprite.                                           */
             /*****************************************************************************************/
             
-            palikat_lkm = palikat_y_lkm * palikat_x_lkm;
+            let collider: Block;
             for (y = 0; y < palikat_y_lkm; y++) {
                 for (x = 0; x < palikat_x_lkm; x++) {
-                    const block = this._blocks.getFgBlock(x, y);
                     p = x + y * palikat_x_lkm;
-                    // 				if (p<300)// && p>=0)//{
-                    // 					//if(sprite.pelaaja == 1) printf("%i\n",palikat_lkm);
-                    this.checkBlocks(sprite, future, block);
-                    // 				//}
+                    if (p < 300) { //src: && p>=0)//{
+                        //src: if(sprite.pelaaja == 1) printf("%i\n",palikat_lkm);
+                        collider = this._blocks.getBlockCollider(kartta_vasen + x - 1, kartta_yla + y - 1);
+                        this.checkBlocks(sprite, future, collider);
+                        //src: }
+                    }
                 }
             }
         }
@@ -2058,16 +2076,16 @@ export class PK2Game {
     /**
      * Source: PK_Check_Blocks.
      */
-    private checkBlocks(sprite: PK2Sprite, future: SpriteAttributes, block: Block) {
+    private checkBlocks(sprite: PK2Sprite, future: SpriteAttributes, block: Block): void {
         let mask_index: int;
         
-        //If sprite is in the block
+        //If sprite is in the block (NO 255)
         if (future.x <= block.right && future.x >= block.left && future.y <= block.bottom && future.y >= block.top) {
             
             /**********************************************************************/
             /* Examine if block is water background                               */
             /**********************************************************************/
-            if (block.isWater())
+            if (block.water)
                 sprite.inWater = true;
             
             /**********************************************************************/
@@ -2125,12 +2143,13 @@ export class PK2Game {
             if (mask_index > 31)
                 mask_index = 31;
             
-            // block.top += palikkamaskit[block.code].alas[mask_index];
-            //
-            // if (block.top >= block.bottom - 2)
-            //     block.toTheBottom = EBlocks.BLOCK_TAUSTA;
-            //
-            // block.bottom -= palikkamaskit[block.code].ylos[mask_index];
+            // PND: block.top += palikkamaskit[block.code].alas[mask_index];
+            block.top += block.bottomMask[mask_index];
+            
+            if (block.top >= block.bottom - 2)
+                block.toTheBottom = EBlocks.BLOCK_TAUSTA;
+            
+            block.bottom -= block.topMask[mask_index];
         }
         
         // If sprite is thouching the block (again?)
@@ -2166,7 +2185,7 @@ export class PK2Game {
             /*********************************************************************/
             /* Examine if sprite is on the border to fall                        */
             /*********************************************************************/
-            if (block.reuna && sprite.jumpTimer <= 0 && future.y < block.bottom && future.y > block.top) {
+            if (block.edge && sprite.jumpTimer <= 0 && future.y < block.bottom && future.y > block.top) {
                 /* && sprite_ala <= block.ala+2)*/ // onko sprite tullut reunalle
                 if (future.left > block.left)
                     sprite.reuna_vasemmalla = true;
@@ -2272,7 +2291,7 @@ export class PK2Game {
      * Source: PK_Draw_InGame.
      */
     private drawGame(): void {
-        let luku: str[15];
+        //let luku: str[15];
         // char luku[15];
         // int vali = 20;
         //
@@ -2349,7 +2368,7 @@ export class PK2Game {
      */
     private addBackground(): void {
         const texture = this._enviroment.textureCache.getTexture(TEXTURE_ID_BGIMAGE);
-        this._bgImage = new PIXI.extras.TilingSprite(texture, this.ctx.screenWidth, this.ctx.screenHeight);
+        this._bgImage = new PIXI.TilingSprite((texture as PkImageTextureImpl).getPixiTexture(), this.ctx.screenWidth, this.ctx.screenHeight);
         this._enviroment.composition.addBgImage(this._bgImage);
         
         this.updateBackground();
@@ -2380,6 +2399,9 @@ export class PK2Game {
             this._bgImage.y = -pallary;
             break;
         }
+        
+        this._bgImage.x += this._cameraX;
+        this._bgImage.y += this._cameraY;
     }
     
     ///  Accessors  ///
@@ -2387,9 +2409,16 @@ export class PK2Game {
     public get ctx(): GameEnv {
         return this._enviroment;
     }
+    public get env(): GameEnv {
+        return this._enviroment;
+    }
     
     public get map(): PK2Map {
         return this.ctx.map;
+    }
+    
+    public get composition(): GameComposition {
+        return this._enviroment.composition;
     }
 }
 

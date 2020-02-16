@@ -1,28 +1,25 @@
-export interface Rectangle {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    
-    x1: number;
-    y1: number;
-    x2: number;
-    y2: number;
-    
-    pack(separator: string): string;
-    
-    getNative(): unknown;
-}
+import { PkRectangle } from '@ng/types/PkRectangle';
+import * as PIXI from 'pixi.js';
 
-export class PkRectangle implements Rectangle {
+export class PkRectangleImpl implements PkRectangle {
     private readonly _rect: PIXI.Rectangle;
     
-    public static $(x: number, y: number, width: number, height: number): PkRectangle {
-        return new PkRectangle(x, y, width, height);
+    public static $(x: number, y: number, width: number, height: number): PkRectangleImpl {
+        return new PkRectangleImpl(x, y, width, height);
+    }
+    
+    public static getPixiRectangle(rect: PkRectangle): PIXI.Rectangle {
+        if (rect == null) {
+            return null;
+        } else if (rect instanceof PkRectangleImpl) {
+            return rect.getNative();
+        } else {
+            return new PIXI.Rectangle(rect.x, rect.y, rect.width, rect.height);
+        }
     }
     
     public constructor(x: number, y: number, width: number, height: number) {
-        if (!PkRectangle.checkInput(x) || !PkRectangle.checkInput(y) || !PkRectangle.checkInput(width) || !PkRectangle.checkInput(height)) {
+        if (!PkRectangleImpl.checkInput(x) || !PkRectangleImpl.checkInput(y) || !PkRectangleImpl.checkInput(width) || !PkRectangleImpl.checkInput(height)) {
             throw new TypeError('Trying to create a Rectangle wit a non numeric or null coordinate.');
         }
         

@@ -5,7 +5,7 @@ import { UIText } from '@game/ui/UIText';
 import { clipTSprite } from '@ng/drawable/DwHelper';
 import { PkScreen } from '@ng/screen/PkScreen';
 import { PK2wImageLoader } from '@ng/support/PK2wImageLoader';
-import * as PIXI from '@vendor/pixi';
+import * as PIXI from 'pixi.js';
 
 export class MapScreen extends PkScreen {
     

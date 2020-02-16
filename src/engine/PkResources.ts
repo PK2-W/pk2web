@@ -1,6 +1,6 @@
 import { ResourceFetchError } from '@ng/error/ResourceFetchError';
 import { ResourceNotFoundError } from '@ng/error/ResourceNotFoundError';
-import { Binary } from '@ng/support/Binary';
+import { PkBinary } from '@ng/types/PkBinary';
 import { pathJoin, cloneStruct } from '@ng/support/utils';
 
 /**
@@ -31,8 +31,8 @@ export class PkResources {
         return await this._xhrGet(uri, XHR_FMT.BINARY);
     }
     
-    public async getBinary(uri: string): Promise<Binary> {
-        return new Binary(await this.getArrayBuffer(uri));
+    public async getBinary(uri: string): Promise<PkBinary> {
+        return new PkBinary(await this.getArrayBuffer(uri));
     }
     
     public async getImage(uri: string): Promise<HTMLImageElement> {
