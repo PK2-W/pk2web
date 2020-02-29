@@ -1,3 +1,4 @@
+import { PkBinary } from '@ng/types/PkBinary';
 import { PkColor } from '@ng/types/PkColor';
 import { PkRectangle } from '@ng/types/PkRectangle';
 
@@ -43,6 +44,40 @@ export class PkImageTk {
         outImage.src = cvx.canvas.toDataURL();
         
         return outImage;
+    }
+    
+    public static async binaryToImage(binary: PkBinary): Promise<HTMLImageElement> {
+        const uri = URL.createObjectURL(binary.getBlob());
+        return await PkImageTk.getImage(uri);
+    }
+    
+    public static cropImage(image: HTMLImageElement, frame?: PkRectangle): HTMLImageElement {
+        // return new Promise(async (resolve, reject) => {
+        const x = frame != null ? frame.x : 0;
+        const y = frame != null ? frame.y : 0;
+        const w = frame != null ? frame.width : image.width;
+        const h = frame != null ? frame.height : image.height;
+        
+        // Move image to auxiliar canvas
+        const cvx = this.getAuxCanvas(w, h);
+        cvx.drawImage(image, -x, -y);
+        
+        // Return image
+        const image2 = new Image(w, h);
+        // image2.onload = () => resolve(image2);
+        //  image2.onerror = () => reject();
+        image2.src = cvx.canvas.toDataURL('image/png');
+        return image2;
+        //  });
+    }
+    
+    public static getImage(safeUri: string): Promise<HTMLImageElement> {
+        return new Promise(async (resolve, reject) => {
+            const image = new Image();
+            image.onload = () => resolve(image);
+            image.onerror = () => reject();
+            image.src = safeUri;
+        });
     }
     
     private static getAuxCanvas(width: number, height: number): CanvasRenderingContext2D {

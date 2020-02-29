@@ -316,6 +316,10 @@ export class PK2Map extends PK2MapInfo {
         return this._tausta;
     }
     
+    public get weather(): number {
+        return this._ilma;
+    }
+    
     
     ///  Advanced accessors  ///
     

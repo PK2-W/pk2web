@@ -85,20 +85,20 @@ export class DwBlock implements IDrawable {
         this._drawable.addChild(tile);
         
         // Debug
-        const graphics = new PIXI.Graphics();
-        if (this.tausta) {
-            graphics.lineStyle(1, 0xa8a8a8, 0.6);
-            graphics.drawRect(3, 3, BLOCK_SIZE - 6, BLOCK_SIZE - 6);
-        } else {
-            graphics.lineStyle(1, 0x1010ff, 0.6);
-            graphics.drawRect(1, 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
-        }
-        this._drawable.addChild(graphics);
-        
-        let text = new PIXI.Text(this.code, { fontFamily: 'Arial', fontSize: 10, fill: 0xff1010, align: 'left' });
-        text.x = 5;
-        text.y = 5;
-        this._drawable.addChild(text);
+        // const graphics = new PIXI.Graphics();
+        // if (this.tausta) {
+        //     graphics.lineStyle(1, 0xa8a8a8, 0.6);
+        //     graphics.drawRect(3, 3, BLOCK_SIZE - 6, BLOCK_SIZE - 6);
+        // } else {
+        //     graphics.lineStyle(1, 0x1010ff, 0.6);
+        //     graphics.drawRect(1, 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+        // }
+        // this._drawable.addChild(graphics);
+        //
+        // let text = new PIXI.Text(this.code, { fontFamily: 'Arial', fontSize: 10, fill: 0xff1010, align: 'left' });
+        // text.x = 5;
+        // text.y = 5;
+        // this._drawable.addChild(text);
         
         setTimeout(() => {
             this._drawable.cacheAsBitmap = true;

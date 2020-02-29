@@ -4,9 +4,11 @@ import { EDamageType, EDestructionType } from '@game/sprite/PK2Sprite';
 import { EAi } from '@game/sprite/SpriteManager';
 import { EBlockProtoCode } from '@game/tile/BlockConstants';
 import { PkResource } from '@ng/PkResources';
+import { PkRectangleImpl } from '@ng/types/pixi/PkRectangleImpl';
 import { PkBinary } from '@ng/types/PkBinary';
 import { pathJoin, str2num } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
+import { PkImageTexture } from '@ng/types/PkImageTexture';
 import {
     SPRITE_MAX_AI,
     SPRITE_MAX_FRAMEJA,
@@ -14,6 +16,7 @@ import {
     ANIMAATIO_MAX_SEKVENSSEJA, PK2SPRITE_VIIMEISIN_VERSIO, MAX_AANIA
 } from '../../support/constants';
 import { DWORD, int, str, BYTE, cvect, CVect } from '../../support/types';
+import * as PIXI from 'pixi.js';
 
 export class SpritePrototype {
     private mContext: GameEnv;
@@ -353,20 +356,21 @@ export class SpritePrototype {
         //     delete (tiedosto);
         //     return 1;
         // }
-        
         // Get sprite bmp
-        // strcat(kuva,kuvatiedosto);
         // int bufferi = PisteDraw2_Image_Load(kuva,false);
-        //
-        // if (bufferi == -1)
+        const img = await PkAssetTk.getImage(pathJoin(fpath, this._kuvatiedosto));
+        const bmp = await PkAssetTk.getBitmap(pathJoin(fpath, this._kuvatiedosto));
+        bmp.removeTransparentPixel();
+        // TODO
+        //  if (bufferi == -1)
         //     return 1;
-        //
+        
         // //Set diferent colors
         // BYTE *buffer = NULL;
         // DWORD leveys;
         // BYTE vari;
         // int x,y,w,h;
-        //
+        
         if (this._vari !== EColor.VARI_NORMAALI) { //Change sprite colors
             //     PisteDraw2_Image_GetSize(bufferi,w,h);
             //
@@ -383,28 +387,30 @@ export class SpritePrototype {
             //     PisteDraw2_DrawImage_End(bufferi);
         }
         
-        // int frame_i = 0,
-        //     frame_x = kuva_x,
-        //     frame_y = kuva_y;
-        //
-        // //Get each frame
-        // for (frame_i=0; frame_i<frameja; frame_i++){
-        //     if (frame_x + kuva_frame_leveys > 640){
-        //         frame_y += this->kuva_frame_korkeus + 3;
-        //         frame_x = kuva_x;
-        //     }
-        //
-        //     framet[frame_i] = PisteDraw2_Image_Cut(bufferi,frame_x,frame_y,kuva_frame_leveys,kuva_frame_korkeus); //frames
-        //     framet_peilikuva[frame_i] = PisteDraw2_Image_Cut(bufferi,frame_x,frame_y,kuva_frame_leveys,kuva_frame_korkeus); //flipped frames
-        //     PisteDraw2_Image_FlipHori(framet_peilikuva[frame_i]);
-        //
-        //     frame_x += this->kuva_frame_leveys + 3;
-        // }
-        //
+        // --- EXTRACT FRAMES ---
+        let frame_x = this._kuva_x;
+        let frame_y = this._kuva_y;
+        
+        //Get each frame
+        for (let frame_i = 0; frame_i < this._frameja; frame_i++) {
+            if (frame_x + this._kuva_frame_leveys > 640) {
+                frame_y += this._kuva_frame_korkeus + 3;
+                frame_x = this._kuva_x;
+            }
+            
+            this.tempFrame = bmp.getTexture(PkRectangleImpl.$(frame_x, frame_y, this._kuva_frame_leveys, this._kuva_frame_korkeus));
+            //     framet[frame_i] = PisteDraw2_Image_Cut(bufferi,frame_x,frame_y,kuva_frame_leveys,kuva_frame_korkeus); //frames
+            //     framet_peilikuva[frame_i] = PisteDraw2_Image_Cut(bufferi,frame_x,frame_y,kuva_frame_leveys,kuva_frame_korkeus); //flipped frames
+            //     PisteDraw2_Image_FlipHori(framet_peilikuva[frame_i]);
+            
+            frame_x += this._kuva_frame_leveys + 3;
+        }
+        
         // PisteDraw2_Image_Delete(bufferi);
         
         return this;
     }
+    public readonly tempFrame: PkImageTexture;
     
     //     void Tallenna(char *tiedoston_nimi);
     //     int  Piirra(int x, int y, int frame);
@@ -608,6 +614,14 @@ export class SpritePrototype {
     
     public canSwim(): boolean {
         return this._osaa_uida === true;
+    }
+    
+    /** @deprecated Use canFly() */
+    public get liitokyky() {
+        return this._liitokyky;
+    }
+    public canFly(): boolean {
+        return this._liitokyky === true;
     }
 }
 

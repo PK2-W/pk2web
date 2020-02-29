@@ -60,7 +60,15 @@ export class Entropy {
     public get switcher3(): int {
         return this._kytkin3;
     }
-    
+    public set switcher1(v) {
+        this._kytkin1 = v;
+    }
+    public set switcher2(v) {
+        this._kytkin2 = v;
+    }
+    public set switcher3(v) {
+        this._kytkin3 = v;
+    }
     
     ///  Static trigonometry  ///
     

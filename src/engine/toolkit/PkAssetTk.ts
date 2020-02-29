@@ -1,8 +1,10 @@
 import { ResourceFetchError } from '@ng/error/ResourceFetchError';
 import { ResourceNotFoundError } from '@ng/error/ResourceNotFoundError';
+import { Log } from '@ng/support/log/LoggerImpl';
+import { PkBitmapImpl } from '@ng/types/pixi/PkBitmapImpl';
 import { PkImageImpl } from '@ng/types/pixi/PkImageImpl';
 import { PkBinary } from '@ng/types/PkBinary';
-import { Log } from '@ng/support/log/LoggerImpl';
+import { PkBitmap } from '@ng/types/PkBitmap';
 import { PkImage } from '@ng/types/PkImage';
 
 export class PkAssetTk {
@@ -47,9 +49,10 @@ export class PkAssetTk {
         });
     }
     
-    // public static async getBitmap(uri: string): Promise<HTMLImageElement> {
-    //
-    // }
+    public static async getBitmap(uri: string): Promise<PkBitmap> {
+        return PkBitmapImpl.fromBinary(
+            await this.getBinary(uri));
+    }
     
     // public static async getSprite(uri: string): Promise<any> {
     //

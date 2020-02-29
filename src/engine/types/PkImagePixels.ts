@@ -1,32 +1,68 @@
 import { PkImageTk } from '@ng/toolkit/PkImageTk';
 import { PkColor } from '@ng/types/PkColor';
+import { int } from '../../support/types';
 
 export class PkImagePixels {
-    private readonly dt: ImageData;
+    private _dt: ImageData;
+    private readonly _width: int;
+    private readonly _height: int;
     
-    public constructor(data: HTMLImageElement | ImageData) {
-        if (data instanceof ImageData) {
-            this.dt = data;
-        } else {
-            this.dt = PkImageTk.imageToImageData(data);
-        }
+    public static fromImage(image: HTMLImageElement): PkImagePixels {
+        const obj = new PkImagePixels(image.width, image.height);
+        obj._dt = PkImageTk.imageToImageData(image);
+        return obj;
+    }
+    
+    public static fromImageData(data: ImageData): PkImagePixels {
+        const obj = new PkImagePixels(data.width, data.height);
+        obj._dt = data;
+        return obj;
+    }
+    
+    public constructor(width: int, height: int) {
+        this._width = width;
+        this._height = height;
     }
     
     public get(x: number, y: number): PkColor {
+        if (this._dt == null)
+            this.createImageData();
+        
         const i = this.getIdx(x, y);
-        return PkColor.rgba(this.dt.data[i], this.dt.data[i + 1], this.dt.data[i + 2], this.dt.data[i + 3]);
+        return PkColor.rgba(this._dt.data[i], this._dt.data[i + 1], this._dt.data[i + 2], this._dt.data[i + 3]);
     }
     
     public set(x: number, y: number, color: PkColor): this {
+        if (this._dt == null)
+            this.createImageData();
+        
         const i = this.getIdx(x, y);
-        this.dt.data[i] = color.r;
-        this.dt.data[i + 1] = color.g;
-        this.dt.data[i + 2] = color.b;
-        this.dt.data[i + 3] = color.a;
+        this._dt.data[i] = color.r;
+        this._dt.data[i + 1] = color.g;
+        this._dt.data[i + 2] = color.b;
+        this._dt.data[i + 3] = color.a;
         return this;
     }
     
+    
+    ///  Accessors  ///
+    
+    public get width(): int {
+        return this._width;
+    }
+    
+    public get height(): int {
+        return this._height;
+    }
+    
+    
+    ///  Auxiliar  ///
+    
+    private createImageData(): void {
+        this._dt = new ImageData(this.width, this.height);
+    }
+    
     private getIdx(x: number, y: number): number {
-        return (y * this.dt.width + x) * 4;
+        return (y * this.width + x) * 4;
     }
 }

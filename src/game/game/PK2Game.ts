@@ -8,7 +8,7 @@ import {
     PK2Map,
     BLOCK_TULI,
     KYTKIN_ALOITUSARVO,
-    EBgMovement
+    EBgMovement, ILMA_SADE, ILMA_SADEMETSA, ILMA_LUMISADE
 } from '@game/map/PK2Map';
 import { PK2Context } from '@game/PK2Context';
 import { PK2Sprite, EDamageType, EDestructionType } from '@game/sprite/PK2Sprite';
@@ -190,7 +190,7 @@ export class PK2Game {
      * Sourfce: PK_MainScreen_InGame
      */
     public gameLoop(delta: number): void {
-        document.getElementById('delta').innerHTML = '' + delta;
+        //document.getElementById('delta').innerHTML = '' + delta;
         // 	PK2Kartta_Animoi(_degree, palikka_animaatio/7, kytkin1, kytkin2, kytkin3, false);
         this.updateCamera();
         
@@ -210,7 +210,7 @@ export class PK2Game {
         
         if (!this._paused) {
             // Increment degreee
-            this.ctx.entropy.degree = (delta * PK2GAMELOOP / 1000) + this.ctx.entropy.degree % 359;
+            this.ctx.entropy.degree = /*(delta * PK2GAMELOOP / 1000) +*/ this.ctx.entropy.degree % 359;
             
             // Decrement timers
             this.ctx.entropy.tickTimers(delta);
@@ -561,6 +561,11 @@ export class PK2Game {
         let x = 0;
         let y = 0;
         
+        let oikealle = true;
+        let vasemmalle = true;
+        let ylos = true;
+        let alas = true;
+        
         let kartta_vasen = 0;
         let kartta_yla = 0;
         
@@ -598,8 +603,8 @@ export class PK2Game {
         // 	PisteInput_Lue_Eventti();
         if (sprite.pelaaja !== 0 && sprite.energia > 0) {
             /* SLOW WALK */
-            // 		if (PisteInput_Keydown(settings.control_walk_slow))
-            // 			lisavauhti = false;
+            if (this.env.context.input.isActing(InputAction.INPUT_WALK_SLOW))
+                lisavauhti = false;
             
             /* ATTACK 1 */
             // 		if (PisteInput_Keydown(settings.control_attack1) && sprite.lataus == 0 && sprite.ammus1 != -1)
@@ -610,10 +615,10 @@ export class PK2Game {
             
             /* CROUCH */
             sprite.kyykky = false;
-            // 		if (PisteInput_Keydown(settings.control_down) && !sprite.alas) {
-            // 			sprite.kyykky = true;
-            // 			sprite_yla += spriteHeight/1.5;
-            // 		}
+            if (this.env.context.input.isActing(InputAction.INPUT_DOWN) && !sprite.toTheBottom) {
+                sprite.kyykky = true;
+                future.top += future.height / 1.5;
+            }
             
             let a_lisays: number = 0;
             
@@ -621,12 +626,12 @@ export class PK2Game {
             if (this.env.context.input.isActing(InputAction.INPUT_RIGHT)) {
                 a_lisays = 0.04;//0.08;
                 
-                // 			if (lisavauhti) {
-                // 				if (rand()%20 == 1 && sprite.animaatio_index == ANIMAATIO_KAVELY) // Draw dust
-                // 					Game::Particles->new_particle(PARTICLE_DUST_CLOUDS,future.x-8,sprite_ala-8,0.25,-0.25,40,0,0);
-                
-                // 				a_lisays += 0.09;//0.05
-                // 			}
+                if (lisavauhti) {
+                    // 				if (rand()%20 == 1 && sprite.animaatio_index == ANIMAATIO_KAVELY) // Draw dust
+                    // 					Game::Particles->new_particle(PARTICLE_DUST_CLOUDS,future.x-8,sprite_ala-8,0.25,-0.25,40,0,0);
+                    
+                    a_lisays += 0.09;//0.05
+                }
                 
                 if (sprite.toTheBottom)
                     a_lisays /= 1.5;//2.0
@@ -638,13 +643,13 @@ export class PK2Game {
             if (this.env.context.input.isActing(InputAction.INPUT_LEFT)) {
                 a_lisays = -0.04;
                 
-                // 			if (lisavauhti) {
-                // 				if (rand()%20 == 1 && sprite.animaatio_index == ANIMAATIO_KAVELY) { // Draw dust
-                // 					Game::Particles->new_particle(PARTICLE_DUST_CLOUDS,future.x-8,sprite_ala-8,-0.25,-0.25,40,0,0);
-                // 				}
-                
-                // 				a_lisays -= 0.09;
-                // 			}
+                if (lisavauhti) {
+                    // 				if (rand()%20 == 1 && sprite.animaatio_index == ANIMAATIO_KAVELY) { // Draw dust
+                    // 					Game::Particles->new_particle(PARTICLE_DUST_CLOUDS,future.x-8,sprite_ala-8,-0.25,-0.25,40,0,0);
+                    // 				}
+                    
+                    a_lisays -= 0.09;
+                }
                 
                 if (sprite.toTheBottom)	// spriten koskettaessa maata kitka vaikuttaa
                     a_lisays /= 1.5;//2.0
@@ -674,9 +679,9 @@ export class PK2Game {
                 }
                 
                 /* tippuminen hiljaa alasp�in */
-                //if (PisteInput_Keydown(settings.control_jump) && sprite.jumpTimer >= 150/*90+20*/ &&
-                //	sprite.tyyppi->liitokyky)
-                //	hidastus = true;
+                if (this.env.context.input.isActing(InputAction.INPUT_JUMP) && sprite.jumpTimer >= 150/*90+20*/ && sprite.proto.canFly()) {
+                    hidastus = true;
+                }
             }
             /* MOVING UP AND DOWN */
             else { // if the player sprite-weight is 0 - like birds
@@ -1222,22 +1227,22 @@ export class PK2Game {
             future.y += future.b;
         }
         
-        // 	if (&sprite == Game::Sprites->player || sprite.energia < 1) {
-        // 		double kitka = 1.04;
-        //
-        // 		if (kartta->ilma == ILMA_SADE || kartta->ilma == ILMA_SADEMETSA)
-        // 			kitka = 1.03;
-        //
-        // 		if (kartta->ilma == ILMA_LUMISADE)
-        // 			kitka = 1.01;
-        //
-        // 		if (!alas)
-        // 			sprite_a /= kitka;
-        // 		else
-        // 			sprite_a /= 1.03;//1.02//1.05
-        //
-        // 		sprite_b /= 1.25;
-        // 	}
+        if (sprite === this._sprites.player || sprite.energia < 1) {
+            let kitka: number = 1.04;
+            
+            if (this.map.weather === ILMA_SADE || this.map.weather === ILMA_SADEMETSA)
+                kitka = 1.03;
+            
+            if (this.map.weather === ILMA_LUMISADE)
+                kitka = 1.01;
+            
+            if (!alas)
+                future.a /= kitka;
+            else
+                future.a /= 1.03;//1.02//1.05
+            
+            future.b /= 1.25;
+        }
         
         sprite.x = future.x;
         sprite.y = future.y;
@@ -2243,19 +2248,19 @@ export class PK2Game {
                         if (sprite.kytkinpaino >= 1) { // Sprite can press the buttons
                             if (block.code === EBlockProtoCode.BLOCK_KYTKIN1 && this.ctx.entropy.switcher1 === 0) {
                                 this.ctx.entropy.switcher1 = KYTKIN_ALOITUSARVO;
-                                kytkin_tarina = 64;
+                                this._kytkin_tarina = 64;
                                 //PK_Play_Sound(kytkin_aani, 100, (int)future.x, (int)sprite_y, SOUND_SAMPLERATE, false);
                             }
                             
                             if (block.code === EBlockProtoCode.BLOCK_KYTKIN2 && this.ctx.entropy.switcher2 === 0) {
                                 this.ctx.entropy.switcher2 = KYTKIN_ALOITUSARVO;
-                                kytkin_tarina = 64;
+                                this._kytkin_tarina = 64;
                                 //PK_Play_Sound(kytkin_aani, 100, (int)future.x, (int)sprite_y, SOUND_SAMPLERATE, false);
                             }
                             
                             if (block.code === EBlockProtoCode.BLOCK_KYTKIN3 && this.ctx.entropy.switcher3 === 0) {
                                 this.ctx.entropy.switcher3 = KYTKIN_ALOITUSARVO;
-                                kytkin_tarina = 64;
+                                this._kytkin_tarina = 64;
                                 //PK_Play_Sound(kytkin_aani, 100, (int)future.x, (int)sprite_y, SOUND_SAMPLERATE, false);
                             }
                         }

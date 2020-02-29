@@ -51,6 +51,9 @@ export class PkInput {
         if (action === InputAction.INPUT_DOWN)
             return this.pressedKeys.has(Key.ArrowDown);
         
+        if (action === InputAction.INPUT_WALK_SLOW)
+            return this.pressedKeys.has(Key.AltGraph);
+        
         return false;
     }
     

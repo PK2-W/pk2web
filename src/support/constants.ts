@@ -34,5 +34,8 @@ export enum InputAction {
     INPUT_LEFT,
     INPUT_RIGHT,
     INPUT_JUMP,
-    INPUT_DOWN
+    INPUT_DOWN,
+    INPUT_WALK_SLOW,
+    INPUT_ATTACK1,
+    INPUT_ATTACK2
 }

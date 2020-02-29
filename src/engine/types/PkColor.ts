@@ -15,6 +15,17 @@ export class PkColor {
         return color;
     }
     
+    public static bgr(b: number, g: number, r: number): PkColor {
+        const color = new PkColor();
+        
+        color._red = r;
+        color._green = g;
+        color._blue = b;
+        color._alpha = 255;
+        
+        return color;
+    }
+    
     public static rgba(r: number, g: number, b: number, a: number): PkColor {
         const color = new PkColor();
         

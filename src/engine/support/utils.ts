@@ -25,7 +25,7 @@ export function minmax(n: number, min: number, max: number): number {
     return n;
 }
 
-export function ifnul<T>(nullable: T | null, replacement: T): T {
+export function ifnul<T>(nullable: T | null, replacement: T = null): T {
     return nullable != null ? nullable : replacement;
 }
 

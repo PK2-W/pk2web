@@ -2,10 +2,11 @@ import { ab2str } from '@ng/support/utils';
 import { int, uint, uint8 } from '../../support/types';
 
 export class PkBinary {
-    private _ab: ArrayBuffer;
+    private readonly _ab: ArrayBuffer;
     
     private _streamOffset: number;
     
+    private _blob: Blob;
     
     ///
     
@@ -26,6 +27,13 @@ export class PkBinary {
     
     public read8(byteOffset: number, byteCount: number): Uint8Array {
         return new Uint8Array(this._ab, byteOffset, byteCount);
+    }
+    
+    public getBlob(): Blob {
+        if (this._blob == null) {
+            this._blob = new Blob([this._ab]);
+        }
+        return this._blob;
     }
     
     
@@ -162,6 +170,7 @@ export class PkBinary {
     public streamRead8Bool(byteCount: number = 1): boolean {
         return this.streamRead8Uint(byteCount) === 1;
     }
+    
     
     ///  Statics  ///
     

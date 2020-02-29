@@ -8,6 +8,16 @@ export class PkRectangleImpl implements PkRectangle {
         return new PkRectangleImpl(x, y, width, height);
     }
     
+    public static fromRectangle(rect: PkRectangle): PkRectangleImpl {
+        if (rect == null) {
+            return null;
+        } else if (rect instanceof PkRectangleImpl) {
+            return rect;
+        } else {
+            return new PkRectangleImpl(rect.x, rect.y, rect.width, rect.height);
+        }
+    }
+    
     public static getPixiRectangle(rect: PkRectangle): PIXI.Rectangle {
         if (rect == null) {
             return null;

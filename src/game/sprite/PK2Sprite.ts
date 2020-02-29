@@ -2,6 +2,7 @@ import { SpriteAttributes } from '@game/sprite/SpriteAttributes';
 import { EAi } from '@game/sprite/SpriteManager';
 import { SpritePrototype } from '@game/sprite/SpritePrototype';
 import { Drawable } from '@ng/drawable/Drawable';
+import { PkImageTextureImpl } from '@ng/types/pixi/PkImageTextureImpl';
 import * as PIXI from 'pixi.js';
 import { int, BYTE } from '../../support/types';
 
@@ -142,14 +143,20 @@ export class PK2Sprite extends Drawable {
             this._ammus1 = proto.ammus1;
             this._ammus2 = proto.ammus2;
             
-            this._drawable.removeChildren();
+            /*this._drawable.removeChildren();
             const graphics = new PIXI.Graphics();
             if (isPlayer)
-                graphics.lineStyle(3, 0xbb0000, 0.75);
+                graphics.lineStyle(3, 0xbb0000, 1);
             else
-                graphics.lineStyle(2, 0xce1de5, 0.6);
+                graphics.lineStyle(2, 0xce1de5, 1);
             graphics.drawRect(-proto.width / 2, -proto.height / 2, proto.width, proto.height);
-            this._drawable.addChild(graphics);
+            this._drawable.addChild(graphics);*/
+            
+            const texture = this.proto.tempFrame;
+            const tile = new PIXI.Sprite((texture as PkImageTextureImpl).getPixiTexture());
+            tile.x = -this.proto.width / 2;
+            tile.y = -this.proto.height / 2;
+            this._drawable.addChild(tile);
         }
     }
     
