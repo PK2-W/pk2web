@@ -51,5 +51,7 @@ module.exports = {
         }),
         new ForkTsCheckerWebpackPlugin({ tsconfig: to('tsconfig.json') })
     ],
-    externals: {}
+    externals: {
+        'pixi.js': 'PIXI'
+    }
 };

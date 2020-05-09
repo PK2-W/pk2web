@@ -1,28 +1,33 @@
-import { GameEnv } from '@game/game/GameEnv';
-import { PK2GameContext } from '@game/PK2GameContext';
+import { GameContext } from '@game/game/GameContext';
 import { EDamageType, EDestructionType } from '@game/sprite/PK2Sprite';
+import { SpriteAnimation } from '@game/sprite/SpriteAnimation';
 import { EAi } from '@game/sprite/SpriteManager';
-import { EBlockProtoCode } from '@game/tile/BlockConstants';
-import { PkResource } from '@ng/PkResources';
+import { Log } from '@ng/support/log/LoggerImpl';
+import { pathJoin, ifempty } from '@ng/support/utils';
+import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { PkRectangleImpl } from '@ng/types/pixi/PkRectangleImpl';
 import { PkBinary } from '@ng/types/PkBinary';
-import { pathJoin, str2num } from '@ng/support/utils';
-import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { PkImageTexture } from '@ng/types/PkImageTexture';
 import {
     SPRITE_MAX_AI,
     SPRITE_MAX_FRAMEJA,
     SPRITE_MAX_ANIMAATIOITA,
-    ANIMAATIO_MAX_SEKVENSSEJA, PK2SPRITE_VIIMEISIN_VERSIO, MAX_AANIA
+    ANIMAATIO_MAX_SEKVENSSEJA,
+    PK2SPRITE_VIIMEISIN_VERSIO,
+    MAX_AANIA
 } from '../../support/constants';
 import { DWORD, int, str, BYTE, cvect, CVect } from '../../support/types';
-import * as PIXI from 'pixi.js';
 
 export class SpritePrototype {
-    private mContext: GameEnv;
+    private mContext: GameContext;
+    
+    /** Source path. */
+    private _fpath: string;
+    /** Source file. */
+    private _fname: string;
     
     // Version
-    private _versio: str<4>;
+    private _version: str<4>;
     //.spr filename
     private _tiedosto: str<255>;
     //Prototype index
@@ -39,64 +44,86 @@ export class SpritePrototype {
     private _aanet: CVect<int> = cvect(MAX_AANIA);							// ��nitehosteet (indeksit buffereihin)
     
     // Spriten kuva- ja animaatio-ominaisuudet
-    private _framet: CVect<int> = cvect(SPRITE_MAX_FRAMEJA);						// spriten framet (bitm�pit)
-    private _framet_peilikuva: CVect<int> = cvect(SPRITE_MAX_FRAMEJA);			// spriten framet peilikuvina
-    private _frameja: BYTE;										// framejen m��r�
-    private _animaatiot: CVect<PK2SpriteAnimation> = cvect(SPRITE_MAX_ANIMAATIOITA);	// animaatio sekvenssit
+    /**
+     * Sprite frames.<br>
+     * @deprecated Must be migrated to _frames.
+     */
+    private _framet: CVect<int> = cvect(SPRITE_MAX_FRAMEJA);
+    /**
+     * Sprite frames.<br>
+     * Replacement of _framet.
+     */
+    private _frames: PkImageTexture[] = cvect(SPRITE_MAX_FRAMEJA);
+    /**
+     * Sprite frames flipped horizontaly.<br>
+     * @deprecated Use _frames.
+     */
+    private _framet_peilikuva: CVect<int> = cvect(SPRITE_MAX_FRAMEJA);
+    private _frameCount: BYTE;										// framejen m��r�
+    private _animaatiot: CVect<SpriteAnimation> = cvect(SPRITE_MAX_ANIMAATIOITA);	// animaatio sekvenssit
     private _animaatioita: BYTE;									// animaatioiden m��r�
-    private _frame_rate: BYTE;										// yhden framen kesto
+    private _frameRate: BYTE;										// yhden framen kesto
     private _kuva_x: int;											// miss� kohtaa kuvaa sprite on
     private _kuva_y: int;											// miss� kohtaa kuvaa sprite on
-    private _kuva_frame_leveys: int;								// yhden framen leveys
-    private _kuva_frame_korkeus: int;								// yhden framen korkeus
+    /** Width of a frame in the sheet. */
+    private _frameWidth: int;
+    /** Height of a frame in the sheet. */
+    private _frameHeight: int;
     private _kuva_frame_vali: int;								// kahden framen vali
     
     // Spriten ominaisuudet
     private _nimi: str<30>;										// spriten nimi (n�kyy editorissa)
     private _leveys: int;											// spriten leveys
     private _korkeus: int;										// spriten korkeus
-    private _paino: number;											// sprite paino (vaikuttaa hyppyyn ja kytkimiin)
+    private _weight: number;											// sprite paino (vaikuttaa hyppyyn ja kytkimiin)
     
     private _vihollinen: boolean;										// onko sprite vihollinen
     private _energia: int;										// monta iskua kest��
-    private _vahinko: int;										// paljon vahinkoa tekee jos osuu
-    private _vahinko_tyyppi: BYTE;									// mink� tyyppist� vahinkoa tekee (1.1)
+    private _causedDamage: int;										// paljon vahinkoa tekee jos osuu
+    private _causedDamageType: BYTE;									// mink� tyyppist� vahinkoa tekee (1.1)
     private _suojaus: BYTE;										// mink� tyyppiselt� vahingolta on suojattu (1.1)
     private _pisteet: int;										// paljonko siit� saa pisteit�
     
-    private _AI: CVect<int> = cvect(SPRITE_MAX_AI);								// mit� teko�lyj� k�ytet��n
+    private _AI: CVect<EAi> = cvect(SPRITE_MAX_AI);								// mit� teko�lyj� k�ytet��n
     
-    private _max_hyppy: BYTE;										// hypyn maksimikesto
-    private _max_nopeus: number;										// maksiminopeus
+    private _maxJump: BYTE;										// hypyn maksimikesto
+    private _maxSpeed: number;										// maksiminopeus
     private _latausaika: int;										// ampumisen j�lkeinen odotus
     private _vari: BYTE;											// tehd��nk� spritest� jonkin tietyn v�rinen
-    private _este: boolean;											// k�ytt�ytyyk� sprite kuin sein�
+    /**
+     * If true, the sprite will act like an obstable block.
+     * SRC: este. */
+    private _obstacle: boolean;
     private _tuhoutuminen: int;									// miten sprite tuhoutuu
     private _avain: boolean;											// Voiko sprite avata lukkoja
-    private _tarisee: boolean;										// T�riseek� sprite satunnaisesti
+    /** If the sprite must shake occasionally. */
+    private _shakes: boolean;
     private _bonusten_lkm: BYTE;									// Bonusten lukum��r�
-    private _hyokkays1_aika: int;									// Hy�kk�ysanimaation 1 kesto (frameja)
-    private _hyokkays2_aika: int;									// Hy�kk�ysanimaation 2 kesto (frameja)
+    /** Attack 1 animation duration (number of frames). */
+    private _hyokkays1_aika: int;
+    /** Attack 2 animation duration (number of frames). */
+    private _hyokkays2_aika: int;
     
     private _pallarx_kerroin: int;								// Vain TYYPPI_TAUSTA. Suhde taustakuvaan.
     
     // Yhteys toisiin spriteihin
     
-    private _muutos_sprite: str<100>;								// Toinen sprite joksi t�m� sprite voi muuttua
-    private _bonus_sprite: str<100>;								// Spriten bonuksena j�tt�m� k�ytt�m� sprite
-    private _ammus1_sprite: str<100>;								// Spriten ammuksena 1 k�ytt�m� sprite
-    private _ammus2_sprite: str<100>;								// Spriten ammuksena 2 k�ytt�m� sprite
-    private _muutos: int;											// Muutosspriten prototyypin indeksi. -1 jos ei ole
-    private _bonus: int;											// Bonusspriten prototyypin indeksi. -1 jos ei ole
-    private _ammus1: int;											// Ammussprite1 prototyypin indeksi. -1 jos ei ole
-    private _ammus2: int;											// Ammussprite1 prototyypin indeksi. -1 jos ei ole
+    private _morphProtoName: str<100>;								// Toinen sprite joksi t�m� sprite voi muuttua
+    private _bonusProtoName: str<100>;								// Spriten bonuksena j�tt�m� k�ytt�m� sprite
+    private _ammo1ProtoName: str<100>;								// Spriten ammuksena 1 k�ytt�m� sprite
+    private _ammo2ProtoName: str<100>;								// Spriten ammuksena 2 k�ytt�m� sprite
+    /** "Transformation" prototype. */
+    public morphProto: SpritePrototype;			// Muutosspriten prototyypin indeksi. -1 jos ei ole
+    public bonusProto: SpritePrototype;				// Bonusspriten prototyypin indeksi. -1 jos ei ole
+    public ammo1Proto: SpritePrototype;				// Ammussprite1 prototyypin indeksi. -1 jos ei ole
+    public ammo2Proto: SpritePrototype;				// Ammussprite1 prototyypin indeksi. -1 jos ei ole
     
     // Lis�ykset 1.2 versiossa
     private _tiletarkistus: boolean;									// t�rm�ileek� tileihin
     private _aani_frq: DWORD;										// ��nien perussoittotaajuus (esim. 22050)
     private _random_frq: boolean;										// satunnaisuutta taajuuteen?
     
-    // Jos sprite on este
+    // If sprite is an obstacle
     private _este_ylos: boolean;
     private _este_alas: boolean;
     private _este_oikealle: boolean;
@@ -111,22 +138,22 @@ export class SpritePrototype {
     private _bonus_aina: boolean;										// j�tt�� aina bonuksen tuhoutuessa
     private _osaa_uida: boolean;										// vaikuttaako painovoima vedess�?
     
-    public static async loadFromFile(ctx: GameEnv, path: string, file: string) {
+    public static async loadFromFile(ctx: GameContext, path: string, file: string) {
         return new SpritePrototype(ctx).loadFromFile(path, file);
     }
     
     // Muodostimet
-    public constructor(ctx: GameEnv) {
+    public constructor(ctx: GameContext) {
         this.mContext = ctx;
         
-        this._versio = PK2SPRITE_VIIMEISIN_VERSIO;
+        this._version = PK2SPRITE_VIIMEISIN_VERSIO;
         this._tiedosto = '';
         this._kuvatiedosto = '';
         this._nimi = '';
-        this._muutos_sprite = '';
-        this._bonus_sprite = '';
-        this._ammus1_sprite = '';
-        this._ammus2_sprite = '';
+        this._morphProtoName = null;
+        this._bonusProtoName = null;
+        this._ammo1ProtoName = null;
+        this._ammo2ProtoName = null;
         
         for (let aani = 0; aani < MAX_AANIA; aani++) {
             this._aanitiedostot[aani] = '';
@@ -134,44 +161,44 @@ export class SpritePrototype {
         }
         
         this._aani_frq = 22050;
-        this._ammus1 = -1;
-        this._ammus2 = -1;
+        this.ammo1Proto = null;
+        this.ammo2Proto = null;
         this._animaatioita = 0;
         this._avain = false;
-        this._bonus = -1;
+        this.bonusProto = null;
         this._bonusten_lkm = 1;
         this._energia = 0;
-        this._este = false;
+        this._obstacle = false;
         this._este_ylos = true;
         this._este_alas = true;
         this._este_oikealle = true;
         this._este_vasemmalle = true;
-        this._frameja = 0;
-        this._frame_rate = 0;
+        this._frameCount = 0;
+        this._frameRate = 0;
         this._hyokkays1_aika = 60;
         this._hyokkays2_aika = 60;
         this._index = 0;
         this._kuva_x = 0;
         this._kuva_y = 0;
-        this._kuva_frame_leveys = 0;
-        this._kuva_frame_korkeus = 0;
+        this._frameWidth = 0;
+        this._frameHeight = 0;
         this._korkeus = 0;
         this._latausaika = 0;
         this._leveys = 0;
-        this._max_hyppy = 0;
-        this._max_nopeus = 3;
-        this._muutos = -1;
-        this._paino = 0;
+        this._maxJump = 0;
+        this._maxSpeed = 3;
+        this.morphProto = null
+        this._weight = 0;
         this._pallarx_kerroin = 0;
         this._pisteet = 0;
         this._random_frq = true;
         this._suojaus = EDamageType.VAHINKO_EI;
-        this._tarisee = false;
+        this._shakes = false;
         this._tiletarkistus = true;
         this._tuhoutuminen = EDestructionType.TUHOUTUMINEN_ANIMAATIO;
         this._tyyppi = EProtoType.TYYPPI_EI_MIKAAN;
-        this._vahinko = 0;
-        this._vahinko_tyyppi = EDamageType.VAHINKO_ISKU;
+        this._causedDamage = 0;
+        this._causedDamageType = EDamageType.VAHINKO_ISKU;
         this._vari = EColor.VARI_NORMAALI;
         this._vihollinen = false;
         
@@ -203,14 +230,14 @@ export class SpritePrototype {
     
     ///  Methods  ///
     private uusi(): void {
-        this._versio = PK2SPRITE_VIIMEISIN_VERSIO;
+        this._version = PK2SPRITE_VIIMEISIN_VERSIO;
         this._tiedosto = '';
         this._kuvatiedosto = '';
         this._nimi = '';
-        this._muutos_sprite = '';
-        this._bonus_sprite = '';
-        this._ammus1_sprite = '';
-        this._ammus2_sprite = '';
+        this._morphProtoName = '';
+        this._bonusProtoName = '';
+        this._ammo1ProtoName = '';
+        this._ammo2ProtoName = '';
         
         for (let aani = 0; aani < MAX_AANIA; aani++) {
             this._aanitiedostot[aani] = '';
@@ -218,45 +245,45 @@ export class SpritePrototype {
         }
         
         this._aani_frq = 22050;
-        this._ammus1 = -1;
-        this._ammus2 = -1;
+        this.ammo1Proto = null
+        this.ammo2Proto = null
         this._animaatioita = 0;
         this._avain = false;
-        this._bonus = -1;
+        this.bonusProto = null
         this._bonusten_lkm = 1;
         this._energia = 0;
-        this._este = false;
+        this._obstacle = false;
         this._este_ylos = true;
         this._este_alas = true;
         this._este_oikealle = true;
         this._este_vasemmalle = true;
-        this._frameja = 0;
-        this._frame_rate = 0;
+        this._frameCount = 0;
+        this._frameRate = 0;
         this._hyokkays1_aika = 60;
         this._hyokkays2_aika = 60;
         this._index = 0;
         this._kuva_x = 0;
         this._kuva_y = 0;
-        this._kuva_frame_leveys = 0;
-        this._kuva_frame_korkeus = 0;
+        this._frameWidth = 0;
+        this._frameHeight = 0;
         this._korkeus = 0;
         this._latausaika = 0;
         this._leveys = 0;
-        this._max_hyppy = 0;
-        this._max_nopeus = 3;
-        this._muutos = -1;
-        this._paino = 0;
+        this._maxJump = 0;
+        this._maxSpeed = 3;
+        this.morphProto = null
+        this._weight = 0;
         this._pallarx_kerroin = 0;
         this._pisteet = 0;
         this._random_frq = true;
         this._suojaus = EDamageType.VAHINKO_EI;
-        this._tarisee = false;
+        this._shakes = false;
         this._tiletarkistus = true;
-        this._tuhoutuminen = TUHOUTUMINEN_ANIMAATIO;
+        this._tuhoutuminen = EDestructionType.TUHOUTUMINEN_ANIMAATIO;
         this._tyyppi = EProtoType.TYYPPI_EI_MIKAAN;
-        this._vahinko = 0;
-        this._vahinko_tyyppi = EDamageType.VAHINKO_ISKU;
-        this._vari = VARI_NORMAALI;
+        this._causedDamage = 0;
+        this._causedDamageType = EDamageType.VAHINKO_ISKU;
+        this._vari = EColor.VARI_NORMAALI;
         this._vihollinen = false;
         
         this._lapinakyvyys = false;
@@ -268,7 +295,7 @@ export class SpritePrototype {
         this._osaa_uida = false;
         
         for (let i = 0; i < SPRITE_MAX_AI; i++) {
-            this._AI[i] = AI_EI;
+            this._AI[i] = EAi.AI_EI;
         }
         
         for (let i = 0; i < SPRITE_MAX_FRAMEJA; i++) {
@@ -297,7 +324,7 @@ export class SpritePrototype {
     //     int  Animaatio_Uusi(int anim_i, BYTE *sekvenssi, bool looppi);
     
     /**
-     * Source: PK2Sprite_Prototyyppi::Lataa
+     * SDL: PK2Sprite_Prototyyppi::Lataa
      *
      * @param fpath
      * @param fname
@@ -306,6 +333,9 @@ export class SpritePrototype {
         // this->Uusi();
         
         // Ladataan itse sprite-tiedosto
+        
+        this._fpath = fpath;
+        this._fname = fname;
         
         const uri = pathJoin(fpath, fname);
         const file = await PkAssetTk.getBinary(uri);
@@ -392,35 +422,49 @@ export class SpritePrototype {
         let frame_y = this._kuva_y;
         
         //Get each frame
-        for (let frame_i = 0; frame_i < this._frameja; frame_i++) {
-            if (frame_x + this._kuva_frame_leveys > 640) {
-                frame_y += this._kuva_frame_korkeus + 3;
+        for (let frame_i = 0; frame_i < this._frameCount; frame_i++) {
+            if (frame_x + this._frameWidth > 640) {
+                frame_y += this._frameHeight + 3;
                 frame_x = this._kuva_x;
             }
             
-            this.tempFrame = bmp.getTexture(PkRectangleImpl.$(frame_x, frame_y, this._kuva_frame_leveys, this._kuva_frame_korkeus));
-            //     framet[frame_i] = PisteDraw2_Image_Cut(bufferi,frame_x,frame_y,kuva_frame_leveys,kuva_frame_korkeus); //frames
+            this._frames[frame_i] = bmp.getTexture(PkRectangleImpl.$(frame_x, frame_y, this._frameWidth, this._frameHeight));
             //     framet_peilikuva[frame_i] = PisteDraw2_Image_Cut(bufferi,frame_x,frame_y,kuva_frame_leveys,kuva_frame_korkeus); //flipped frames
             //     PisteDraw2_Image_FlipHori(framet_peilikuva[frame_i]);
             
-            frame_x += this._kuva_frame_leveys + 3;
+            frame_x += this._frameWidth + 3;
         }
         
         // PisteDraw2_Image_Delete(bufferi);
         
+        Log.dg(
+            [`[SpritePrototype] Loaded "${ this._fname }"`],
+            [`Version: ${ this._version }`],
+            [`Max jump: ${ this._maxJump }`],
+            [`Max speed: ${ this._maxSpeed }`],
+            [`Energy: ${ this._energia }`],
+            [`Weight: ${ this._weight }`],
+            [`Frames: ${ this._frameCount }`],
+            [`Animations: [${ this._animaatiot.join(',') }]`],
+            [`Behaviours: [${ this._AI.join(',') }]`]
+        );
+        
         return this;
     }
-    public readonly tempFrame: PkImageTexture;
     
     //     void Tallenna(char *tiedoston_nimi);
     //     int  Piirra(int x, int y, int frame);
     
-    /** TODO Esta no es la manera... */
-    public Onko_AI(ai: EAi): boolean {						// Palauttaa true, jos spritell� on ko. AI
-        for (let i = 0; i < SPRITE_MAX_AI; i++)
-            if (this._AI[i] === ai)
-                return true;
-        return false;
+    // Palauttaa true, jos spritell� on ko. AI
+    /** @deprecated Use hasBehavior */
+    public Onko_AI(ai: EAi): boolean { throw new Error('DEPRECATED'); }
+    /**
+     * Returns true if this prototype has the specified behavior, false otherwise.
+     *
+     * @param ai - Behavior to check.
+     */
+    public hasBehavior(ai: EAi): boolean {
+        return this._AI.includes(ai);
     }
     
     
@@ -429,7 +473,7 @@ export class SpritePrototype {
     //     void SetProto12(PK2Sprite_Prototyyppi12 &proto);
     
     /**
-     * Source: PK2Sprite_Prototyyppi::SetProto13.
+     * SDL: PK2Sprite_Prototyyppi::SetProto13.
      *
      * @param stream
      */
@@ -443,56 +487,56 @@ export class SpritePrototype {
             this._aanet[i] = stream.streamReadInt(4);
         }
         
-        this._frameja = stream.streamReadByte();
+        this._frameCount = stream.streamReadByte();
         for (let i = 0; i < 20; i++) {
-            this._animaatiot[i] = PK2SpriteAnimation.fromSerialized(stream);
+            this._animaatiot[i] = SpriteAnimation.fromSerialized(stream);
         }
         this._animaatioita = stream.streamReadUint(1);
-        this._frame_rate = stream.streamReadUint(1);
+        this._frameRate = stream.streamReadUint(1);
         stream.streamOffset += 1;                                 // <- 1 byte padding for struct alignment
         this._kuva_x = stream.streamReadInt(4);
         this._kuva_y = stream.streamReadInt(4);
-        this._kuva_frame_leveys = stream.streamReadInt(4);
-        this._kuva_frame_korkeus = stream.streamReadInt(4);
+        this._frameWidth = stream.streamReadInt(4);
+        this._frameHeight = stream.streamReadInt(4);
         this._kuva_frame_vali = stream.streamReadInt(4);
         
         this._nimi = stream.streamReadCStr(30);
         stream.streamOffset += 2;                                 // <- 2 bytes padding for struct alignment
         this._leveys = stream.streamReadInt(4);
         this._korkeus = stream.streamReadInt(4);
-        this._paino = stream.streamReadDouble(8);
+        this._weight = stream.streamReadDouble(8);
         this._vihollinen = stream.streamReadBool();
         
         stream.streamOffset += 3;                                 // <- 3 bytes padding for struct alignment
         this._energia = stream.streamReadInt(4);
-        this._vahinko = stream.streamReadInt(4);
-        this._vahinko_tyyppi = stream.streamReadUint(1);
+        this._causedDamage = stream.streamReadInt(4);
+        this._causedDamageType = stream.streamReadUint(1);
         this._suojaus = stream.streamReadUint(1);
         stream.streamOffset += 2;                                 // <- 2 bytes padding for struct alignment
         this._pisteet = stream.streamReadInt(4);
         for (let i = 0; i < 10; i++) {
             this._AI[i] = stream.streamReadUint(4) as EAi;
         }
-        this._max_hyppy = stream.streamReadUint(1);
+        this._maxJump = stream.streamReadUint(1);
         stream.streamOffset += 3;                                 // <- 3 bytes padding for struct alignment
-        this._max_nopeus = stream.streamReadDouble(8);
+        this._maxSpeed = stream.streamReadDouble(8);
         this._latausaika = stream.streamReadInt(4);
         this._vari = stream.streamReadUint(1);
-        this._este = stream.streamReadBool();
+        this._obstacle = stream.streamReadBool();
         stream.streamOffset += 2;                                 // <- 2 bytes padding for struct alignment
         this._tuhoutuminen = stream.streamReadInt(4);
         this._avain = stream.streamReadBool();
-        this._tarisee = stream.streamReadBool();
+        this._shakes = stream.streamReadBool();
         this._bonusten_lkm = stream.streamReadUint(1);
         stream.streamOffset++;                                    // <- 1 byte padding for struct alignment
         this._hyokkays1_aika = stream.streamReadInt(4);
         this._hyokkays2_aika = stream.streamReadInt(4);
         this._pallarx_kerroin = stream.streamReadInt(4);
         
-        this._muutos_sprite = stream.streamReadCStr(100);
-        this._bonus_sprite = stream.streamReadCStr(100);
-        this._ammus1_sprite = stream.streamReadCStr(100);
-        this._ammus2_sprite = stream.streamReadCStr(100);
+        this._morphProtoName = ifempty(stream.streamReadCStr(100));
+        this._bonusProtoName = ifempty(stream.streamReadCStr(100));
+        this._ammo1ProtoName = ifempty(stream.streamReadCStr(100));
+        this._ammo2ProtoName = ifempty(stream.streamReadCStr(100));
         
         this._tiletarkistus = stream.streamReadBool();
         
@@ -529,6 +573,49 @@ export class SpritePrototype {
         this._index = index;
     }
     
+    public get name(): string {
+        return this._fname;
+    }
+    public get path(): string {
+        return this._fpath;
+    }
+    
+    // Morph prototype
+    /** @see _morphProtoName. */
+    public get morphProtoName(): string { return this._morphProtoName; }
+    /** @deprecated Use {@link _morphProtoName}. */
+    public get muutos_sprite(): string { throw new Error('DEPRECATED'); }
+    /** @deprecated Use {@link morphProto}, that uses {@link SpritePrototype} instead an index. */
+    public get muutos(): int { throw new Error('DEPRECATED'); }
+    
+    public getBehavior(i: int): EAi {
+        return this._AI[i];
+    }
+    
+    // Bonus prototype
+    /** @see _bonusProtoName. */
+    public get bonusProtoName(): string { return this._bonusProtoName; }
+    /** @deprecated Use {@link _bonusProtoName}. */
+    public get bonus_sprite(): string { throw new Error('DEPRECATED'); }
+    /** @deprecated Use {@link bonusProto}, that uses {@link SpritePrototype} instead an index. */
+    public get bonus(): SpritePrototype { throw new Error('DEPRECATED'); }
+    
+    // Ammunition 1 prototype
+    /** @see _ammo1ProtoName. */
+    public get ammo1ProtoName(): string { return this._ammo1ProtoName; }
+    /** @deprecated Use {@link _ammo1ProtoName}. */
+    public get ammus1_sprite(): string { throw new Error('DEPRECATED'); }
+    /** @deprecated Use {@link ammo1Proto}, that uses {@link SpritePrototype} instead an index. */
+    public get ammus1(): SpritePrototype { throw new Error('DEPRECATED'); }
+    
+    // Ammunition 2 prototype
+    /** @see _ammo2ProtoName. */
+    public get ammo2ProtoName(): string { return this._ammo2ProtoName; }
+    /** @deprecated Use {@link _ammo2ProtoName}. */
+    public get ammus2_sprite(): string { throw new Error('DEPRECATED'); }
+    /** @deprecated Use {@link ammo2Proto}, that uses {@link SpritePrototype} instead an index. */
+    public get ammus2(): SpritePrototype { throw new Error('DEPRECATED'); }
+    
     /** @deprecated use width */
     public get leveys(): int {
         return this.width;
@@ -540,7 +627,61 @@ export class SpritePrototype {
         this._leveys = v;
     }
     
-    /** @deprecated use height */
+    /** In a bonus sprite is the gift-time, i.e. bonus extra time, or extra time invisible... */
+    public get latausaika() {
+        return this._latausaika;
+    }
+    
+    /** @deprecated Use shakes */
+    public get tarisee(): boolean {
+        return this.shakes;
+    }
+    public get shakes(): boolean {
+        return this._shakes;
+    }
+    
+    /** @deprecated Use frameCount */
+    public get frameja(): int {
+        return this.frameCount;
+    }
+    public get frameCount(): int {
+        return this._frameCount;
+    }
+    
+    public get frameRate(): int {
+        return this._frameRate;
+    }
+    
+    public getAnimation(i: int): SpriteAnimation {
+        return this._animaatiot[i];
+    }
+    
+    /**
+     * Returns the specified frame.
+     *
+     * @param i - Index of the required frame.
+     */
+    public getFrame(i: int): PkImageTexture {
+        return this._frames[i];
+    }
+    
+    /** @deprecated Use frameWidth. */
+    public get kuva_frame_leveys(): int {
+        return this._frameWidth;
+    }
+    public get frameWidth(): int {
+        return this._frameWidth;
+    }
+    
+    /** @deprecated Use frameHeight. */
+    public get kuva_frame_korkeus(): int {
+        return this._frameHeight;
+    }
+    public get frameHeight(): int {
+        return this._frameHeight;
+    }
+    
+    /** @deprecated Use height */
     public get korkeus(): int {
         return this.height;
     }
@@ -551,30 +692,69 @@ export class SpritePrototype {
         this._korkeus = v;
     }
     
-    /** @deprecated use maxSpeed */
+    /** @deprecated Use maxSpeed */
     public get max_nopeus(): number {
         return this.maxSpeed;
     }
     public get maxSpeed(): number {
-        return this._max_nopeus;
+        return this._maxSpeed;
     }
     public set maxSpeed(v: number) {
-        this._max_nopeus = v;
+        this._maxSpeed = v;
     }
     
     public get energy(): int {
         return this._energia;
     }
     
+    /** @deprecated Use weight */    public get paino(): number { return this.weight; }
     public get weight(): number {
-        return this._paino;
+        return this._weight;
     }
     
-    public get ammus1(): number {
-        return this._ammus1;
+    /** @deprecated use causedDamage */
+    public get vahinko(): int { return this.causedDamage; }
+    public get causedDamage(): int {
+        return this._causedDamage;
     }
-    public get ammus2(): number {
-        return this._ammus2;
+    
+    /** @deprecated use causedDamageType */
+    public get vahinko_tyyppi(): EDamageType { return this.causedDamageType; }
+    public get causedDamageType(): EDamageType {
+        return this._causedDamageType;
+    }
+    
+    public get suojaus(): EDamageType { return this._suojaus; }
+    
+    public isObstacle(): boolean {
+        return this._obstacle == true;
+    }
+    public get este(): boolean { return this._obstacle; }
+    public get este_alas(): boolean { return this._este_alas; }
+    public get este_ylos(): boolean { return this._este_ylos; }
+    public get este_oikealle(): boolean { return this._este_oikealle; }
+    public get este_vasemmalle(): boolean { return this._este_vasemmalle; }
+    
+    /** @deprecated use score */
+    public get pisteet(): number { return this.score; }
+    public get score(): number {
+        return this._pisteet;
+    }
+    
+    /** @deprecated Use attack1Duration. */
+    public get hyokkays1_aika(): int {
+        return this.attack1Duration;
+    }
+    public get attack1Duration(): int {
+        return this._hyokkays1_aika;
+    }
+    
+    /** @deprecated Use attack2Duration. */
+    public get hyokkays2_aika(): int {
+        return this.attack2Duration;
+    }
+    public get attack2Duration(): int {
+        return this._hyokkays2_aika;
     }
     
     public isEnemy() {
@@ -586,10 +766,10 @@ export class SpritePrototype {
         return this.maxJump;
     }
     public get maxJump(): BYTE {
-        return this._max_hyppy;
+        return this._maxJump;
     }
     public set maxJump(v: BYTE) {
-        this._max_hyppy = v;
+        this._maxJump = v;
     }
     
     public get pallarx_kerroin(): number {
@@ -609,7 +789,7 @@ export class SpritePrototype {
     }
     
     public isDestructible(): boolean {
-        return this._tuhoutuminen === EDestructionType.TUHOUTUMINEN_EI_TUHOUDU;
+        return this._tuhoutuminen !== EDestructionType.TUHOUTUMINEN_EI_TUHOUDU;
     }
     
     public canSwim(): boolean {
@@ -622,27 +802,6 @@ export class SpritePrototype {
     }
     public canFly(): boolean {
         return this._liitokyky === true;
-    }
-}
-
-/**
- * Source: PK2SPRITE_ANIMAATIO.
- */
-class PK2SpriteAnimation {
-    public sekvenssi: CVect<BYTE> = cvect(ANIMAATIO_MAX_SEKVENSSEJA);	// sequence
-    public frameja: BYTE;								// frames
-    public looppi: boolean;									// loop
-    
-    public static fromSerialized(stream: PkBinary) {
-        const obj = new PK2SpriteAnimation();
-        
-        for (let i = 0; i < ANIMAATIO_MAX_SEKVENSSEJA; i++) {
-            obj.sekvenssi[i] = stream.streamReadByte();
-        }
-        obj.frameja = stream.streamReadUint(1);
-        obj.looppi = stream.streamReadBool();
-        
-        return obj;
     }
 }
 

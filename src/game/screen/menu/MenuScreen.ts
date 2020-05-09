@@ -5,6 +5,7 @@ import { UIWaveText } from '@game/ui/UIWaveText';
 import { clipTSprite } from '@ng/drawable/DwHelper';
 import { PkScreen } from '@ng/screen/PkScreen';
 import { PkUIComponent } from '@ng/screen/PkUIComponent';
+import { Log } from '@ng/support/log/LoggerImpl';
 import { PK2wImageLoader } from '@ng/support/PK2wImageLoader';
 import * as PIXI from 'pixi.js';
 import { int } from '../../../support/types';
@@ -53,7 +54,7 @@ export class MenuScreen extends PkScreen {
     }
     
     private async inialize(): Promise<MenuScreen> {
-        console.debug('PK M   - Initializing menu screen');
+        Log.d('[MenuScreen] Initializing menu screen');
         
         // Load and prepare background
         const loader = await PK2wImageLoader.load('gfx/menu.bmp');

@@ -1,3 +1,4 @@
+import { Log } from '@ng/support/log/LoggerImpl';
 import { RESOURCES_PATH } from '../../support/constants';
 import * as PIXI from 'pixi.js';
 import { PK2wLoader } from './PK2wLoader';
@@ -21,7 +22,7 @@ export class PK2wImageLoader extends PK2wLoader {
     }
     
     private load(): Promise<PK2wImageLoader> {
-        console.debug(`Ld     - Loading picture: "${ this._uri }"`);
+        Log.d(`[ImageLoader] Loading picture: "${ this._uri }"`);
         
         return new Promise((resolve, reject) => {
             

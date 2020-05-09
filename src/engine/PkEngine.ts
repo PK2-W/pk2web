@@ -9,7 +9,7 @@ import { RESOURCES_PATH } from '../support/constants';
 import { GameTimer } from '../support/GameTimer';
 import { PkScreen } from './screen/PkScreen';
 import { int, bool, SCREENID } from '../support/types';
-import { PK2wRenderer } from './PK2wDraw';
+import { Renderer } from './render/Renderer';
 import { PK2wSound } from './PK2wSound';
 import { PkLanguage } from './PkLanguage';
 
@@ -35,7 +35,7 @@ export class PkEngine {
     private readonly _gameTimer: GameTimer;
     private readonly _language: PkLanguage;
     private readonly _resources: PkResources;
-    private readonly _rendr: PK2wRenderer;
+    private readonly _rendr: Renderer;
     private readonly _input: PkInput;
     private readonly _audio: PK2wSound;
     
@@ -48,10 +48,10 @@ export class PkEngine {
         // 		return;
         // 	}
         
-        this._gameTimer = new GameTimer(80);
+        this._gameTimer = new GameTimer(60);
         this._language = new PkLanguage();
         this._resources = new PkResources(RESOURCES_PATH);
-        this._rendr = new PK2wRenderer(width, height);
+        this._rendr = new Renderer(width, height);
         this._input = new PkInput(this);
         this._audio = new PK2wSound(this);
         
@@ -119,7 +119,7 @@ export class PkEngine {
         this._gameTimer.start();
         
         this._rendr.tmp();
-        this.loop2();
+        //this.loop2();
     }
     
     // TODO: separe gf. loop from gameloop
@@ -154,7 +154,7 @@ export class PkEngine {
         return this.avrg_fps;
     }
     
-    public get rendr(): PK2wRenderer {
+    public get rendr(): Renderer {
         return this._rendr;
     }
     
@@ -170,7 +170,7 @@ export class PkEngine {
         return this._resources;
     }
     
-    public getRenderer(): PK2wRenderer {
+    public getRenderer(): Renderer {
         return this._rendr;
     }
     

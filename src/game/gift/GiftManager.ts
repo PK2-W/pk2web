@@ -1,9 +1,9 @@
-import { GameEnv } from '@game/game/GameEnv';
+import { GameContext } from '@game/game/GameContext';
 
 export class GiftManager {
-    private _ctx: GameEnv;
+    private _ctx: GameContext;
     
-    public constructor(ctx: GameEnv) {
+    public constructor(ctx: GameContext) {
         this._ctx = ctx;
     }
 }

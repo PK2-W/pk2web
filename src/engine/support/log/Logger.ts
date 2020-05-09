@@ -1,7 +1,7 @@
 /**
  * Tanto en el servidor como en el cliente, el logger debe implementar esta interfaz.
  *
- * @version 1.2-stable
+ * @version 2.1-stable
  */
 export interface Logger {
     
@@ -28,9 +28,14 @@ export interface Logger {
     ev(...args): void;
     
     /**
-     * Muestra en consola el contenido especificado con el nivel "debug" (estándar).
+     * Muestra en consola el contenido especificado con el nivel "debug".
      */
     d(...args): void;
+    
+    /**
+     * Muestra en consola el contenido especificado con el nivel "log" (estándar).
+     */
+    l(...args): void
     
     /**
      * Muestra en consola el contenido especificado con el nivel "success".
@@ -47,9 +52,22 @@ export interface Logger {
      */
     e(...args): void;
     
+    /**
+     * Muestra en consola un listado de líneas agrupadas con el nivel "debug".<br>
+     * El grupo se encontrará colapsado por defecto.<br>
+     * La primera de las líneas será la cabecera del grupo.
+     *
+     * @param lines
+     */
+    dg(...lines: any[][]): void;
+    
+    /**
+     * Determina si el nivel establecido en el logger es DEBUG o inferior.
+     */
+    isDebug(): boolean;
 }
 
 /**
  * Niveles de log disponibles.
  */
-export type TLogLevel = 't' | 'e' | 'w' | 's' | 'd' | 'v' | 'vv' | 'nv' | 'ev';
+export type TLogLevel = 't' | 'e' | 'w' | 's' | 'l' | 'd' | 'v' | 'vv' | 'nv' | 'ev';

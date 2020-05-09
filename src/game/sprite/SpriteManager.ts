@@ -1,21 +1,22 @@
-import { GameEnv } from '@game/game/GameEnv';
+import { GameContext } from '@game/game/GameContext';
 import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, PK2Map } from '@game/map/PK2Map';
 import { PK2Sprite } from '@game/sprite/PK2Sprite';
 import { SpritePrototype, EProtoType, TSpriteProtoCode } from '@game/sprite/SpritePrototype';
-import { pathJoin } from '@ng/support/utils';
+import { Log } from '@ng/support/log/LoggerImpl';
+import { pathJoin, ifnul } from '@ng/support/utils';
 import { EventEmitter } from '@vendor/eventemitter3';
 import { MAX_SPRITES, MAX_SPRITE_TYPES, MAX_AANIA, RESOURCES_PATH } from '../../support/constants';
 import { OutOfBoundsError } from '../../support/error/OutOfBoundsError';
 import { int, CVect, cvect, rand } from '../../support/types';
 
 export class SpriteManager extends EventEmitter {
-    private readonly _ctx: GameEnv;
+    private readonly _ctx: GameContext;
     
     /**
      * List of prototypes.<br>
      * List indexes are the same indexes used in sprite matrices to point to the requiered prototype.
      */
-    private _protot: CVect<SpritePrototype> = cvect(MAX_SPRITE_TYPES);
+    private _protot: SpritePrototype[];
     /** Sprites pool. */
     private _spritet: CVect<PK2Sprite> = cvect(MAX_SPRITES);
     
@@ -25,17 +26,33 @@ export class SpriteManager extends EventEmitter {
     private _nextFreeProtoIndex: int = 0;
     
     
-    public constructor(ctx: GameEnv) {
+    public constructor(ctx: GameContext) {
         super();
         
         this._ctx = ctx;
+        
+        this._protot = [];
         
         this.clear();
     }
     
     
     public get(i: int) {
-        return this._spritet[i];
+        return ifnul(this._spritet[i]);
+    }
+    
+    public getPrototype(name: string) {
+        for (let proto of this._protot) {
+            if (proto.name === name) {
+                return proto;
+            }
+        }
+        
+        return null;
+    }
+    
+    public getPrototypeAt(i: int) {
+        return ifnul(this._protot[i]);
     }
     
     // private	int  protot_get(char *polku, char *tiedosto);
@@ -56,7 +73,7 @@ export class SpriteManager extends EventEmitter {
     }
     
     /**
-     * Source: PK2::SpriteSystem::protot_get_all()
+     * SDL: PK2::SpriteSystem::protot_get_all()
      *
      * @param map
      */
@@ -95,16 +112,18 @@ export class SpriteManager extends EventEmitter {
         
         this._nextFreeProtoIndex = lastProtoIndex + 1;
         
-        for (let i = 0; i < MAX_SPRITE_TYPES; i++) {
-            // protot_get_transformation(i);
-            //protot_get_bonus(i);
-            // protot_get_ammo1(i);
-            // protot_get_ammo2(i);
+        Log.d('[SpriteManager] Loading child prototypes...');
+        
+        for (let proto of this._protot) {
+            await this.loadMorphProtoFor(proto);
+            await this.loadBonusProtoFor(proto);
+            await this.loadAmmo1ProtoFor(proto);
+            await this.loadAmmo2ProtoFor(proto);
         }
     }
     
     /**
-     * Source: PK2::SpriteSystem::protot_get
+     * SDL: PK2::SpriteSystem::protot_get
      */
     private async loadProto(fpath: string, fname: string): Promise<SpritePrototype> {
         let proto: SpritePrototype;
@@ -146,6 +165,95 @@ export class SpriteManager extends EventEmitter {
         return proto;
     }
     
+    /**
+     * CPP: PK_Prototyyppi_Aseta_Muutos_Sprite
+     * SDL: PK2::SpriteSystem::protot_get_transformation
+     *
+     * @param proto
+     */
+    public async loadMorphProtoFor(proto: SpritePrototype): Promise<void> {
+        if (proto.morphProtoName != null) {
+            // If morph sprite has been already loaded, get it from the list and assign
+            proto.morphProto = this.getPrototype(proto.morphProtoName);
+            
+            // If the sprite hasn't been loaded yet,
+            if (proto.morphProto == null) {
+                // Load from file and assign
+                proto.morphProto = await SpritePrototype.loadFromFile(this._ctx, proto.path, proto.morphProtoName);
+                // Save it
+                this._protot.push(proto.morphProto);
+            }
+        }
+    }
+    
+    /**
+     * CPP: PK_Prototyyppi_Aseta_Bonus_Sprite
+     * SDL: PK2::SpriteSystem::protot_get_bonus
+     *
+     * @param proto
+     */
+    public async loadBonusProtoFor(proto: SpritePrototype): Promise<void> {
+        if (proto.bonusProtoName != null) {
+            // If bonus sprite has been already loaded, get it from the list and assign
+            proto.bonusProto = this.getPrototype(proto.bonusProtoName);
+            
+            // If the sprite hasn't been loaded yet,
+            if (proto.bonusProto == null) {
+                // Load from file and assign
+                try {
+                    proto.bonusProto = await SpritePrototype.loadFromFile(this._ctx, proto.path, proto.bonusProtoName);
+                } catch (err) {
+                    debugger
+                    console.log('');
+                } // Save it
+                this._protot.push(proto.bonusProto);
+            }
+        }
+    }
+    
+    /**
+     * CPP: PK_Prototyyppi_Aseta_Ammus1_Sprite
+     * SDL: PK2::SpriteSystem::protot_get_ammo1
+     *
+     * @param proto
+     */
+    public async loadAmmo1ProtoFor(proto: SpritePrototype): Promise<void> {
+        if (proto.ammo1ProtoName != null) {
+            // If ammo1 sprite has been already loaded, get it from the list and assign
+            proto.ammo1Proto = this.getPrototype(proto.ammo1ProtoName);
+            
+            // If the sprite hasn't been loaded yet,
+            if (proto.ammo1Proto == null) {
+                // Load from file and assign
+                proto.ammo1Proto = await SpritePrototype.loadFromFile(this._ctx, proto.path, proto.ammo1ProtoName);
+                // Save it
+                this._protot.push(proto.ammo1Proto);
+            }
+        }
+    }
+    
+    /**
+     * CPP: PK_Prototyyppi_Aseta_Ammus2_Sprite
+     * SDL: PK2::SpriteSystem::protot_get_ammo2
+     *
+     * @param proto
+     */
+    public async loadAmmo2ProtoFor(proto: SpritePrototype): Promise<void> {
+        if (proto.ammo2ProtoName != null) {
+            // If ammo2 sprite has been already loaded, get it from the list and assign
+            proto.ammo2Proto = this.getPrototype(proto.ammo2ProtoName);
+            
+            // If the sprite hasn't been loaded yet,
+            if (proto.ammo2Proto == null) {
+                // Load from file and assign
+                proto.ammo2Proto = await SpritePrototype.loadFromFile(this._ctx, proto.path, proto.ammo2ProtoName);
+                // Save it
+                this._protot.push(proto.ammo2Proto);
+            }
+        }
+    }
+    
+    
     // 	void protot_clear_all();
     
     public clear(): void {
@@ -159,7 +267,7 @@ export class SpriteManager extends EventEmitter {
     
     /**
      * Adds the sprites from the specified map to the sprite system.
-     * Source: PK2Kartta::Place_Sprites.
+     * SDL: PK2Kartta::Place_Sprites.
      */
     public addMapSprites(map: PK2Map) {
         this.clear();
@@ -189,7 +297,12 @@ export class SpriteManager extends EventEmitter {
             if (sprite.piilota) {
                 sprite.reuseWith(proto, isPlayer, false, x, y);
                 
-                if (isPlayer) this._player = sprite;
+                if (isPlayer) {
+                    this._player = sprite;
+                    
+                    // In debug, player is available globally
+                    if (Log.isDebug()) window['player'] = this;
+                }
                 
                 if (isBonus) { //If it is a bonus dropped by enemy
                     sprite.x += sprite.proto.width;
@@ -241,7 +354,7 @@ export class SpriteManager extends EventEmitter {
                 //sprite.x += sprite.proto.leveys;
                 //sprite.y += sprite.proto.korkeus/2;
                 
-                //         if (proto.Onko_AI(AI_HEITTOASE)){
+                //         if (hasBehavior(AI_HEITTOASE)){
                 //             if ((int)spritet[emo].a == 0){
                 //                 // Jos "ampuja" on pelaaja tai ammuksen nopeus on nolla
                 //                 if (spritet[emo].pelaaja == 1 || sprite.tyyppi->maxSpeed == 0){
@@ -270,7 +383,7 @@ export class SpriteManager extends EventEmitter {
                 //             sprite.hyppy_ajastin = 1;
                 //         }
                 //         else
-                //         if (proto.Onko_AI(AI_MUNA)){
+                //         if (hasBehavior(AI_MUNA)){
                 //             sprite.y = spritet[emo].y+10;
                 //             sprite.a = spritet[emo].a / 1.5;
                 //         }
@@ -330,19 +443,19 @@ export class SpriteManager extends EventEmitter {
             if (/*pelaaja_index >= 0 && pelaaja_index < MAX_SPRITEJA && */!sprite.piilota) {
                 sprite.a = 0;
                 
-                if (sprite.proto.Onko_AI(EAi.AI_RANDOM_ALOITUSSUUNTA_HORI)) {
+                if (sprite.hasBehavior(EAi.AI_RANDOM_ALOITUSSUUNTA_HORI)) {
                     while (sprite.a === 0) {
                         sprite.a = ((rand() % 2 - rand() % 2) * sprite.proto.maxSpeed) / 3.5; //2;
                     }
                 }
                 
-                if (sprite.proto.Onko_AI(EAi.AI_RANDOM_ALOITUSSUUNTA_VERT)) {
+                if (sprite.hasBehavior(EAi.AI_RANDOM_ALOITUSSUUNTA_VERT)) {
                     while (sprite.b === 0) {
                         sprite.b = ((rand() % 2 - rand() % 2) * sprite.proto.maxSpeed) / 3.5; //2;
                     }
                 }
                 
-                if (sprite.proto.Onko_AI(EAi.AI_ALOITUSSUUNTA_PELAAJAA_KOHTI)) {
+                if (sprite.hasBehavior(EAi.AI_ALOITUSSUUNTA_PELAAJAA_KOHTI)) {
                     
                     if (sprite.x < this.player.x)
                         sprite.a = sprite.proto.maxSpeed / 3.5;
@@ -351,7 +464,7 @@ export class SpriteManager extends EventEmitter {
                         sprite.a = (sprite.proto.maxSpeed * -1) / 3.5;
                 }
                 
-                if (sprite.proto.Onko_AI(EAi.AI_ALOITUSSUUNTA_PELAAJAA_KOHTI_VERT)) {
+                if (sprite.hasBehavior(EAi.AI_ALOITUSSUUNTA_PELAAJAA_KOHTI_VERT)) {
                     
                     if (sprite.y < this.player.y)
                         sprite.b = sprite.proto.maxSpeed / -3.5;
@@ -375,7 +488,7 @@ export class SpriteManager extends EventEmitter {
                 
                 if (code != null) {
                     proto = this._protot[code]; // TODO -> Estoy podría fallar
-                    if (proto.isKey() && !proto.isDestructible()) {
+                    if (proto.isKey() && proto.isDestructible()) {
                         keys++;
                     }
                 }
@@ -388,7 +501,7 @@ export class SpriteManager extends EventEmitter {
     
     ///  Accessors  ///
     
-    private get ctx(): GameEnv {
+    private get ctx(): GameContext {
         return this._ctx;
     }
     
@@ -404,13 +517,6 @@ export class SpriteManager extends EventEmitter {
     
     public onSpriteCreated(fn: (sprite: PK2Sprite) => void, context: any) {
         return this.on(Ev.SPRITE_CREATED, fn, context);
-    }
-    
-    
-    ///  Support  ///
-    
-    private log(msg) {
-        console.debug(`Spr M  - ${ msg }`);
     }
 }
 

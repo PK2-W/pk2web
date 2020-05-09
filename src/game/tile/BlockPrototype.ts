@@ -1,10 +1,9 @@
 import { TEXTURE_ID_BLOCKS } from '@game/game/PK2Game';
 import { BLOCK_ESTO_ALAS, BLOCK_KYTKIN1, BLOCK_KYTKIN3 } from '@game/map/PK2Map';
+import { EBlockProtoCode, BLOCK_RAW_SIZE, BLOCK_SIZE } from '@game/tile/BlockConstants';
 import { BlockContext } from '@game/tile/BlockContext';
 import { EBlocks } from '@game/tile/DwBlock';
-import { EBlockProtoCode, BLOCK_RAW_SIZE, BLOCK_SIZE } from '@game/tile/BlockConstants';
 import { PkRectangleImpl } from '@ng/types/pixi/PkRectangleImpl';
-import { PkImage } from '@ng/types/PkImage';
 import { PkImageTexture } from '@ng/types/PkImageTexture';
 import { PkRectangle } from '@ng/types/PkRectangle';
 import { BYTE, bool, int } from '../../support/types';
@@ -18,13 +17,13 @@ export class BlockPrototype {
     // Indicates if it's background tile
     private _tausta: boolean;
     // ...facing left
-    private _vasemmalle: BYTE;
+    private _leftIsBarrier: boolean;
     // ...facing right
-    private _oikealle: BYTE;
+    private _rightIsBarrier: boolean;
     // ...faceing up
-    private _ylos: BYTE;
+    private _topIsBarrier: boolean;
     // ...facing down
-    private _alas: BYTE;
+    private bottomIsBarrier: boolean;
     private _vasen: int;
     private _oikea: int;
     private _yla: int;
@@ -70,55 +69,55 @@ export class BlockPrototype {
             if ((i < 80 || i > 139) && i !== 255) {
                 proto._tausta = false;
                 
-                proto._oikealle = EBlocks.BLOCK_SEINA;
-                proto._vasemmalle = EBlocks.BLOCK_SEINA;
-                proto._ylos = EBlocks.BLOCK_SEINA;
-                proto._alas = EBlocks.BLOCK_SEINA;
+                proto._rightIsBarrier = true;
+                proto._leftIsBarrier = true;
+                proto._topIsBarrier = true;
+                proto.bottomIsBarrier = true;
                 
                 // Erikoislattiat
                 
                 if (i > 139) {
-                    proto._oikealle = EBlocks.BLOCK_TAUSTA;
-                    proto._vasemmalle = EBlocks.BLOCK_TAUSTA;
-                    proto._ylos = EBlocks.BLOCK_TAUSTA;
-                    proto._alas = EBlocks.BLOCK_TAUSTA;
+                    proto._rightIsBarrier = false;
+                    proto._leftIsBarrier = false;
+                    proto._topIsBarrier = false;
+                    proto.bottomIsBarrier = false;
                 }
                 
                 // L�pik�velt�v� lattia
                 
                 if (i === BLOCK_ESTO_ALAS) {
-                    proto._oikealle = EBlocks.BLOCK_TAUSTA;
-                    proto._ylos = EBlocks.BLOCK_TAUSTA;
-                    proto._alas = EBlocks.BLOCK_SEINA;
-                    proto._vasemmalle = EBlocks.BLOCK_TAUSTA;
+                    proto._rightIsBarrier = false;
+                    proto._topIsBarrier = false;
+                    proto.bottomIsBarrier = true;
+                    proto._leftIsBarrier = false;
                     proto._ala -= 27;
                 }
                 
                 // M�et
                 
                 if (i > 49 && i < 60) {
-                    proto._oikealle = EBlocks.BLOCK_TAUSTA;
-                    proto._ylos = EBlocks.BLOCK_SEINA;
-                    proto._alas = EBlocks.BLOCK_SEINA;
-                    proto._vasemmalle = EBlocks.BLOCK_TAUSTA;
+                    proto._rightIsBarrier = false;
+                    proto._topIsBarrier = true;
+                    proto.bottomIsBarrier = true;
+                    proto._leftIsBarrier = false;
                     proto._ala += 1;
                 }
                 
                 // Kytkimet
                 
                 if (i >= BLOCK_KYTKIN1 && i <= BLOCK_KYTKIN3) {
-                    proto._oikealle = EBlocks.BLOCK_SEINA;
-                    proto._ylos = EBlocks.BLOCK_SEINA;
-                    proto._alas = EBlocks.BLOCK_SEINA;
-                    proto._vasemmalle = EBlocks.BLOCK_SEINA;
+                    proto._rightIsBarrier = true;
+                    proto._topIsBarrier = true;
+                    proto.bottomIsBarrier = true;
+                    proto._leftIsBarrier = true;
                 }
             } else {
                 proto._tausta = true;
                 
-                proto._oikealle = EBlocks.BLOCK_TAUSTA;
-                proto._vasemmalle = EBlocks.BLOCK_TAUSTA;
-                proto._ylos = EBlocks.BLOCK_TAUSTA;
-                proto._alas = EBlocks.BLOCK_TAUSTA;
+                proto._rightIsBarrier = false;
+                proto._leftIsBarrier = false;
+                proto._topIsBarrier = false;
+                proto.bottomIsBarrier = false;
             }
             
             proto._vesi = (i > 131 && i < 140);
@@ -141,7 +140,7 @@ export class BlockPrototype {
     }
     
     /**
-     * Source: PK_Palikka_Tee_Maskit.
+     * SDL: PK_Palikka_Tee_Maskit.
      */
     private calculateMask(): void {
         const px = this.getDefaultTexture().getPixels();
@@ -187,10 +186,15 @@ export class BlockPrototype {
     public get bottom(): number { return this._ala; }
     public get left(): number { return this._vasen; }
     
-    public get toTheTop(): EBlocks { return this._ylos; }
-    public get toTheRight(): EBlocks { return this._oikealle; }
-    public get toTheBottom(): EBlocks { return this._alas; }
-    public get toTheLeft(): EBlocks { return this._vasemmalle; }
+    public get toTheTop(): boolean { return this._topIsBarrier; }
+    public get toTheRight(): boolean { return this._rightIsBarrier; }
+    public get toTheBottom(): boolean { return this.bottomIsBarrier; }
+    public get toTheLeft(): boolean { return this._leftIsBarrier; }
+    
+    /** @deprecated */ public get vasemmalle(): EBlocks { return this._leftIsBarrier ? EBlocks.BLOCK_SEINA : EBlocks.BLOCK_TAUSTA; };
+    /** @deprecated */ public get oikealle(): EBlocks { return this._rightIsBarrier ? EBlocks.BLOCK_SEINA : EBlocks.BLOCK_TAUSTA; };
+    /** @deprecated */ public get ylos(): EBlocks { return this._topIsBarrier ? EBlocks.BLOCK_SEINA : EBlocks.BLOCK_TAUSTA; };
+    /** @deprecated */ public get alas(): EBlocks { return this.bottomIsBarrier ? EBlocks.BLOCK_SEINA : EBlocks.BLOCK_TAUSTA; };
     
     public get topMask(): number[] { return this._topMask; }
     public get bottomMask(): number[] { return this._bottomMask; }

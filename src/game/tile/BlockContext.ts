@@ -1,10 +1,10 @@
-import { GameEnv } from '@game/game/GameEnv';
+import { GameContext } from '@game/game/GameContext';
 import { TextureCache } from '@game/game/TextureCache';
 
 export class BlockContext {
-    private _context: GameEnv;
+    private _context: GameContext;
     
-    public constructor(context: GameEnv) {
+    public constructor(context: GameContext) {
         this._context = context;
     }
     

@@ -28,7 +28,7 @@ export const MAX_AANIA = 7;
 export const VAHINKO_AIKA = 50; //Damage time?
 
 // Game loop of the original game in ticks per second
-export const PK2GAMELOOP = 100;
+export const PK2GAMELOOP = 60;
 
 export enum InputAction {
     INPUT_LEFT,

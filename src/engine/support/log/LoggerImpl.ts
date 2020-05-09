@@ -1,7 +1,7 @@
 /**
  * Forma común en la que el sistema mostrará información sobre la ejecución en terminal.
  *
- * @version 2.3-stable
+ * @version 3.2-stable
  */
 import { Logger, TLogLevel } from '@ng/support/log/Logger';
 
@@ -9,7 +9,9 @@ class LoggerImpl implements Logger {
     // Instancia
     public static readonly instance: Logger = new LoggerImpl();
     
+    public static DEBUG = true;
     public static VERBOSE = false;
+    public static VVERBOSE = false;
     
     /**
      * Devuelve el color y el método nativo para cada nivel de log.
@@ -26,12 +28,14 @@ class LoggerImpl implements Logger {
             return { c: '#2ecc71', m: 'log' };
         case 'v':
         case 'vv':
-            return { c: '#95a5a6', m: 'debug' };
+            return { c: '#444444', m: 'log' };
         case 'nv':
             return { c: '#9b59b6', m: 'debug' };
         case 'ev':
             return { c: '#3498db', m: 'debug' };
         case 'd':
+            return { c: '#777777', m: 'log' };
+        case 'l':
         default:
             return { c: null, m: 'log' };
         }
@@ -53,7 +57,7 @@ class LoggerImpl implements Logger {
      * @param args  - Argumentos originales de la llamada al logger.
      * @param level - Nivel de la información a mostrar.
      */
-    private static apply(args: any[], level: TLogLevel): void {
+    private static apply(args: any[], level: TLogLevel, group: boolean): void {
         const style = LoggerImpl.color(level);
         
         // Aplicar color
@@ -63,7 +67,7 @@ class LoggerImpl implements Logger {
         }
         
         // Mostrar
-        window.console[style.m].apply(window.console, args);
+        window.console[group ? 'groupCollapsed' : style.m].apply(window.console, args);
     }
     
     /**
@@ -73,14 +77,14 @@ class LoggerImpl implements Logger {
      * @param args  - Argumentos originales de la llamada al logger.
      * @param level - Nivel de la información a mostrar.
      */
-    private static log(args: any[], level: TLogLevel): void {
+    private static log(args: any[], level: TLogLevel, group: boolean = false): void {
         let currArgs = [];
         let currStrLike: boolean;
         let prevStrLike: boolean = null;
         
         // Si no se pasan argumentos o se pasa uno vacío, mostrar salto de línea
         if (args.length === 0 || args.length === 1 && LoggerImpl.trim(String(args[0])).length === 0) {
-            LoggerImpl.apply([''], level);
+            LoggerImpl.apply([''], level, group);
             return;
         }
         
@@ -97,7 +101,7 @@ class LoggerImpl implements Logger {
                 // Si el previo es nulo o ~object
                 else {
                     if (prevStrLike != null && currArgs.length > 0) {
-                        LoggerImpl.apply(currArgs, level);
+                        LoggerImpl.apply(currArgs, level, group);
                         prevStrLike = null;
                         currArgs = [];
                     }
@@ -114,12 +118,12 @@ class LoggerImpl implements Logger {
         }
         
         // Finalizar
-        LoggerImpl.apply(currArgs, level);
+        LoggerImpl.apply(currArgs, level, group);
     }
     
     /** @inheritDoc */
     public vv(...args): void {
-        if (!LoggerImpl.VERBOSE)
+        if (!LoggerImpl.VVERBOSE)
             return;
         
         LoggerImpl.log(args, 'vv');
@@ -143,10 +147,15 @@ class LoggerImpl implements Logger {
     
     /** @inheritDoc */
     public v(...args): void {
-        if (!LoggerImpl.VERBOSE)
+        if (!LoggerImpl.VERBOSE || !!LoggerImpl.VVERBOSE)
             return;
         
         LoggerImpl.log(args, 'v');
+    }
+    
+    /** @inheritDoc */
+    public l(...args): void {
+        LoggerImpl.log(args, 'l');
     }
     
     /** @inheritDoc */
@@ -168,7 +177,26 @@ class LoggerImpl implements Logger {
     public e(...args): void {
         LoggerImpl.log(args, 'e');
     }
+    
+    public dg(...lines: any[][]): void {
+        if (!LoggerImpl.DEBUG)
+            return;
+        
+        let i = 0;
+        for (let line of lines) {
+            if (i++ == 0) {
+                LoggerImpl.log(line, 'd', true);
+            } else {
+                LoggerImpl.log(line, 'd');
+            }
+        }
+        console.groupEnd();
+    }
+    
+    public isDebug(): boolean {
+        return LoggerImpl.DEBUG || LoggerImpl.VERBOSE || LoggerImpl.VVERBOSE;
+    }
 }
 
 // Exportar la instancia
-export const Log = LoggerImpl.instance;
+export const Log: Logger = LoggerImpl.instance;

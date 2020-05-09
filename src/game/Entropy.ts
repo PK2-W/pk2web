@@ -23,59 +23,51 @@ export class Entropy {
     }
     
     /**
-     * Source: PK_Precalculate_SinCos.
+     * SDL: PK_Precalculate_SinCos.
      */
     private precalculateSinCos(): void {
         for (let i = 0; i < 360; i++) this._cosTable[i] = Math.cos(Math.PI * 2 * (i % 360) / 180) * 33;
         for (let i = 0; i < 360; i++) this._sinTable[i] = Math.sin(Math.PI * 2 * (i % 360) / 180) * 33;
     }
     
-    public tickTimers(delta: number): void {
-        if (this._kytkin1 > 0)
-            this._kytkin1 -= Math.max(0, delta * PK2GAMELOOP / 1000);
-        
-        if (this._kytkin2 > 0)
-            this._kytkin2 -= Math.max(0, delta * PK2GAMELOOP / 1000);
-        
-        if (this._kytkin3 > 0)
-            this._kytkin3 -= Math.max(0, delta * PK2GAMELOOP / 1000);
-    }
-    
     
     ///  Accessors  ///
     
-    public get degree(): number {
+    public get oscillator(): number {
         return this._degree;
+    }
+    public get degree(): number {
+        return this.oscillator;
     }
     public set degree(degree: number) {
         this._degree = degree;
     }
+    /** @deprecated */ public get aste(): number { return this.oscillator; }
     
-    public get switcher1(): int {
-        return this._kytkin1;
-    }
-    public get switcher2(): int {
-        return this._kytkin2;
-    }
-    public get switcher3(): int {
-        return this._kytkin3;
-    }
-    public set switcher1(v) {
-        this._kytkin1 = v;
-    }
-    public set switcher2(v) {
-        this._kytkin2 = v;
-    }
-    public set switcher3(v) {
-        this._kytkin3 = v;
-    }
     
     ///  Static trigonometry  ///
     
-    public getSin(i: uint): number {
-        return this._sinTable[i];
+    /**
+     * Returns the `sin` function of the given angle.<br>
+     * If the angle is an integer precalculated table is used, in other case, native function is used.
+     *
+     * @param alpha - Angle in degrees
+     */
+    public sin(alpha: number): number {
+        return (Number.isInteger(alpha))
+            ? this._sinTable[alpha]
+            : Math.sin(alpha * Math.PI / 180);
     }
-    public getCos(i: uint): number {
-        return this._cosTable[i];
+    
+    /**
+     * Returns the `cos` function of the given angle.<br>
+     * If the angle is an integer precalculated table is used, in other case, native function is used.
+     *
+     * @param alpha - Angle in degrees
+     */
+    public cos(alpha: number): number {
+        return (Number.isInteger(alpha))
+            ? this._cosTable[alpha]
+            : Math.cos(alpha * Math.PI / 180);
     }
 }

@@ -93,7 +93,7 @@ export class PkBitmapImpl implements PkBitmap {
     }
     
     public removeTransparentPixel(color?: PkColor): this {
-        debugger;
+        //debugger;
         if (color == null) {
             color = this.getLastColor();
             if (color != null) {

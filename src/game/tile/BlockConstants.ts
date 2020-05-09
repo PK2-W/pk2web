@@ -4,8 +4,11 @@ export const BLOCK_RAW_SIZE = 32;
 export const BLOCK_SIZE = 32;
 
 export enum EBlockProtoCode {
+    /** Platform only traversable upwards. */
     BLOCK_ESTO_ALAS = 40,
+    /** Horizontal lift. */
     BLOCK_HISSI_HORI = 41,
+    /** Vertical lift. */
     BLOCK_HISSI_VERT = 42,
     BLOCK_KYTKIN2_YLOS = 43,
     BLOCK_KYTKIN2_ALAS = 45,
@@ -14,9 +17,13 @@ export enum EBlockProtoCode {
     BLOCK_LUKKO = 47,
     BLOCK_KALLOSEINA = 48,
     BLOCK_KALLOTAUSTA = 49,
+    /** Animated block 1 (60..64). */
     BLOCK_ANIM1 = 60,
+    /** Animated block 1 (65..69). */
     BLOCK_ANIM2 = 65,
+    /** Animated block 1 (70..74). */
     BLOCK_ANIM3 = 70,
+    /** Animated block 1 (75..79). */
     BLOCK_ANIM4 = 75,
     BLOCK_VIRTA_VASEMMALLE = 140,
     BLOCK_VIRTA_OIKEALLE = 141,

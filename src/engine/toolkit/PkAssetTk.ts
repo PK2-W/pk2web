@@ -39,7 +39,7 @@ export class PkAssetTk {
                 const url = URL.createObjectURL(blob);
                 const image = new Image();
                 image.onload = () => {
-                    Log.d('Loaded image: ' + uri);
+                    Log.v('[~AssetTk] Loaded image: ' + uri);
                     resolve(PkImageImpl.from(image)); //TODO Generalizar
                 };
                 image.src = url;

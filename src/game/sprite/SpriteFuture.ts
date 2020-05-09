@@ -1,6 +1,6 @@
 import { BYTE, int } from '../../support/types';
 
-export interface SpriteAttributes {
+export interface SpriteFuture {
     /** X coordinate. */
     x: number;
     /** Y coordinate. */
@@ -24,10 +24,14 @@ export interface SpriteAttributes {
     /** Sprite height. */
     height: int;
     
-    toTheRight: boolean;
-    toTheLeft: boolean;
-    toTheTop: boolean;
-    toTheBottom: boolean;
+    /** It indicates that sprite can go to the right without colliding with another sprite. */
+    canGoRight: boolean;
+    /** It indicates that sprite can go to the left without colliding with another sprite. */
+    canGoLeft: boolean;
+    /** It indicates that sprite can go up without colliding with another sprite. */
+    canGoUp: boolean;
+    /** It indicates that sprite can go down without colliding with another sprite. */
+    canGoDown: boolean;
     
     inWater: boolean;
     

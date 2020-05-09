@@ -62,12 +62,12 @@ export class PkInput {
     
     private onKeyDown(ev: KeyboardEvent): void {
         this.pressedKeys.add(ev.key);
-        Log.v('Down ' + ev.key);
+        Log.v('[~Input] Key down: ' + ev.key);
     }
     
     private onKeyUp(ev: KeyboardEvent): void {
         this.pressedKeys.delete(ev.key);
-        Log.v('Up ' + ev.key);
+        Log.v('[~Input] Key up:   ' + ev.key);
     }
     
     private onVisibilityChange(): void {

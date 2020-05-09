@@ -103,7 +103,7 @@ export class PkBinary {
     /**
      * Reads the specified number of bytes from the binary stream as a C++ string.<br>
      * If string contains \0 (null caracter) the string is truncated, else it returns the specified number of bytes.<br>
-     * Source: <code>ifstream::read</code>.
+     * SDL: <code>ifstream::read</code>.
      *
      * @param byteCount - Number of bytes to read.
      */

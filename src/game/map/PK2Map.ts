@@ -64,7 +64,7 @@ export class PK2Map extends PK2MapInfo {
     
     /**
      * Creates a new instance and loads basic data from the map file located in the specified URI.<br>
-     * Source: <code>constructor</code> + <code>PK2Kartta::Latta</code>.
+     * SDL: <code>constructor</code> + <code>PK2Kartta::Latta</code>.
      *
      * @param ctx
      * @param fname - Resource URI (from source "polku + nimi").
@@ -83,7 +83,7 @@ export class PK2Map extends PK2MapInfo {
     
     /**
      * Loads basic data from the map file located in the specified URI.<br>
-     * Source: <code>PK2Kartta::Latta</code>
+     * SDL: <code>PK2Kartta::Latta</code>
      *
      * @param uri - Resource URI (from source "polku + nimi").
      */
@@ -210,7 +210,7 @@ export class PK2Map extends PK2MapInfo {
         // TODO: Moved to game
         //Lataa_Taustakuva(this->taustakuva);
         
-        console.log(this);
+        //console.log(this);
     }
     
     //     int PK2Kartta::Lataa_PalikkaPaletti(char *polku, char *filename){

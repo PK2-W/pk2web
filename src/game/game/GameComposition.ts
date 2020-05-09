@@ -1,9 +1,11 @@
 import { Drawable } from '@ng/drawable/Drawable';
 import { IDrawable } from '@ng/drawable/IDrawable';
+import { DisplayContainer } from '@ng/display/DisplayContainer';
 import { Log } from '@ng/support/log/LoggerImpl';
 import * as PIXI from 'pixi.js';
 
 export class GameComposition extends Drawable {
+    // Game ordered layers
     private readonly _lyBgImage: PIXI.Container;
     private readonly _lyBgSprites: PIXI.Container;
     private readonly _lyBgParticles: PIXI.Container;
@@ -32,22 +34,22 @@ export class GameComposition extends Drawable {
     
     public addBgBlock(dw: IDrawable) {
         this._lyBgBlocks.addChild(dw.getDrawable());
-        Log.d('Block added to the composition (bg).');
+        //  Log.d('Block added to the composition (bg).');
     }
     
     public addFgBlock(dw: IDrawable) {
         this._lyBlocks.addChild(dw.getDrawable());
-        Log.d('Block added to the composition (fg).');
+        //  Log.d('Block added to the composition (fg).');
     }
     
     public addBgSprite(dw: IDrawable) {
         this._lyBgSprites.addChild(dw.getDrawable());
-        Log.d('Sprite added to the composition (bg).');
+        // Log.d('Sprite added to the composition (bg).');
     }
     
     public addSprite(dw: IDrawable) {
         this._lySprites.addChild(dw.getDrawable());
-        Log.d('Sprite added to the composition (fg).');
+        // Log.d('Sprite added to the composition (fg).');
     }
     
     protected get container(): PIXI.Container {

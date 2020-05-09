@@ -29,6 +29,10 @@ export function ifnul<T>(nullable: T | null, replacement: T = null): T {
     return nullable != null ? nullable : replacement;
 }
 
+export function ifempty(str: string, replacement: any = null): string {
+    return str !== '' ? str : replacement;
+}
+
 export function trim(str: string) {
     return str.replace(TRIM_RX, '');
 }

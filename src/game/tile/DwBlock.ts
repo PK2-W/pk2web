@@ -1,10 +1,12 @@
 import { Block } from '@game/tile/Block';
-import { BLOCK_SIZE } from '@game/tile/BlockConstants';
+import { BLOCK_SIZE, EBlockProtoCode } from '@game/tile/BlockConstants';
 import { BlockContext } from '@game/tile/BlockContext';
 import { BlockPrototype, TBlockProtoCode } from '@game/tile/BlockPrototype';
 import { IDrawable } from '@ng/drawable/IDrawable';
+import { Log } from '@ng/support/log/LoggerImpl';
 import { PkImageTextureImpl } from '@ng/types/pixi/PkImageTextureImpl';
 import * as PIXI from 'pixi.js';
+import { uint } from '../../support/types';
 
 export class DwBlock implements IDrawable {
     private readonly _context: BlockContext;
@@ -14,9 +16,12 @@ export class DwBlock implements IDrawable {
     private readonly _proto: BlockPrototype;
     // Id of the texture to use
     private readonly _textureId: string;
+    private _textureOffset: uint;
     
     private readonly _i: number;
     private readonly _j: number;
+    private _xOffset: number;
+    private _yOffset: number;
     
     // ...facing left
     private _vasemmalle: EBlocks;
@@ -35,6 +40,8 @@ export class DwBlock implements IDrawable {
         
         this._i = i;
         this._j = j;
+        this._xOffset = 0;
+        this._yOffset = 0;
         
         this._drawable = new PIXI.Container();
         this._drawable.x = this.x;
@@ -50,16 +57,13 @@ export class DwBlock implements IDrawable {
     public get i(): number { return this._i; }
     public get j(): number { return this._j; }
     
-    public get x(): number { return this._i * BLOCK_SIZE; }
-    // public set x(x: number) {
-    //     this._x = x;
-    //     this._drawable.x = x;
-    // }
-    public get y(): number { return this._j * BLOCK_SIZE; }
-    // public set y(y: number) {
-    //     this._y = y;
-    //     this._drawable.y = y;
-    // }
+    public get x(): number { return this.xReal + this._xOffset; }
+    public get xReal(): number { return this._i * BLOCK_SIZE; }
+    public get xOffset(): number { return this._xOffset; }
+    
+    public get y(): number { return this.yReal + this._yOffset; }
+    public get yReal(): number { return this._j * BLOCK_SIZE; }
+    public get yOffset(): number { return this._yOffset; }
     
     public get top(): number { return this.y + this._proto.top; }
     public get right(): number { return this.x + BLOCK_SIZE + this._proto.right; }
@@ -79,10 +83,13 @@ export class DwBlock implements IDrawable {
     
     ///  Graphics  ///
     
+    private tmpSpr = new PIXI.Sprite();
     public relayout(): void {
-        const texture = this._context.textureCache.getTexture(this._textureId, this._proto.getTextureArea());
-        const tile = new PIXI.Sprite((texture as PkImageTextureImpl).getPixiTexture());
-        this._drawable.addChild(tile);
+        this._drawable.removeChildren();
+        const texture = this._context.textureCache.getTexture(this._textureId, this._proto.getTextureArea(this._textureOffset));
+        this.tmpSpr.texture = (texture as PkImageTextureImpl).getPixiTexture();
+        
+        this._drawable.addChild(this.tmpSpr);
         
         // Debug
         // const graphics = new PIXI.Graphics();
@@ -100,9 +107,14 @@ export class DwBlock implements IDrawable {
         // text.y = 5;
         // this._drawable.addChild(text);
         
-        setTimeout(() => {
-            this._drawable.cacheAsBitmap = true;
-        }, 1500);
+        // setTimeout(() => {
+        //     this._drawable.cacheAsBitmap = true;
+        // }, 1500);
+    }
+    
+    public setTextureOffset(offset: uint): void {
+        this._textureOffset = offset;
+        this.relayout();
     }
     
     public getDrawable(): PIXI.DisplayObject {
@@ -129,10 +141,10 @@ export class DwBlock implements IDrawable {
             x: this.x,
             y: this.y,
             
-            toTheLeft: this._proto.toTheLeft,
-            toTheRight: this._proto.toTheRight,
-            toTheTop: this._proto.toTheTop,
-            toTheBottom: this._proto.toTheBottom,
+            leftIsBarrier: this._proto.toTheLeft,
+            rightIsBarrier: this._proto.toTheRight,
+            topIsBarrier: this._proto.toTheTop,
+            bottomIsBarrier: this._proto.toTheBottom,
             
             top: this.top,
             right: this.right,
@@ -147,8 +159,25 @@ export class DwBlock implements IDrawable {
             water: this.isWater()
         };
     }
+    
+    public setOffset(xOffset: number, yOffset: number) {
+        if (xOffset === this._xOffset && yOffset === this._yOffset)
+            return;
+        
+        this._xOffset = xOffset;
+        this._yOffset = yOffset;
+        
+        this.tmpSpr.x = xOffset;
+        this.tmpSpr.y = yOffset;
+        
+        // if (this.code === EBlockProtoCode.BLOCK_KYTKIN1 || this.code === EBlockProtoCode.BLOCK_KYTKIN2 || this.code === EBlockProtoCode.BLOCK_KYTKIN3)
+        //     Log.d(`[!Switch] Switch ${ this.code } offset set to ${ this.tmpSpr }`);
+    }
 }
 
+/**
+ * @deprecated Replace with booleans
+ */
 export enum EBlocks {
     BLOCK_TAUSTA,          //BLOCK_BACKGROUND
     BLOCK_SEINA,           //BLOCK_WALL
