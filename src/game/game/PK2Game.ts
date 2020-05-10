@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/camelcase */
+import { Effects } from '@game/effects/Effects';
 import { GameContext } from '@game/game/GameContext';
 import { GiftManager } from '@game/gift/GiftManager';
 import {
@@ -12,11 +13,14 @@ import {
     ILMA_SADEMETSA,
     ILMA_LUMISADE
 } from '@game/map/PK2Map';
+import { EParticle } from '@game/particle/Particle';
+import { ParticleSystem } from '@game/particle/ParticleSystem';
 import { PK2Context } from '@game/PK2Context';
-import { PK2Sprite, EDamageType } from '@game/sprite/PK2Sprite';
+import { PK2Sprite, EDamageType, EAnimation, EDestructionType } from '@game/sprite/PK2Sprite';
 import { SpriteFuture } from '@game/sprite/SpriteFuture';
 import { SpriteManager, EAi } from '@game/sprite/SpriteManager';
 import { EProtoType } from '@game/sprite/SpritePrototype';
+import { TX } from '@game/texts';
 import { Block } from '@game/tile/Block';
 import { EBlockProtoCode } from '@game/tile/BlockConstants';
 import { BlockManager } from '@game/tile/BlockManager';
@@ -26,8 +30,9 @@ import { pathJoin } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { PkImageTextureImpl } from '@ng/types/pixi/PkImageTextureImpl';
 import { PkImage } from '@ng/types/PkImage';
+import { PkImageTexture } from '@ng/types/PkImageTexture';
 import * as PIXI from 'pixi.js';
-import { MAX_SPRITES, RESOURCES_PATH, InputAction, SPRITE_MAX_AI } from '../../support/constants';
+import { MAX_SPRITES, RESOURCES_PATH, InputAction, SPRITE_MAX_AI, VAHINKO_AIKA } from '../../support/constants';
 import { int, rand, bool, uint, DWORD } from '../../support/types';
 
 export class PK2Game extends GameContext {
@@ -38,7 +43,6 @@ export class PK2Game extends GameContext {
     
     private _bgImage: PIXI.Container;
     // PK2BLOCKMASKI palikkamaskit[BLOCK_MAX_MASKEJA];
-    // PK2::Particle_System* Particles;
     private _sprites: SpriteManager;
     private _gifts: GiftManager;
     private _blocks: BlockManager;
@@ -52,6 +56,7 @@ export class PK2Game extends GameContext {
     private _dcameraY: number;
     private _dcameraA: number;
     private _dcameraB: number;
+    
     
     /// >  Timing
     
@@ -80,9 +85,9 @@ export class PK2Game extends GameContext {
     public constructor(context: PK2Context, map: PK2Map) {
         super(context, map);
         
+        this._sprites = new SpriteManager(this);
         this._gifts = new GiftManager(this);
         this._blocks = new BlockManager(this);
-        this._sprites = new SpriteManager(this);
         
         this._paused = false;
         
@@ -90,7 +95,7 @@ export class PK2Game extends GameContext {
             if (sprite.proto.type === EProtoType.TYYPPI_TAUSTA) {
                 this.composition.addBgSprite(sprite);
             } else {
-                this.composition.addSprite(sprite);
+                this.composition.addFgSprite(sprite);
             }
         }, this);
     }
@@ -114,6 +119,10 @@ export class PK2Game extends GameContext {
             /////  Source: PK_Map_Open --------
             
             this.loadBgImage(this.map.fpath, this.map.bgImageFilename);
+            
+            // TODO: Temporal location
+            this._stuff = await PkAssetTk.getBitmap('./pk2w/res/gfx/pk2stuff.bmp');
+            this._stuff.removeTransparentPixel();
             
             // PND	PK_New_Save();
             
@@ -202,7 +211,7 @@ export class PK2Game extends GameContext {
         
         this.updateCamera();
         
-        // 	PkEngine::Particles->update();
+        this.particles.update();
         
         if (!this._paused) {
             // ---IF level is not passed AND (level is with timeout AND timeout is not dued)
@@ -377,8 +386,8 @@ export class PK2Game extends GameContext {
         // 			if (PisteInput_Keydown(PI_LSHIFT)/* && key_delay == 0*/) {
         // 				//key_delay = 20;
         // 				for (int r = 1; r<6; r++)
-        // 					//PkEngine::Particles->new_particle(PARTICLE_SPARK, player->x + rand() % 10 - rand() % 10, player->y + rand() % 10 - rand() % 10, 0, 0, rand() % 100, 0.1, 32);
-        // 					PkEngine::Particles->new_particle(PARTICLE_SPARK, PkEngine::Sprites->player->x + rand() % 10 - rand() % 10, PkEngine::Sprites->player->y + rand() % 10 - rand() % 10, 0, 0, rand() % 100, 0.1, 32);
+        // 					//this._particles.new_particle(PARTICLE_SPARK, player->x + rand() % 10 - rand() % 10, player->y + rand() % 10 - rand() % 10, 0, 0, rand() % 100, 0.1, 32);
+        // 					this._particles.new_particle(PARTICLE_SPARK, PkEngine::Sprites->player->x + rand() % 10 - rand() % 10, PkEngine::Sprites->player->y + rand() % 10 - rand() % 10, 0, 0, rand() % 100, 0.1, 32);
         // 				*PkEngine::Sprites->player = PK2Sprite(&PkEngine::Sprites->protot[PROTOTYYPPI_KANA], 1, false, PkEngine::Sprites->player->x, PkEngine::Sprites->player->y);
         // 			}
         // 		}
@@ -409,7 +418,7 @@ export class PK2Game extends GameContext {
         // TODO    if (settings.tausta_spritet)
         // ~ PK_Draw_InGame_BGSprites()
         this.PK_Draw_InGame_BGSprites();
-        //
+        
         //     Game::Particles->draw_bg_particles();
         
         // ~ kartta->Piirra_Taustat(Game::camera_x,Game::camera_y,false);
@@ -505,9 +514,9 @@ export class PK2Game extends GameContext {
                         xl = yl = 0;
                     
                     switch (sprite.proto.getBehavior(0)) {
-                    case EAi.AI_TAUSTA_KUU               :
-                        yl += this.screenHeight / 3 + 50;
-                        break;
+                        case EAi.AI_TAUSTA_KUU               :
+                            yl += this.screenHeight / 3 + 50;
+                            break;
                         /*case AI_TAUSTA_LIIKKUU_VASEMMALLE	:	if (sprite.a == 0)
                                                          sprite.a = rand()%3;
                                                       sprite.alku_x -= sprite.a;
@@ -517,28 +526,28 @@ export class PK2Game extends GameContext {
                                                            sprite.a = rand()%3;
                                                       }
                                                       break;*/
-                    case EAi.AI_LIIKKUU_X_COS:
-                        sprite.AI_MovesX(this.entropy.cos(this.entropy.degree % 360));
-                        alku_x = sprite.x;
-                        alku_y = sprite.y;
-                        break;
-                    case EAi.AI_LIIKKUU_Y_COS:
-                        sprite.AI_MovesY(this.entropy.cos(this.entropy.degree % 360));
-                        alku_x = sprite.x;
-                        alku_y = sprite.y;
-                        break;
-                    case EAi.AI_LIIKKUU_X_SIN:
-                        sprite.AI_MovesX(this.entropy.sin(this.entropy.degree % 360));
-                        alku_x = sprite.x;
-                        alku_y = sprite.y;
-                        break;
-                    case EAi.AI_LIIKKUU_Y_SIN:
-                        sprite.AI_MovesY(this.entropy.sin(this.entropy.degree % 360));
-                        alku_x = sprite.x;
-                        alku_y = sprite.y;
-                        break;
-                    default:
-                        break;
+                        case EAi.AI_LIIKKUU_X_COS:
+                            sprite.AI_MovesX(this.entropy.cos(this.entropy.degree % 360));
+                            alku_x = sprite.x;
+                            alku_y = sprite.y;
+                            break;
+                        case EAi.AI_LIIKKUU_Y_COS:
+                            sprite.AI_MovesY(this.entropy.cos(this.entropy.degree % 360));
+                            alku_x = sprite.x;
+                            alku_y = sprite.y;
+                            break;
+                        case EAi.AI_LIIKKUU_X_SIN:
+                            sprite.AI_MovesX(this.entropy.sin(this.entropy.degree % 360));
+                            alku_x = sprite.x;
+                            alku_y = sprite.y;
+                            break;
+                        case EAi.AI_LIIKKUU_Y_SIN:
+                            sprite.AI_MovesY(this.entropy.sin(this.entropy.degree % 360));
+                            alku_x = sprite.x;
+                            alku_y = sprite.y;
+                            break;
+                        default:
+                            break;
                     }
                     
                     sprite.x = alku_x - xl;
@@ -767,7 +776,7 @@ export class PK2Game extends GameContext {
         
         for (let i = 0; i < MAX_SPRITES; i++) { //Activate sprite if it is on screen
             sprite = this._sprites.get(i);
-            
+            // (Culling sprites update)
             if (sprite.x < this.cameraX + 640 + 320 && //screen_width+screen_width/2 &&
                 sprite.x > this.cameraX - 320 && //screen_width/2 &&
                 sprite.y < this.cameraY + 480 + 240 && //screen_height+screen_height/2 &&
@@ -831,16 +840,16 @@ export class PK2Game extends GameContext {
         // Calculate the remainder of the sprite towards
         
         if (sprite.attack1Remaining > 0)
-            sprite.attack1Remaining -= 1 * coef;
+            sprite.attack1Remaining -= 1;
         
         if (sprite.attack2Remaining > 0)
-            sprite.attack2Remaining -= 1 * coef;
+            sprite.attack2Remaining -= 1;
         
         if (sprite.lataus > 0)	// aika kahden ampumisen (munimisen) v�lill�
-            sprite.lataus -= 1 * coef;
+            sprite.lataus -= 1;
         
         if (sprite.muutos_ajastin > 0)	// aika muutokseen
-            sprite.muutos_ajastin -= 1 * coef;
+            sprite.muutos_ajastin -= 1;
         
         /*****************************************************************************************/
         /* Player-sprite and its controls                                                        */
@@ -879,8 +888,9 @@ export class PK2Game extends GameContext {
                 a_lisays = 0.04;//0.08;
                 
                 if (lisavauhti) {
-                    // 				if (rand()%20 == 1 && sprite.animaatio_index == ANIMAATIO_KAVELY) // Draw dust
-                    // 					Game::Particles->new_particle(PARTICLE_DUST_CLOUDS,future.x-8,sprite_ala-8,0.25,-0.25,40,0,0);
+                    // Draw dust
+                    if (rand() % 20 == 1 && sprite.animationIndex == EAnimation.ANIMAATIO_KAVELY)
+                        this.particles.newParticle(EParticle.PARTICLE_DUST_CLOUDS, future.x - 8, future.bottom - 8, 0.25, -0.25, 40, 0, 0);
                     
                     a_lisays += 0.09;//0.05
                 }
@@ -896,9 +906,9 @@ export class PK2Game extends GameContext {
                 a_lisays = -0.04;
                 
                 if (lisavauhti) {
-                    // 				if (rand()%20 == 1 && sprite.animaatio_index == ANIMAATIO_KAVELY) { // Draw dust
-                    // 					Game::Particles->new_particle(PARTICLE_DUST_CLOUDS,future.x-8,sprite_ala-8,-0.25,-0.25,40,0,0);
-                    // 				}
+                    // Draw dust
+                    if (rand() % 20 == 1 && sprite.animationIndex == EAnimation.ANIMAATIO_KAVELY)
+                        this.particles.newParticle(EParticle.PARTICLE_DUST_CLOUDS, future.x - 8, future.bottom - 8, 0.25, -0.25, 40, 0, 0);
                     
                     a_lisays -= 0.09;
                 }
@@ -912,7 +922,7 @@ export class PK2Game extends GameContext {
             if (sprite.kyykky)	// Slow when couch
                 a_lisays /= 10;
             
-            future.a += a_lisays * coef;
+            future.a += a_lisays;
             
             /* JUMPING */
             if (sprite.proto.weight > 0) {
@@ -922,8 +932,6 @@ export class PK2Game extends GameContext {
                         // 						PK_Play_Sound(hyppy_aani, 100, (int)future.x, (int)sprite_y,
                         // 									  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
                         
-                        // if (sprite == this._sprites.player)
-                        //     Log.d(sprite.jumpTimer);
                         if (sprite.jumpTimer <= 0)
                             sprite.jumpTimer = 1; //10;
                     }
@@ -941,10 +949,10 @@ export class PK2Game extends GameContext {
             else { // if the player sprite-weight is 0 - like birds
                 
                 if (this.context.input.isActing(InputAction.INPUT_JUMP))
-                    future.b -= 0.15 * coef;
+                    future.b -= 0.15;
                 
                 if (this.context.input.isActing(InputAction.INPUT_DOWN))
-                    future.b += 0.15 * coef;
+                    future.b += 0.15;
                 
                 sprite.jumpTimer = 0;
             }
@@ -952,35 +960,38 @@ export class PK2Game extends GameContext {
             /* AI */
             for (let ai = 0; ai < SPRITE_MAX_AI; ai++) {
                 switch (sprite.proto.getBehavior(ai)) {
-                
-                case EAi.AI_MUUTOS_JOS_ENERGIAA_ALLE_2:
-                    if (sprite.proto.morphProto != null)
-                        sprite.AI_Muutos_Jos_Energiaa_Alle_2(sprite.proto.morphProto);
-                    break;
-                
-                case EAi.AI_MUUTOS_JOS_ENERGIAA_YLI_1:
-                    //TODO
-                    // if (sprite.proto.morphProto!=null)
-                    // if (sprite.AI_Muutos_Jos_Energiaa_Yli_1(sprite.proto.morphProto)==true)
-                    // 	Effect::Destruction(TUHOUTUMINEN_SAVU_HARMAA, (DWORD)sprite.x, (DWORD)sprite.y);
-                    break;
-                
-                case EAi.AI_MUUTOS_AJASTIN:
-                    if (sprite.proto.morphProto != null)
-                        sprite.AI_Muutos_Ajastin(sprite.proto.morphProto);
-                    break;
-                
-                case EAi.AI_VAHINGOITTUU_VEDESTA:
-                    sprite.AI_Vahingoittuu_Vedesta();
-                    break;
-                
-                case EAi.AI_MUUTOS_JOS_OSUTTU:
-                    if (sprite.proto.morphProto != null)
-                        sprite.AI_Muutos_Jos_Osuttu(sprite.proto.morphProto);
-                    break;
-                
-                default:
-                    break;
+                    
+                    // "Change to morph prototype if energy < 2"
+                    case EAi.AI_MUUTOS_JOS_ENERGIAA_ALLE_2:
+                        if (sprite.proto.morphProto != null)
+                            sprite.AI_Muutos_Jos_Energiaa_Alle_2(sprite.proto.morphProto);
+                        break;
+                    
+                    // "Change to morph prototype if energy > 1 and show smoke"
+                    case EAi.AI_MUUTOS_JOS_ENERGIAA_YLI_1:
+                        if (sprite.proto.morphProto != null) {
+                            if (sprite.AI_Muutos_Jos_Energiaa_Yli_1(sprite.proto.morphProto) == true)
+                                Effects.destruction(this, EDestructionType.TUHOUTUMINEN_SAVU_HARMAA, Math.floor(sprite.x), Math.floor(sprite.y));
+                        }
+                        break;
+                    
+                    // "Change to morph prototype if morph timer is over"
+                    case EAi.AI_MUUTOS_AJASTIN:
+                        if (sprite.proto.morphProto != null)
+                            sprite.AI_Muutos_Ajastin(sprite.proto.morphProto);
+                        break;
+                    
+                    case EAi.AI_VAHINGOITTUU_VEDESTA:
+                        sprite.AI_Vahingoittuu_Vedesta();
+                        break;
+                    
+                    case EAi.AI_MUUTOS_JOS_OSUTTU:
+                        if (sprite.proto.morphProto != null)
+                            sprite.AI_Muutos_Jos_Osuttu(sprite.proto.morphProto);
+                        break;
+                    
+                    default:
+                        break;
                 }
             }
             
@@ -1006,7 +1017,8 @@ export class PK2Game extends GameContext {
             
             // Original timer < 90 (impulse)
             if (!hyppy_maximissa) {
-                //sprite_b = (sprite.tyyppi->max_hyppy/2 - sprite.jumpTimer/2)/-2.0;//-4
+                // Source
+                // sprite_b = (sprite.tyyppi->max_hyppy/2 - sprite.jumpTimer/2)/-2.0;//-4
                 future.b = -this.entropy.sin(sprite.jumpTimer) / 8; //(sprite.tyyppi->max_hyppy/2 - sprite.jumpTimer/2)/-2.5;
                 if (future.b > sprite.proto.maxJump) {
                     future.b = sprite.proto.maxJump / 10.0;
@@ -1036,7 +1048,7 @@ export class PK2Game extends GameContext {
         /*****************************************************************************************/
         
         if (sprite.weight !== 0 && (sprite.jumpTimer <= 0 || sprite.jumpTimer >= 45))
-            future.b += (sprite.weight / 1.25) * coef; // + future.b/1.5;
+            future.b += (sprite.weight / 1.25); // + future.b/1.5;
         
         if (hidastus && future.b > 0) // If gliding   // TODO: Como meto el coeficiente aqui
             future.b /= 1.3; //1.5; //3
@@ -1123,13 +1135,13 @@ export class PK2Game extends GameContext {
                     sprite.jumpTimer -= 1;
             }
             
-            // 		if (rand()%80 == 1)
-            // 			Game::Particles->new_particle(PARTICLE_SPARK,future.x-4,sprite_y,0,-0.5-rand()%2,rand()%30+30,0,32);
+            if (rand() % 80 == 1)
+                this.particles.newParticle(EParticle.PARTICLE_SPARK, future.x - 4, future.y, 0, -0.5 - rand() % 2, rand() % 30 + 30, 0, 32);
         }
         
-        // If sprite enters or exist from water
+        // If sprite enters or exist from water, splash
         if (future.inWater !== sprite.inWater) {
-            // 		Effect::Splash((int)future.x,(int)future.y,32);
+            Effects.splash(this, Math.floor(future.x), Math.floor(future.y), 32);
         }
         
         /*****************************************************************************************/
@@ -1167,6 +1179,7 @@ export class PK2Game extends GameContext {
                     sprite2_yla = 0;
                 }
                 
+                // If sprite is solid (sprite can collide con sprite2)
                 if (sprite2.proto.este && sprite.proto.tiletarkistus) { //If there is a block sprite active
                     if (future.x - future.width / 2 + future.a <= sprite2.x + sprite2.proto.width / 2 &&
                         future.x + future.width / 2 + future.a >= sprite2.x - sprite2.proto.width / 2 &&
@@ -1208,13 +1221,14 @@ export class PK2Game extends GameContext {
                     }
                 }
                 
+                // If they are overlapping
                 if (future.x <= sprite2.x + sprite2.proto.width / 2 &&
                     future.x >= sprite2.x - sprite2.proto.width / 2 &&
                     future.y/*yla*/ <= sprite2.y + sprite2.proto.height / 2 &&
                     future.y/*ala*/ >= sprite2.y - sprite2.proto.height / 2 + sprite2_yla) {
-                    // samanmerkkiset spritet vaihtavat suuntaa t�rm�tess��n
-                    if (sprite.proto === sprite2.proto &&
-                        sprite2.energy > 0/* && sprite.pelaaja == 0*/) {
+                    
+                    // Sprites of same kind turn back on collision
+                    if (sprite.proto === sprite2.proto && sprite2.energy > 0/* && sprite.pelaaja == 0*/) {
                         if (sprite.x < sprite2.x)
                             future.canGoRight = false;
                         if (sprite.x > sprite2.x)
@@ -1225,6 +1239,7 @@ export class PK2Game extends GameContext {
                             future.canGoUp = false;
                     }
                     
+                    // Acceleration blocks (invisible arrows)
                     if (sprite.hasBehavior(EAi.AI_NUOLET_VAIKUTTAVAT)) {
                         
                         if (sprite2.hasBehavior(EAi.AI_NUOLI_OIKEALLE)) {
@@ -1275,10 +1290,10 @@ export class PK2Game extends GameContext {
                             // If there is another sprite damaging
                             if (sprite.proto.causedDamage > 0 && sprite2.proto.type != EProtoType.TYYPPI_BONUS) {
                                 
-                                sprite.causeDamage(sprite.proto.causedDamage, sprite.proto.causedDamageType);
+                                sprite2.causeDamage(sprite.proto.causedDamage, sprite.proto.causedDamageType);
                                 
-                                if (!(sprite2.pelaaja && 0/*nakymattomyys*/)) //If sprite2 isn't a invisible player
-                                    sprite._hyokkays1 = sprite.proto.attack1Duration; //Then sprite attack
+                                if (!(sprite2.pelaaja && false/*nakymattomyys*/)) //If sprite2 isn't a invisible player
+                                    sprite.attack1Remaining = sprite.proto.attack1Duration; //Then sprite attack
                                 
                                 // The projectiles are shattered by shock
                                 if (sprite2.proto.type == EProtoType.TYYPPI_AMMUS) {
@@ -1316,33 +1331,33 @@ export class PK2Game extends GameContext {
                 
                 Log.d(`Received damage; energy now is: ${ sprite.energy }`);
                 
-                // 			sprite.isku = VAHINKO_AIKA;
+                sprite.knockTimer = VAHINKO_AIKA;
                 
-                // 			if (sprite.saatu_vahinko_tyyppi == VAHINKO_SAHKO)
-                // 				sprite.isku *= 6;
+                if (sprite.receivedDamageType == EDamageType.VAHINKO_SAHKO)
+                    sprite.knockTimer *= 6;
                 
                 // 			PK_Play_Sound(sprite.tyyppi->aanet[AANI_VAHINKO], 100, (int)sprite.x, (int)sprite.y,
                 // 						  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
                 //
-                // 			if (sprite.tyyppi->tuhoutuminen%100 == TUHOUTUMINEN_HOYHENET)
-                // 				Effect::Destruction(TUHOUTUMINEN_HOYHENET, (DWORD)sprite.x, (DWORD)sprite.y);
-                //
-                // 			if (sprite.tyyppi->tyyppi != TYYPPI_AMMUS){
-                // 				Game::Particles->new_particle(PARTICLE_STAR,future.x,sprite_y,-1,-1,60,0.01,128);
-                // 				Game::Particles->new_particle(PARTICLE_STAR,future.x,sprite_y, 0,-1,60,0.01,128);
-                // 				Game::Particles->new_particle(PARTICLE_STAR,future.x,sprite_y, 1,-1,60,0.01,128);
-                // 			}
+                if (sprite.proto.tuhoutuminen % 100 == EDestructionType.TUHOUTUMINEN_HOYHENET)
+                    Effects.destruction(this, EDestructionType.TUHOUTUMINEN_HOYHENET, Math.floor(sprite.x), Math.floor(sprite.y));
+                
+                if (sprite.proto.type != EProtoType.TYYPPI_AMMUS) {
+                    this.particles.newParticle(EParticle.PARTICLE_STAR, future.x, future.y, -1, -1, 60, 0.01, 128);
+                    this.particles.newParticle(EParticle.PARTICLE_STAR, future.x, future.y, 0, -1, 60, 0.01, 128);
+                    this.particles.newParticle(EParticle.PARTICLE_STAR, future.x, future.y, 1, -1, 60, 0.01, 128);
+                }
                 
                 // 			if (sprite.Onko_AI(AI_VAIHDA_KALLOT_JOS_OSUTTU))
                 // 				kartta->Change_SkullBlocks();
                 
                 if (sprite.hasBehavior(EAi.AI_HYOKKAYS_1_JOS_OSUTTU)) {
-                    sprite._hyokkays1 = sprite.proto.attack1Duration;
+                    sprite.attack1Remaining = sprite.proto.attack1Duration;
                     sprite.lataus = 0;
                 }
                 
                 if (sprite.hasBehavior(EAi.AI_HYOKKAYS_2_JOS_OSUTTU)) {
-                    sprite._hyokkays2 = sprite.proto.attack2Duration;
+                    sprite.attack2Remaining = sprite.proto.attack2Duration;
                     sprite.lataus = 0;
                 }
             }
@@ -1421,17 +1436,16 @@ export class PK2Game extends GameContext {
                     if (sprite.jumpTimer >= 90 + 10) {
                         // 					PK_Play_Sound(tomahdys_aani,30,(int)future.x, (int)sprite_y,
                         // 				                  int(25050-sprite.weight*3000),true);
-                        //
-                        // 					//Game::Particles->new_particle(	PARTICLE_DUST_CLOUDS,sprite_x+rand()%5-rand()%5-10,sprite_ala+rand()%3-rand()%3,
-                        // 					//			  0,-0.2,rand()%50+20,0,0);
-                        //
-                        // 					if (rand()%7 == 1) {
-                        // 						Game::Particles->new_particle(PARTICLE_SMOKE,sprite_x+rand()%5-rand()%5-10,sprite_ala+rand()%3-rand()%3,
-                        // 									  	   0.3,-0.1,450,0,0);
-                        // 						Game::Particles->new_particle(PARTICLE_SMOKE,sprite_x+rand()%5-rand()%5-10,sprite_ala+rand()%3-rand()%3,
-                        // 									  	   -0.3,-0.1,450,0,0);
-                        // 					}
-                        //
+                        
+                        // Janne
+                        // Game::Particles->new_particle(	PARTICLE_DUST_CLOUDS,sprite_x+rand()%5-rand()%5-10,sprite_ala+rand()%3-rand()%3,
+                        //			  0,-0.2,rand()%50+20,0,0);
+                        
+                        if (rand() % 7 == 1) {
+                            this.particles.newParticle(EParticle.PARTICLE_SMOKE, future.x + rand() % 5 - rand() % 5 - 10, future.bottom + rand() % 3 - rand() % 3, 0.3, -0.1, 450, 0, 0);
+                            this.particles.newParticle(EParticle.PARTICLE_SMOKE, future.x + rand() % 5 - rand() % 5 - 10, future.bottom + rand() % 3 - rand() % 3, -0.3, -0.1, 450, 0, 0);
+                        }
+                        
                         if (sprite.weight > 1)
                             this._vibration = 34 + Math.floor(sprite.weight * 20);
                     }
@@ -1519,169 +1533,181 @@ export class PK2Game extends GameContext {
         //
         if (!sprite.isPlayer()) {
             for (let ai = 0; ai < SPRITE_MAX_AI; ai++) {
-                switch (sprite.proto._AI[ai]) {
-                case EAi.AI_EI:
-                    ai = SPRITE_MAX_AI; // lopetetaan
-                    break;
-                case EAi.AI_KANA:
-                case EAi.AI_PIKKUKANA:
-                    sprite.AI_Chicken();
-                    break;
-                case EAi.AI_SAMMAKKO1:
-                    sprite.AI_Frog1();
-                    break;
-                case EAi.AI_SAMMAKKO2:
-                    sprite.AI_Frog2();
-                    break;
-                case EAi.AI_BONUS:
-                    sprite.AI_Bonus();
-                    break;
-                case EAi.AI_MUNA:
-                    sprite.AI_Egg();
-                    break;
-                case EAi.AI_AMMUS:
-                    sprite.AI_Projectile(/**/);
-                    break;
-                case EAi.AI_HYPPIJA:
-                    sprite.AI_Hyppija();
-                    break;
-                case EAi.AI_PERUS:
-                    sprite.AI_Perus(coef);
-                    break;
-                case EAi.AI_NONSTOP:
-                    sprite.AI_NonStop(coef);
-                    break;
-                case EAi.AI_KAANTYY_ESTEESTA_HORI:
-                    sprite.AI_TurnsBackBeacuseObstacleH(/**/);
-                    break;
-                case EAi.AI_KAANTYY_ESTEESTA_VERT:
-                    sprite.AI_TurnsBackBeacuseObstacleV(/**/);
-                    break;
-                case EAi.AI_VAROO_KUOPPAA:
-                    sprite.AI_Varoo_Kuoppaa(coef);
-                    break;
-                case EAi.AI_RANDOM_SUUNNANVAIHTO_HORI:
-                    sprite.AI_Random_Suunnanvaihto_Hori();
-                    break;
-                case EAi.AI_RANDOM_KAANTYMINEN:
-                    sprite.AI_Random_Kaantyminen();
-                    break;
-                case EAi.AI_RANDOM_HYPPY:
-                    sprite.AI_Random_Hyppy();
-                    break;
-                case EAi.AI_SEURAA_PELAAJAA:
-                    if (this._nakymattomyys === 0) {
-                        sprite.AI_FollowPlayer(this._sprites.player, coef);
-                    }
-                    break;
-                case EAi.AI_SEURAA_PELAAJAA_JOS_NAKEE:
-                    if (this._nakymattomyys === 0) {
-                        sprite.AI_Seuraa_Pelaajaa_Jos_Nakee(this._sprites.player, coef);
-                    }
-                    break;
-                case EAi.AI_SEURAA_PELAAJAA_VERT_HORI:
-                    if (this._nakymattomyys === 0) {
-                        sprite.AI_Seuraa_Pelaajaa_Vert_Hori(this._sprites.player, coef);
-                    }
-                    break;
-                case EAi.AI_SEURAA_PELAAJAA_JOS_NAKEE_VERT_HORI:
-                    if (this._nakymattomyys == 0) {
-                        sprite.AI_Seuraa_Pelaajaa_Jos_Nakee_Vert_Hori(this._sprites.player, coef);
-                    }
-                    break;
-                case EAi.AI_PAKENEE_PELAAJAA_JOS_NAKEE:
-                    if (this.nakymattomyys == 0) {
-                        sprite.AI_Pakenee_Pelaajaa_Jos_Nakee(this._sprites.player);
-                    }
-                    break;
-                case EAi.AI_POMMI:
-                    sprite.AI_Pommi();
-                    break;
-                case EAi.AI_HYOKKAYS_1_JOS_OSUTTU:
-                    sprite.AI_Hyokkays_1_Jos_Osuttu();
-                    break;
-                case EAi.AI_HYOKKAYS_2_JOS_OSUTTU:
-                    sprite.AI_Hyokkays_2_Jos_Osuttu();
-                    break;
-                case EAi.AI_HYOKKAYS_1_NONSTOP:
-                    sprite.AI_Hyokkays_1_Nonstop();
-                    break;
-                case EAi.AI_HYOKKAYS_2_NONSTOP:
-                    sprite.AI_Hyokkays_2_Nonstop();
-                    break;
-                    // 				case AI_HYOKKAYS_1_JOS_PELAAJA_EDESSA:
-                    // 													if (nakymattomyys == 0)
-                    // 														sprite.AI_Hyokkays_1_Jos_Pelaaja_Edessa(*Game::Sprites->player);
-                    // 													break;
-                    // 				case AI_HYOKKAYS_2_JOS_PELAAJA_EDESSA:
-                    // 													if (nakymattomyys == 0)
-                    // 														sprite.AI_Hyokkays_2_Jos_Pelaaja_Edessa(*Game::Sprites->player);
-                    // 													break;
-                    // 				case AI_HYOKKAYS_1_JOS_PELAAJA_ALAPUOLELLA:
-                    // 													if (nakymattomyys == 0)
-                    // 														sprite.AI_Hyokkays_1_Jos_Pelaaja_Alapuolella(*Game::Sprites->player);
-                    // 													break;
-                    // 				case AI_HYPPY_JOS_PELAAJA_YLAPUOLELLA:
-                    // 													if (nakymattomyys == 0)
-                    // 														sprite.AI_Hyppy_Jos_Pelaaja_Ylapuolella(*Game::Sprites->player);
-                    // 													break;
-                    // 				case AI_VAHINGOITTUU_VEDESTA:		sprite.AI_Vahingoittuu_Vedesta();
-                    // 													break;
-                    // 				case AI_TAPA_KAIKKI:				sprite.AI_Tapa_Kaikki();
-                    // 													break;
-                    // 				case AI_KITKA_VAIKUTTAA:			sprite.AI_Kitka_Vaikuttaa();
-                    // 													break;
-                    // 				case AI_PIILOUTUU:					sprite.AI_Piiloutuu();
-                    // 													break;
-                    // 				case AI_PALAA_ALKUUN_X:				sprite.AI_Palaa_Alkuun_X();
-                    // 													break;
-                    // 				case AI_PALAA_ALKUUN_Y:				sprite.AI_Palaa_Alkuun_Y();
-                    // 													break;
-                case EAi.AI_LIIKKUU_X_COS:
-                    sprite.AI_MovesX(this.entropy.cos(this.entropy.degree % 360));
-                    break;
-                case EAi.AI_LIIKKUU_Y_COS:
-                    sprite.AI_MovesY(this.entropy.cos(this.entropy.degree % 360));
-                    break;
-                case EAi.AI_LIIKKUU_X_SIN:
-                    sprite.AI_MovesX(this.entropy.sin(this.entropy.degree % 360));
-                    break;
-                case EAi.AI_LIIKKUU_Y_SIN:
-                    sprite.AI_MovesY(this.entropy.sin(this.entropy.degree % 360));
-                    break;
-                case EAi.AI_LIIKKUU_X_COS_NOPEA:
-                    sprite.AI_MovesX(this.entropy.cos((this.entropy.degree * 2) % 360));
-                    break;
-                case EAi.AI_LIIKKUU_Y_SIN_NOPEA:
-                    sprite.AI_MovesY(this.entropy.sin((this.entropy.degree * 2) % 360));
-                    break;
-                case EAi.AI_LIIKKUU_X_COS_HIDAS:
-                    sprite.AI_MovesX(this.entropy.cos((this.entropy.degree / 2) % 360));
-                    break;
-                case EAi.AI_LIIKKUU_Y_SIN_HIDAS:
-                    sprite.AI_MovesY(this.entropy.sin((this.entropy.degree / 2) % 360));
-                    break;
-                case EAi.AI_LIIKKUU_Y_SIN_VAPAA:
-                    sprite.AI_MovesY(this.entropy.sin((sprite.ajastin / 2) % 360));
-                    break;
-                case EAi.AI_MUUTOS_JOS_ENERGIAA_ALLE_2:
-                    if (sprite.proto.morphProto != null)
-                        sprite.AI_Muutos_Jos_Energiaa_Alle_2(sprite.proto.morphProto);
-                    break;
-                case EAi.AI_MUUTOS_JOS_ENERGIAA_YLI_1:
-                    // TODO
-                    //if (sprite.proto.morphProto != null)
-                    // if (sprite.AI_Muutos_Jos_Energiaa_Yli_1(sprite.proto.morphProto)==true)
-                    // 	Effect::Destruction(TUHOUTUMINEN_SAVU_HARMAA, (DWORD)sprite.x, (DWORD)sprite.y);
-                    break;
-                case EAi.AI_MUUTOS_AJASTIN:
-                    if (sprite.proto.morphProto != null)
-                        sprite.AI_Muutos_Ajastin(sprite.proto.morphProto);
-                    break;
-                case EAi.AI_MUUTOS_JOS_OSUTTU:
-                    if (sprite.proto.morphProto != null)
-                        sprite.AI_Muutos_Jos_Osuttu(sprite.proto.morphProto);
-                    break;
+                switch (sprite.proto.getBehavior(ai)) {
+                    case EAi.AI_EI:
+                        ai = SPRITE_MAX_AI; // lopetetaan
+                        break;
+                    case EAi.AI_KANA:
+                    case EAi.AI_PIKKUKANA:
+                        sprite.AI_Chicken();
+                        break;
+                    case EAi.AI_SAMMAKKO1:
+                        sprite.AI_Frog1();
+                        break;
+                    case EAi.AI_SAMMAKKO2:
+                        sprite.AI_Frog2();
+                        break;
+                    case EAi.AI_BONUS:
+                        sprite.AI_Bonus();
+                        break;
+                    case EAi.AI_MUNA:
+                        sprite.AI_Egg();
+                        break;
+                    case EAi.AI_AMMUS:
+                        sprite.AI_Projectile(/**/);
+                        break;
+                    case EAi.AI_HYPPIJA:
+                        sprite.AI_Hyppija();
+                        break;
+                    case EAi.AI_PERUS:
+                        sprite.AI_Perus();
+                        break;
+                    case EAi.AI_NONSTOP:
+                        sprite.AI_NonStop();
+                        break;
+                    case EAi.AI_KAANTYY_ESTEESTA_HORI:
+                        sprite.AI_TurnsBackBeacuseObstacleH(/**/);
+                        break;
+                    case EAi.AI_KAANTYY_ESTEESTA_VERT:
+                        sprite.AI_TurnsBackBeacuseObstacleV(/**/);
+                        break;
+                    case EAi.AI_VAROO_KUOPPAA:
+                        sprite.AI_Varoo_Kuoppaa();
+                        break;
+                    case EAi.AI_RANDOM_SUUNNANVAIHTO_HORI:
+                        sprite.AI_Random_Suunnanvaihto_Hori();
+                        break;
+                    case EAi.AI_RANDOM_KAANTYMINEN:
+                        sprite.AI_Random_Kaantyminen();
+                        break;
+                    case EAi.AI_RANDOM_HYPPY:
+                        sprite.AI_Random_Hyppy();
+                        break;
+                    case EAi.AI_SEURAA_PELAAJAA:
+                        if (this._nakymattomyys === 0) {
+                            sprite.AI_FollowPlayer(this._sprites.player);
+                        }
+                        break;
+                    case EAi.AI_SEURAA_PELAAJAA_JOS_NAKEE:
+                        if (this._nakymattomyys === 0) {
+                            sprite.AI_Seuraa_Pelaajaa_Jos_Nakee(this._sprites.player);
+                        }
+                        break;
+                    case EAi.AI_SEURAA_PELAAJAA_VERT_HORI:
+                        if (this._nakymattomyys === 0) {
+                            sprite.AI_Seuraa_Pelaajaa_Vert_Hori(this._sprites.player);
+                        }
+                        break;
+                    case EAi.AI_SEURAA_PELAAJAA_JOS_NAKEE_VERT_HORI:
+                        if (this._nakymattomyys == 0) {
+                            sprite.AI_Seuraa_Pelaajaa_Jos_Nakee_Vert_Hori(this._sprites.player);
+                        }
+                        break;
+                    case EAi.AI_PAKENEE_PELAAJAA_JOS_NAKEE:
+                        if (this.nakymattomyys == 0) {
+                            sprite.AI_Pakenee_Pelaajaa_Jos_Nakee(this._sprites.player);
+                        }
+                        break;
+                    case EAi.AI_POMMI:
+                        sprite.AI_Pommi();
+                        break;
+                    case EAi.AI_HYOKKAYS_1_JOS_OSUTTU:
+                        sprite.AI_Hyokkays_1_Jos_Osuttu();
+                        break;
+                    case EAi.AI_HYOKKAYS_2_JOS_OSUTTU:
+                        sprite.AI_Hyokkays_2_Jos_Osuttu();
+                        break;
+                    case EAi.AI_HYOKKAYS_1_NONSTOP:
+                        sprite.AI_Hyokkays_1_Nonstop();
+                        break;
+                    case EAi.AI_HYOKKAYS_2_NONSTOP:
+                        sprite.AI_Hyokkays_2_Nonstop();
+                        break;
+                    // "Attack 1 if player is in front"
+                    case EAi.AI_HYOKKAYS_1_JOS_PELAAJA_EDESSA:
+                        if (this._nakymattomyys == 0)
+                            sprite.AI_Hyokkays_1_Jos_Pelaaja_Edessa(this._sprites.player);
+                        break;
+                    // "Attack 2 if player is in front"
+                    case EAi.AI_HYOKKAYS_2_JOS_PELAAJA_EDESSA:
+                        if (this._nakymattomyys == 0)
+                            sprite.AI_Hyokkays_2_Jos_Pelaaja_Edessa(this._sprites.player);
+                        break;
+                    // "Attack 1 if player is bellow"
+                    case EAi.AI_HYOKKAYS_1_JOS_PELAAJA_ALAPUOLELLA:
+                        if (this._nakymattomyys == 0)
+                            sprite.AI_Hyokkays_1_Jos_Pelaaja_Alapuolella(this._sprites.player);
+                        break;
+                    // "Jump if player is above"
+                    case EAi.AI_HYPPY_JOS_PELAAJA_YLAPUOLELLA:
+                        if (this._nakymattomyys == 0)
+                            sprite.AI_Hyppy_Jos_Pelaaja_Ylapuolella(this._sprites.player);
+                        break;
+                    case EAi.AI_VAHINGOITTUU_VEDESTA:
+                        sprite.AI_Vahingoittuu_Vedesta();
+                        break;
+                    case EAi.AI_TAPA_KAIKKI:
+                        sprite.AI_Tapa_Kaikki();
+                        break;
+                    case EAi.AI_KITKA_VAIKUTTAA:
+                        sprite.AI_Kitka_Vaikuttaa();
+                        break;
+                    case EAi.AI_PIILOUTUU:
+                        sprite.AI_Piiloutuu();
+                        break;
+                    case EAi.AI_PALAA_ALKUUN_X:
+                        sprite.AI_Palaa_Alkuun_X();
+                        break;
+                    case EAi.AI_PALAA_ALKUUN_Y:
+                        sprite.AI_Palaa_Alkuun_Y();
+                        break;
+                    case EAi.AI_LIIKKUU_X_COS:
+                        sprite.AI_MovesX(this.entropy.cos(this.entropy.degree % 360));
+                        break;
+                    case EAi.AI_LIIKKUU_Y_COS:
+                        sprite.AI_MovesY(this.entropy.cos(this.entropy.degree % 360));
+                        break;
+                    case EAi.AI_LIIKKUU_X_SIN:
+                        sprite.AI_MovesX(this.entropy.sin(this.entropy.degree % 360));
+                        break;
+                    case EAi.AI_LIIKKUU_Y_SIN:
+                        sprite.AI_MovesY(this.entropy.sin(this.entropy.degree % 360));
+                        break;
+                    case EAi.AI_LIIKKUU_X_COS_NOPEA:
+                        sprite.AI_MovesX(this.entropy.cos((this.entropy.degree * 2) % 360));
+                        break;
+                    case EAi.AI_LIIKKUU_Y_SIN_NOPEA:
+                        sprite.AI_MovesY(this.entropy.sin((this.entropy.degree * 2) % 360));
+                        break;
+                    case EAi.AI_LIIKKUU_X_COS_HIDAS:
+                        sprite.AI_MovesX(this.entropy.cos((this.entropy.degree / 2) % 360));
+                        break;
+                    case EAi.AI_LIIKKUU_Y_SIN_HIDAS:
+                        sprite.AI_MovesY(this.entropy.sin((this.entropy.degree / 2) % 360));
+                        break;
+                    case EAi.AI_LIIKKUU_Y_SIN_VAPAA:
+                        sprite.AI_MovesY(this.entropy.sin((sprite.ajastin / 2) % 360));
+                        break;
+                    // "Change to morph prototype if energy < 2"
+                    case EAi.AI_MUUTOS_JOS_ENERGIAA_ALLE_2:
+                        if (sprite.proto.morphProto != null)
+                            sprite.AI_Muutos_Jos_Energiaa_Alle_2(sprite.proto.morphProto);
+                        break;
+                    // "Change to morph prototype if energy > 1 and show smoke"
+                    case EAi.AI_MUUTOS_JOS_ENERGIAA_YLI_1:
+                        if (sprite.proto.morphProto != null) {
+                            if (sprite.AI_Muutos_Jos_Energiaa_Yli_1(sprite.proto.morphProto) == true)
+                                Effects.destruction(this, EDestructionType.TUHOUTUMINEN_SAVU_HARMAA, Math.floor(sprite.x), Math.floor(sprite.y));
+                        }
+                        break;
+                    case EAi.AI_MUUTOS_AJASTIN:
+                        if (sprite.proto.morphProto != null)
+                            sprite.AI_Muutos_Ajastin(sprite.proto.morphProto);
+                        break;
+                    case EAi.AI_MUUTOS_JOS_OSUTTU:
+                        if (sprite.proto.morphProto != null)
+                            sprite.AI_Muutos_Jos_Osuttu(sprite.proto.morphProto);
+                        break;
                     
                     // 				case EAi.AI_TELEPORTTI:
                     // 				if (sprite.AI_Teleportti(i, Game::Sprites->spritet, MAX_SPRITEJA, *Game::Sprites->player)==1)
@@ -1699,101 +1725,198 @@ export class PK2Game extends GameContext {
                     //
                     // 													}
                     // 													break;
-                case  EAi.AI_KIIPEILIJA:
-                    sprite.AI_Climber(/**/);
-                    break;
-                case EAi.AI_KIIPEILIJA2:
-                    sprite.AI_Climber2(/**/);
-                    break;
+                    case  EAi.AI_KIIPEILIJA:
+                        sprite.AI_Climber(/**/);
+                        break;
+                    case EAi.AI_KIIPEILIJA2:
+                        sprite.AI_Climber2(/**/);
+                        break;
+                    // "Kill sprite if parent sprite dies"
                     // 				case EAi.AI_TUHOUTUU_JOS_EMO_TUHOUTUU:	sprite.AI_Tuhoutuu_Jos_Emo_Tuhoutuu(Game::Sprites->spritet);
                     // 													break;
                     //
-                case EAi.AI_TIPPUU_TARINASTA:
-                    sprite.AI_Tippuu_Tarinasta(this._vibration + this._kytkin_tarina);
-                    break;
-                case EAi.AI_LIIKKUU_ALAS_JOS_KYTKIN1_PAINETTU:
-                    sprite.AI_MovesWhenSwitchPressed(this.switchTimer1, 0, 1);
-                    break;
-                case EAi.AI_LIIKKUU_YLOS_JOS_KYTKIN1_PAINETTU:
-                    sprite.AI_MovesWhenSwitchPressed(this.switchTimer1, 0, -1);
-                    break;
-                case EAi.AI_LIIKKUU_VASEMMALLE_JOS_KYTKIN1_PAINETTU:
-                    sprite.AI_MovesWhenSwitchPressed(this.switchTimer1, -1, 0);
-                    break;
-                case EAi.AI_LIIKKUU_OIKEALLE_JOS_KYTKIN1_PAINETTU:
-                    sprite.AI_MovesWhenSwitchPressed(this.switchTimer1, 1, 0);
-                    break;
-                case EAi.AI_LIIKKUU_ALAS_JOS_KYTKIN2_PAINETTU:
-                    sprite.AI_MovesWhenSwitchPressed(this.switchTimer2, 0, 1);
-                    break;
-                case EAi.AI_LIIKKUU_YLOS_JOS_KYTKIN2_PAINETTU:
-                    sprite.AI_MovesWhenSwitchPressed(this.switchTimer2, 0, -1);
-                    break;
-                case EAi.AI_LIIKKUU_VASEMMALLE_JOS_KYTKIN2_PAINETTU:
-                    sprite.AI_MovesWhenSwitchPressed(this.switchTimer2, -1, 0);
-                    break;
-                case EAi.AI_LIIKKUU_OIKEALLE_JOS_KYTKIN2_PAINETTU:
-                    sprite.AI_MovesWhenSwitchPressed(this.switchTimer2, 1, 0);
-                    break;
-                case EAi.AI_LIIKKUU_ALAS_JOS_KYTKIN3_PAINETTU:
-                    sprite.AI_MovesWhenSwitchPressed(this.switchTimer3, 0, 1);
-                    break;
-                case EAi.AI_LIIKKUU_YLOS_JOS_KYTKIN3_PAINETTU:
-                    sprite.AI_MovesWhenSwitchPressed(this.switchTimer3, 0, -1);
-                    break;
-                case EAi.AI_LIIKKUU_VASEMMALLE_JOS_KYTKIN3_PAINETTU:
-                    sprite.AI_MovesWhenSwitchPressed(this.switchTimer3, -1, 0);
-                    break;
-                case EAi.AI_LIIKKUU_OIKEALLE_JOS_KYTKIN3_PAINETTU:
-                    sprite.AI_MovesWhenSwitchPressed(this.switchTimer3, 1, 0);
-                    break;
-                case  EAi.AI_TIPPUU_JOS_KYTKIN1_PAINETTU:
-                    sprite.AI_DripsWhenSwitchPressed(this.switchTimer1);
-                    break;
-                case EAi.AI_TIPPUU_JOS_KYTKIN2_PAINETTU:
-                    sprite.AI_DripsWhenSwitchPressed(this.switchTimer2);
-                    break;
-                case EAi.AI_TIPPUU_JOS_KYTKIN3_PAINETTU:
-                    sprite.AI_DripsWhenSwitchPressed(this.switchTimer3);
-                    break;
-                case EAi.AI_RANDOM_LIIKAHDUS_VERT_HORI:
-                    sprite.AI_Random_Liikahdus_Vert_Hori();
-                    break;
-                case EAi.AI_KAANTYY_JOS_OSUTTU:
-                    sprite.AI_TurnsIfHitted();
-                    break;
+                    case EAi.AI_TIPPUU_TARINASTA:
+                        sprite.AI_Tippuu_Tarinasta(this._vibration + this._kytkin_tarina);
+                        break;
+                    case EAi.AI_LIIKKUU_ALAS_JOS_KYTKIN1_PAINETTU:
+                        sprite.AI_MovesWhenSwitchPressed(this.switchTimer1, 0, 1);
+                        break;
+                    case EAi.AI_LIIKKUU_YLOS_JOS_KYTKIN1_PAINETTU:
+                        sprite.AI_MovesWhenSwitchPressed(this.switchTimer1, 0, -1);
+                        break;
+                    case EAi.AI_LIIKKUU_VASEMMALLE_JOS_KYTKIN1_PAINETTU:
+                        sprite.AI_MovesWhenSwitchPressed(this.switchTimer1, -1, 0);
+                        break;
+                    case EAi.AI_LIIKKUU_OIKEALLE_JOS_KYTKIN1_PAINETTU:
+                        sprite.AI_MovesWhenSwitchPressed(this.switchTimer1, 1, 0);
+                        break;
+                    case EAi.AI_LIIKKUU_ALAS_JOS_KYTKIN2_PAINETTU:
+                        sprite.AI_MovesWhenSwitchPressed(this.switchTimer2, 0, 1);
+                        break;
+                    case EAi.AI_LIIKKUU_YLOS_JOS_KYTKIN2_PAINETTU:
+                        sprite.AI_MovesWhenSwitchPressed(this.switchTimer2, 0, -1);
+                        break;
+                    case EAi.AI_LIIKKUU_VASEMMALLE_JOS_KYTKIN2_PAINETTU:
+                        sprite.AI_MovesWhenSwitchPressed(this.switchTimer2, -1, 0);
+                        break;
+                    case EAi.AI_LIIKKUU_OIKEALLE_JOS_KYTKIN2_PAINETTU:
+                        sprite.AI_MovesWhenSwitchPressed(this.switchTimer2, 1, 0);
+                        break;
+                    case EAi.AI_LIIKKUU_ALAS_JOS_KYTKIN3_PAINETTU:
+                        sprite.AI_MovesWhenSwitchPressed(this.switchTimer3, 0, 1);
+                        break;
+                    case EAi.AI_LIIKKUU_YLOS_JOS_KYTKIN3_PAINETTU:
+                        sprite.AI_MovesWhenSwitchPressed(this.switchTimer3, 0, -1);
+                        break;
+                    case EAi.AI_LIIKKUU_VASEMMALLE_JOS_KYTKIN3_PAINETTU:
+                        sprite.AI_MovesWhenSwitchPressed(this.switchTimer3, -1, 0);
+                        break;
+                    case EAi.AI_LIIKKUU_OIKEALLE_JOS_KYTKIN3_PAINETTU:
+                        sprite.AI_MovesWhenSwitchPressed(this.switchTimer3, 1, 0);
+                        break;
+                    case  EAi.AI_TIPPUU_JOS_KYTKIN1_PAINETTU:
+                        sprite.AI_DripsWhenSwitchPressed(this.switchTimer1);
+                        break;
+                    case EAi.AI_TIPPUU_JOS_KYTKIN2_PAINETTU:
+                        sprite.AI_DripsWhenSwitchPressed(this.switchTimer2);
+                        break;
+                    case EAi.AI_TIPPUU_JOS_KYTKIN3_PAINETTU:
+                        sprite.AI_DripsWhenSwitchPressed(this.switchTimer3);
+                        break;
+                    case EAi.AI_RANDOM_LIIKAHDUS_VERT_HORI:
+                        sprite.AI_Random_Liikahdus_Vert_Hori();
+                        break;
+                    case EAi.AI_KAANTYY_JOS_OSUTTU:
+                        sprite.AI_TurnsIfHitted();
+                        break;
                     // 				case AI_EVIL_ONE:					if (sprite.energy < 1) music_volume = 0;
                     // 													break;
                     //
-                    // 				case AI_INFO1:						if (sprite.AI_Info(*Game::Sprites->player))	PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info01));break;
-                    // 				case AI_INFO2:						if (sprite.AI_Info(*Game::Sprites->player))	PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info02));break;
-                    // 				case AI_INFO3:						if (sprite.AI_Info(*Game::Sprites->player))	PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info03));break;
-                    // 				case AI_INFO4:						if (sprite.AI_Info(*Game::Sprites->player))	PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info04));break;
-                    // 				case AI_INFO5:						if (sprite.AI_Info(*Game::Sprites->player))	PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info05));break;
-                    // 				case AI_INFO6:						if (sprite.AI_Info(*Game::Sprites->player))	PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info06));break;
-                    // 				case AI_INFO7:						if (sprite.AI_Info(*Game::Sprites->player))	PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info07));break;
-                    // 				case AI_INFO8:						if (sprite.AI_Info(*Game::Sprites->player))	PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info08));break;
-                    // 				case AI_INFO9:						if (sprite.AI_Info(*Game::Sprites->player))	PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info09));break;
-                    // 				case AI_INFO10:						if (sprite.AI_Info(*Game::Sprites->player))	PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info10));break;
-                    // 				case AI_INFO11:						if (sprite.AI_Info(*Game::Sprites->player))	PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info11));break;
-                    // 				case AI_INFO12:						if (sprite.AI_Info(*Game::Sprites->player))	PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info12));break;
-                    // 				case AI_INFO13:						if (sprite.AI_Info(*Game::Sprites->player))	PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info13));break;
-                    // 				case AI_INFO14:						if (sprite.AI_Info(*Game::Sprites->player))	PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info14));break;
-                    // 				case AI_INFO15:						if (sprite.AI_Info(*Game::Sprites->player))	PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info15));break;
-                    // 				case AI_INFO16:						if (sprite.AI_Info(*Game::Sprites->player))	PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info16));break;
-                    // 				case AI_INFO17:						if (sprite.AI_Info(*Game::Sprites->player))	PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info17));break;
-                    // 				case AI_INFO18:						if (sprite.AI_Info(*Game::Sprites->player))	PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info18));break;
-                    // 				case AI_INFO19:						if (sprite.AI_Info(*Game::Sprites->player))	PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info19));break;
-                default:
-                    break;
+                    case EAi.AI_INFO1:
+                        if (sprite.AI_Info(this._sprites.player)) {
+                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info01));
+                            Log.l('[INFO] ', this.context.tx.get(TX.INFO01));
+                        }
+                        break;
+                    case EAi.AI_INFO2:
+                        if (sprite.AI_Info(this._sprites.player)) {
+                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info02));
+                            Log.l('[INFO] ', this.context.tx.get(TX.INFO02));
+                        }
+                        break;
+                    case EAi.AI_INFO3:
+                        if (sprite.AI_Info(this._sprites.player)) {
+                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info03));
+                            Log.l('[INFO] ', this.context.tx.get(TX.INFO03));
+                        }
+                        break;
+                    case EAi.AI_INFO4:
+                        if (sprite.AI_Info(this._sprites.player)) {
+                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info04));
+                            Log.l('[INFO] ', this.context.tx.get(TX.INFO04));
+                        }
+                        break;
+                    case EAi.AI_INFO5:
+                        if (sprite.AI_Info(this._sprites.player)) {
+                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info05));
+                            Log.l('[INFO] ', this.context.tx.get(TX.INFO05));
+                        }
+                        break;
+                    case EAi.AI_INFO6:
+                        if (sprite.AI_Info(this._sprites.player)) {
+                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info06));
+                            Log.l('[INFO] ', this.context.tx.get(TX.INFO06));
+                        }
+                        break;
+                    case EAi.AI_INFO7:
+                        if (sprite.AI_Info(this._sprites.player)) {
+                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info07));
+                            Log.l('[INFO] ', this.context.tx.get(TX.INFO07));
+                        }
+                        break;
+                    case EAi.AI_INFO8:
+                        if (sprite.AI_Info(this._sprites.player)) {
+                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info08));
+                            Log.l('[INFO] ', this.context.tx.get(TX.INFO08));
+                        }
+                        break;
+                    case EAi.AI_INFO9:
+                        if (sprite.AI_Info(this._sprites.player)) {
+                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info09));
+                            Log.l('[INFO] ', this.context.tx.get(TX.INFO09));
+                        }
+                        break;
+                    case EAi.AI_INFO10:
+                        if (sprite.AI_Info(this._sprites.player)) {
+                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info10));
+                            Log.l('[INFO] ', this.context.tx.get(TX.INFO10));
+                        }
+                        break;
+                    case EAi.AI_INFO11:
+                        if (sprite.AI_Info(this._sprites.player)) {
+                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info11));
+                            Log.l('[INFO] ', this.context.tx.get(TX.INFO11));
+                        }
+                        break;
+                    case EAi.AI_INFO12:
+                        if (sprite.AI_Info(this._sprites.player)) {
+                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info12));
+                            Log.l('[INFO] ', this.context.tx.get(TX.INFO12));
+                        }
+                        break;
+                    case EAi.AI_INFO13:
+                        if (sprite.AI_Info(this._sprites.player)) {
+                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info13));
+                            Log.l('[INFO] ', this.context.tx.get(TX.INFO13));
+                        }
+                        break;
+                    case EAi.AI_INFO14:
+                        if (sprite.AI_Info(this._sprites.player)) {
+                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info14));
+                            Log.l('[INFO] ', this.context.tx.get(TX.INFO14));
+                        }
+                        break;
+                    case EAi.AI_INFO15:
+                        if (sprite.AI_Info(this._sprites.player)) {
+                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info15));
+                            Log.l('[INFO] ', this.context.tx.get(TX.INFO15));
+                        }
+                        break;
+                    case EAi.AI_INFO16:
+                        if (sprite.AI_Info(this._sprites.player)) {
+                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info16));
+                            Log.l('[INFO] ', this.context.tx.get(TX.INFO16));
+                        }
+                        break;
+                    case EAi.AI_INFO17:
+                        if (sprite.AI_Info(this._sprites.player)) {
+                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info17));
+                            Log.l('[INFO] ', this.context.tx.get(TX.INFO17));
+                        }
+                        break;
+                    case EAi.AI_INFO18:
+                        if (sprite.AI_Info(this._sprites.player)) {
+                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info18));
+                            Log.l('[INFO] ', this.context.tx.get(TX.INFO18));
+                        }
+                        break;
+                    case EAi.AI_INFO19:
+                        if (sprite.AI_Info(this._sprites.player)) {
+                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info19));
+                            Log.l('[INFO] ', this.context.tx.get(TX.INFO19));
+                        }
+                        break;
+                    default:
+                        break;
                 }
             }
         }
-        //
-        // 	//if (kaiku == 1 && sprite.tyyppi->tyyppi == TYYPPI_AMMUS && sprite.tyyppi->vahinko_tyyppi == VAHINKO_MELU &&
-        // 	//	sprite.tyyppi->aanet[AANI_HYOKKAYS1] > -1)
-        // 	//	PK_Play_Sound(sprite.tyyppi->aanet[AANI_HYOKKAYS1],20, (int)sprite_x, (int)sprite_y,
-        // 	//				  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
+        
+        // Source
+        //if (kaiku == 1 && sprite.tyyppi->tyyppi == TYYPPI_AMMUS && sprite.tyyppi->vahinko_tyyppi == VAHINKO_MELU &&
+        //	sprite.tyyppi->aanet[AANI_HYOKKAYS1] > -1)
+        //	PK_Play_Sound(sprite.tyyppi->aanet[AANI_HYOKKAYS1],20, (int)sprite_x, (int)sprite_y,
+        //				  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
         
         
         /*****************************************************************************************/
@@ -1833,54 +1956,54 @@ export class PK2Game extends GameContext {
         /* Attacks 1 and 2                                                                       */
         /*****************************************************************************************/
         
-        // // If the sprite is ready and isn't crouching
-        // 	if (sprite.lataus == 0 && !sprite.kyykky) {
-        // 		// hy�kk�ysaika on "tapissa" mik� tarkoittaa sit�, ett� aloitetaan hy�kk�ys
-        // 		if (sprite.hyokkays1 == sprite.tyyppi->attack1Duration) {
-        // 			// provides recovery time, after which the sprite can attack again
-        // 			sprite.lataus = sprite.tyyppi->latausaika;
-        // 			if(sprite.lataus == 0) sprite.lataus = 5;
-        // 			// jos spritelle ei ole m��ritelty omaa latausaikaa ...
-        // 			if (sprite.ammus1 > -1 && sprite.tyyppi->latausaika == 0)
-        // 			// ... ja ammukseen on, otetaan latausaika ammuksesta
-        // 				if (Game::Sprites->protot[sprite.ammus1].tulitauko > 0)
-        // 					sprite.lataus = Game::Sprites->protot[sprite.ammus1].tulitauko;
-        //
-        // 			// soitetaan hy�kk�ys��ni
-        // 			PK_Play_Sound(sprite.tyyppi->aanet[AANI_HYOKKAYS1],100, (int)sprite_x, (int)sprite_y,
-        // 						  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
-        //
-        // 			if (sprite.ammus1 > -1) {
-        // 				Game::Sprites->add_ammo(sprite.ammus1,0,sprite_x, sprite_y, i);
-        //
-        // 		//		if (Game::Sprites->protot[sprite.ammus1].aanet[AANI_HYOKKAYS1] > -1)
-        // 		//			PK_Play_Sound(Game::Sprites->protot[sprite.ammus1].aanet[AANI_HYOKKAYS1],100, (int)sprite_x, (int)sprite_y,
-        // 		//						  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
-        // 			}
-        // 		}
-        //
-        // 		// Sama kuin hy�kk�ys 1:ss�
-        // 		if (sprite.hyokkays2 == sprite.tyyppi->hyokkays2_aika) {
-        // 			sprite.lataus = sprite.tyyppi->latausaika;
-        // 			if(sprite.lataus == 0) sprite.lataus = 5;
-        // 			if (sprite.ammus2 > -1  && sprite.tyyppi->latausaika == 0)
-        // 				if (Game::Sprites->protot[sprite.ammus2].tulitauko > 0)
-        // 					sprite.lataus = Game::Sprites->protot[sprite.ammus2].tulitauko;
-        //
-        // 			PK_Play_Sound(sprite.tyyppi->aanet[AANI_HYOKKAYS2],100,(int)sprite_x, (int)sprite_y,
-        // 						  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
-        //
-        // 			if (sprite.ammus2 > -1) {
-        // 				Game::Sprites->add_ammo(sprite.ammus2,0,sprite_x, sprite_y, i);
-        //
-        // 		//		if (Game::Sprites->protot[sprite.ammus2].aanet[AANI_HYOKKAYS1] > -1)
-        // 		//			PK_Play_Sound(Game::Sprites->protot[sprite.ammus2].aanet[AANI_HYOKKAYS1],100, (int)sprite_x, (int)sprite_y,
-        // 		//						  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
-        //
-        // 			}
-        // 		}
-        // 	}
-        //
+        // If the sprite is ready and isn't crouching
+        if (sprite.lataus == 0 && !sprite.isCrouched()) {
+            // hy�kk�ysaika on "tapissa" mik� tarkoittaa sit�, ett� aloitetaan hy�kk�ys
+            if (sprite.attack1Remaining == sprite.proto.attack1Duration) {
+                // provides recovery time, after which the sprite can attack again
+                sprite.lataus = sprite.proto.latausaika;
+                if (sprite.lataus == 0) sprite.lataus = 5;
+                // jos spritelle ei ole m��ritelty omaa latausaikaa ...
+                // 			if (sprite.ammus1 > -1 && sprite.tyyppi->latausaika == 0)
+                // ... ja ammukseen on, otetaan latausaika ammuksesta
+                // 				if (Game::Sprites->protot[sprite.ammus1].tulitauko > 0)
+                // 					sprite.lataus = Game::Sprites->protot[sprite.ammus1].tulitauko;
+                //
+                // 			// soitetaan hy�kk�ys��ni
+                // 			PK_Play_Sound(sprite.tyyppi->aanet[AANI_HYOKKAYS1],100, (int)sprite_x, (int)sprite_y,
+                // 						  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
+                //
+                // 			if (sprite.ammus1 > -1) {
+                // 				Game::Sprites->add_ammo(sprite.ammus1,0,sprite_x, sprite_y, i);
+                //
+                // 		//		if (Game::Sprites->protot[sprite.ammus1].aanet[AANI_HYOKKAYS1] > -1)
+                // 		//			PK_Play_Sound(Game::Sprites->protot[sprite.ammus1].aanet[AANI_HYOKKAYS1],100, (int)sprite_x, (int)sprite_y,
+                // 		//						  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
+                // 			}
+            }
+            
+            // 		// Sama kuin hy�kk�ys 1:ss�
+            // 		if (sprite.hyokkays2 == sprite.tyyppi->hyokkays2_aika) {
+            // 			sprite.lataus = sprite.tyyppi->latausaika;
+            // 			if(sprite.lataus == 0) sprite.lataus = 5;
+            // 			if (sprite.ammus2 > -1  && sprite.tyyppi->latausaika == 0)
+            // 				if (Game::Sprites->protot[sprite.ammus2].tulitauko > 0)
+            // 					sprite.lataus = Game::Sprites->protot[sprite.ammus2].tulitauko;
+            //
+            // 			PK_Play_Sound(sprite.tyyppi->aanet[AANI_HYOKKAYS2],100,(int)sprite_x, (int)sprite_y,
+            // 						  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
+            //
+            // 			if (sprite.ammus2 > -1) {
+            // 				Game::Sprites->add_ammo(sprite.ammus2,0,sprite_x, sprite_y, i);
+            //
+            // 		//		if (Game::Sprites->protot[sprite.ammus2].aanet[AANI_HYOKKAYS1] > -1)
+            // 		//			PK_Play_Sound(Game::Sprites->protot[sprite.ammus2].aanet[AANI_HYOKKAYS1],100, (int)sprite_x, (int)sprite_y,
+            // 		//						  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
+            //
+            // 			}
+            // 		}
+        }
+        
         // 	// Random sounds
         // 	if (sprite.tyyppi->aanet[AANI_RANDOM] != -1 && rand()%200 == 1 && sprite.energy > 0)
         // 		PK_Play_Sound(sprite.tyyppi->aanet[AANI_RANDOM],80,(int)sprite_x, (int)sprite_y,
@@ -1959,13 +2082,13 @@ export class PK2Game extends GameContext {
         // Siirret��n varsinaiset muuttujat apumuuttujiin.
         
         if (sprite.knockTimer > 0)
-            sprite.knockTimer -= (1 * coef);
+            sprite.knockTimer -= (1);
         
         if (sprite.lataus > 0)
-            sprite.lataus -= (1 * coef);
+            sprite.lataus -= (1);
         
         if (sprite.muutos_ajastin > 0) // aika muutokseen
-            sprite.muutos_ajastin -= (1 * coef);
+            sprite.muutos_ajastin -= (1);
         
         
         // Hyppyyn liittyv�t seikat
@@ -1975,7 +2098,7 @@ export class PK2Game extends GameContext {
         // 	sprite.hyppy_ajastin = sprite.tyyppi->max_hyppy / 2;
         
         if (sprite.jumpTimer > 0 && sprite.jumpTimer < sprite.proto.maxJump) {
-            sprite.jumpTimer += (1 * coef);
+            sprite.jumpTimer += (1);
             future.b = (sprite.proto.maxJump - sprite.jumpTimer) / -4.0;//-2
         }
         
@@ -1988,16 +2111,15 @@ export class PK2Game extends GameContext {
             // |  Gravity
             // V
             
-            future.b += (sprite.weight + future.b / 1.25) * coef;
+            future.b += (sprite.weight + future.b / 1.25);
             
             if (sprite.inWater) {
                 if (future.b > 0) {
                     future.b /= 2.0;
                 }
                 
-                // TODO
-                // if (rand()%80 == 1)
-                // 	PkEngine::Particles->new_particle(PARTICLE_SPARK,sprite_x-4,sprite_y,0,-0.5-rand()%2,rand()%30+30,0,32);
+                if (rand() % 80 == 1)
+                    this.particles.newParticle(EParticle.PARTICLE_SPARK, future.x - 4, future.y, 0, -0.5 - rand() % 2, rand() % 30 + 30, 0, 32);
             }
             
             sprite.inWater = false;
@@ -2279,7 +2401,7 @@ export class PK2Game extends GameContext {
                     // 					ay = sprite.alku_y-sprite.tyyppi->korkeus/2.0;
                     // 					PkEngine::Sprites->add(sprite.tyyppi->indeksi,0,ax-17, ay,i, false);
                     // 					for (int r=1;r<6;r++)
-                    // 						PkEngine::Particles->new_particle(PARTICLE_SPARK,ax+rand()%10-rand()%10, ay+rand()%10-rand()%10,0,0,rand()%100,0.1,32);
+                    // 						this._particles.new_particle(PARTICLE_SPARK,ax+rand()%10-rand()%10, ay+rand()%10-rand()%10,0,0,rand()%100,0.1,32);
                     //
                     // 				}
                     //
@@ -2325,25 +2447,25 @@ export class PK2Game extends GameContext {
             }
             
             switch (sprite.proto.getBehavior(i)) {
-            case EAi.AI_BONUS:
-                sprite.AI_Bonus();
-                break;
-            
-            case EAi.AI_PERUS:
-                sprite.AI_Perus();
-                break;
-            
-            case EAi.AI_MUUTOS_AJASTIN:
-                if (sprite.proto.morphProto != null)
-                    sprite.AI_Muutos_Ajastin(sprite.proto.morphProto);
-                break;
-            
-            case EAi.AI_TIPPUU_TARINASTA:
-                sprite.AI_Tippuu_Tarinasta(this._vibration + this._kytkin_tarina);
-                break;
-            
-            default:
-                break;
+                case EAi.AI_BONUS:
+                    sprite.AI_Bonus();
+                    break;
+                
+                case EAi.AI_PERUS:
+                    sprite.AI_Perus();
+                    break;
+                
+                case EAi.AI_MUUTOS_AJASTIN:
+                    if (sprite.proto.morphProto != null)
+                        sprite.AI_Muutos_Ajastin(sprite.proto.morphProto);
+                    break;
+                
+                case EAi.AI_TIPPUU_TARINASTA:
+                    sprite.AI_Tippuu_Tarinasta(this._vibration + this._kytkin_tarina);
+                    break;
+                
+                default:
+                    break;
             }
         }
         
@@ -2658,22 +2780,22 @@ export class PK2Game extends GameContext {
         let pallary: int = (this.cameraY % (480 * 3)) / 3;
         
         switch (this.map.bgMovement) {
-        case EBgMovement.TAUSTA_STAATTINEN:
-            this._bgImage.x = 0;
-            this._bgImage.y = 0;
-            break;
-        case EBgMovement.TAUSTA_PALLARX_HORI:
-            this._bgImage.x = -pallarx;
-            this._bgImage.y = 0;
-            break;
-        case EBgMovement.TAUSTA_PALLARX_VERT:
-            this._bgImage.x = 0;
-            this._bgImage.y = -pallary;
-            break;
-        case EBgMovement.TAUSTA_PALLARX_VERT_JA_HORI:
-            this._bgImage.x = -pallarx;
-            this._bgImage.y = -pallary;
-            break;
+            case EBgMovement.TAUSTA_STAATTINEN:
+                this._bgImage.x = 0;
+                this._bgImage.y = 0;
+                break;
+            case EBgMovement.TAUSTA_PALLARX_HORI:
+                this._bgImage.x = -pallarx;
+                this._bgImage.y = 0;
+                break;
+            case EBgMovement.TAUSTA_PALLARX_VERT:
+                this._bgImage.x = 0;
+                this._bgImage.y = -pallary;
+                break;
+            case EBgMovement.TAUSTA_PALLARX_VERT_JA_HORI:
+                this._bgImage.x = -pallarx;
+                this._bgImage.y = -pallary;
+                break;
         }
         
         this._bgImage.x += this.cameraX;

@@ -11,6 +11,8 @@ export interface PkRectangle {
     
     pack(separator: string): string;
     
+    equals(other: PkRectangle): boolean;
+    
     /** @deprecated */
     getNative(): unknown;
 }

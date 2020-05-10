@@ -8,7 +8,7 @@ import { Drawable } from '@ng/drawable/Drawable';
 import { PkImageTextureImpl } from '@ng/types/pixi/PkImageTextureImpl';
 import * as PIXI from 'pixi.js';
 import { VAHINKO_AIKA } from '../../support/constants';
-import { int, BYTE, rand, bool } from '../../support/types';
+import { int, CBYTE, rand, bool, uint } from '../../support/types';
 
 export class PK2Sprite extends Drawable {
     private _aktiivinen: boolean;			// true / false
@@ -73,12 +73,17 @@ export class PK2Sprite extends Drawable {
     private _ajastin: int;			// ajastin jonka arvo py�rii v�lill� 1 - 32000
     private _iclk1: InternalClock;			// ajastin jonka arvo py�rii v�lill� 1 - 32000
     
-    /** Running animation. */
-    private _animaatio_index: BYTE;
-    /** Current frame index of the running animation. */
-    private _sekvenssi_index: BYTE;
+    // Animation
+    /**
+     * Index of the running animation.<br>
+     * `≈ BYTE animaatio_index` */
+    private _animationIndex: EAnimation | number;
+    /**
+     * Index of the current frame in the running animation. <br>
+     * `≈ BYTE sekvenssi_index` */
+    private _frameIndex: CBYTE;
     /** How long the current frame has been running. */
-    private _frame_aika: BYTE;
+    private _frame_aika: CBYTE;
     private _muutos_ajastin: int;		// sprite muuttuu muutosspriteksi kun t�m� nollautuu
     
     private _sprite: PIXI.Sprite;
@@ -121,7 +126,7 @@ export class PK2Sprite extends Drawable {
         this._kytkinpaino = 0;
         this.flipX = false;
         this._flip_y = false;
-        this._animaatio_index = EAnimation.ANIMAATIO_PAIKALLA;
+        this._animationIndex = EAnimation.ANIMAATIO_PAIKALLA;
         this._alas = true;
         this._ylos = true;
         this._oikealle = true;
@@ -129,7 +134,7 @@ export class PK2Sprite extends Drawable {
         this._reuna_oikealla = false;
         this._reuna_vasemmalla = false;
         this._frame_aika = 0;
-        this._sekvenssi_index = 0;
+        this._frameIndex = 0;
         this._knockTimer = 0;
         this._lataus = 0;
         this._attack1Remaining = 0;
@@ -201,7 +206,6 @@ export class PK2Sprite extends Drawable {
      * @param kamera_x
      * @param kamera_y
      */
-    // TODO coef!
     public Piirra(kamera_x: int, kamera_y: int) {
         let l: int = Math.floor(this.proto.frameWidth / 2);//leveys
         let h: int = Math.floor(this.proto.frameHeight / 2);
@@ -258,41 +262,41 @@ export class PK2Sprite extends Drawable {
         let frame: int = 0;
         
         switch (this.proto.getBehavior(0)) {
-        case EAi.AI_KANA:
-            this.animationChicken();
-            break;
-        case EAi.AI_PIKKUKANA:
-            this.animationChicken();
-            break;
-        case EAi.AI_BONUS:
-            this.animationBonus();
-            break;
-        case EAi.AI_MUNA:
-            this.animationEgg();
-            break;
-        case EAi.AI_AMMUS:
-            this.animationAmmo();
-            break;
-        case EAi.AI_HYPPIJA:
-            this.animationChicken();
-            break;
-        case EAi.AI_PERUS:
-            this.animationBase();
-            break;
-        case EAi.AI_TELEPORTTI:
-            this.animationBase();
-            break;
-        default:
-            break;
+            case EAi.AI_KANA:
+                this.animationChicken();
+                break;
+            case EAi.AI_PIKKUKANA:
+                this.animationChicken();
+                break;
+            case EAi.AI_BONUS:
+                this.animationBonus();
+                break;
+            case EAi.AI_MUNA:
+                this.animationEgg();
+                break;
+            case EAi.AI_AMMUS:
+                this.animationAmmo();
+                break;
+            case EAi.AI_HYPPIJA:
+                this.animationChicken();
+                break;
+            case EAi.AI_PERUS:
+                this.animationBase();
+                break;
+            case EAi.AI_TELEPORTTI:
+                this.animationBase();
+                break;
+            default:
+                break;
         }
         
-        const animaatio: SpriteAnimation = this.proto.getAnimation(this._animaatio_index);
+        const animation: SpriteAnimation = this.proto.getAnimation(this._animationIndex);
         
-        if (this._sekvenssi_index >= animaatio.frameja) {
-            this._sekvenssi_index = 0;
+        if (this._frameIndex >= animation.frameja) {
+            this._frameIndex = 0;
         }
         
-        frame = animaatio.sekvenssi[this._sekvenssi_index] - 1;
+        frame = animation.sekvenssi[this._frameIndex] - 1;
         
         // Lasketaan kuinka paljon talla hetkella voimassa olevaa framea viela naytetaan
         if (this._frame_aika < this.proto.frameRate) {
@@ -302,12 +306,12 @@ export class PK2Sprite extends Drawable {
             this._frame_aika = 0;
             
             // Onko animaatiossa enaa frameja?
-            if (this._sekvenssi_index < animaatio.frameja - 1) {
-                this._sekvenssi_index++;
+            if (this._frameIndex < animation.frameja - 1) {
+                this._frameIndex++;
                 // Jos ei ja animaatio on asetettu luuppaamaan, aloitetaan animaatio alusta.
             } else {
-                if (animaatio.looppi) {
-                    this._sekvenssi_index = 0;
+                if (animation.looppi) {
+                    this._frameIndex = 0;
                 }
             }
         }
@@ -327,12 +331,12 @@ export class PK2Sprite extends Drawable {
      * @param index - Index of the animation to apply.
      * @param reset - If animation is applied, start from frame 0.
      */
-    public animation(index: int, reset: boolean): void {
-        if (index != this._animaatio_index) {
+    public animation(index: EAnimation, reset: boolean): void {
+        if (index != this._animationIndex) {
             if (reset) {
-                this._sekvenssi_index = 0;
+                this._frameIndex = 0;
             }
-            this._animaatio_index = index;
+            this._animationIndex = index;
         }
     }
     
@@ -340,57 +344,57 @@ export class PK2Sprite extends Drawable {
      * SDL: PK2Sprite::Animaatio_Perus.
      */
     private animationBase(): void {
-        let uusi_animaatio: EAnimation;
-        let alusta: boolean = false;
+        let newAnimation: EAnimation;
+        let reset: boolean = false;
         
         if (this._energy < 1 && !this._alas) {
-            uusi_animaatio = EAnimation.ANIMAATIO_KUOLEMA;
-            alusta = true;
+            newAnimation = EAnimation.ANIMAATIO_KUOLEMA;
+            reset = true;
         } else {
             if (this.a > -0.2 && this.a < 0.2 && this.b === 0 && this.jumpTimer <= 0) {
-                uusi_animaatio = EAnimation.ANIMAATIO_PAIKALLA;
-                alusta = true;
+                newAnimation = EAnimation.ANIMAATIO_PAIKALLA;
+                reset = true;
             }
             
             if ((this.a < -0.2 || this.a > 0.2) && this.jumpTimer <= 0) {
-                uusi_animaatio = EAnimation.ANIMAATIO_KAVELY;
-                alusta = false;
+                newAnimation = EAnimation.ANIMAATIO_KAVELY;
+                reset = false;
             }
             
             if (this.b < 0)//-0.3
             {
-                uusi_animaatio = EAnimation.ANIMAATIO_HYPPY_YLOS;
-                alusta = false;
+                newAnimation = EAnimation.ANIMAATIO_HYPPY_YLOS;
+                reset = false;
             }
             
             if ((this.jumpTimer > this.proto.maxJump || this.b > 1.5) && this._alas) {
-                uusi_animaatio = EAnimation.ANIMAATIO_HYPPY_ALAS;
-                alusta = false;
+                newAnimation = EAnimation.ANIMAATIO_HYPPY_ALAS;
+                reset = false;
             }
             
             if (this._crouched) {
-                uusi_animaatio = EAnimation.ANIMAATIO_KYYKKY;
-                alusta = true;
+                newAnimation = EAnimation.ANIMAATIO_KYYKKY;
+                reset = true;
             }
             
             if (this._attack1Remaining > 0) {
-                uusi_animaatio = EAnimation.ANIMAATIO_HYOKKAYS1;
-                alusta = true;
+                newAnimation = EAnimation.ANIMAATIO_HYOKKAYS1;
+                reset = true;
             }
             
             if (this._attack2Remaining > 0) {
-                uusi_animaatio = EAnimation.ANIMAATIO_HYOKKAYS2;
-                alusta = true;
+                newAnimation = EAnimation.ANIMAATIO_HYOKKAYS2;
+                reset = true;
             }
             
             if (this._knockTimer > 0) {
-                uusi_animaatio = EAnimation.ANIMAATIO_VAHINKO;
-                alusta = false;
+                newAnimation = EAnimation.ANIMAATIO_VAHINKO;
+                reset = false;
             }
         }
         
-        if (uusi_animaatio != null) {
-            this.animation(uusi_animaatio, alusta);
+        if (newAnimation != null) {
+            this.animation(newAnimation, reset);
         }
     }
     
@@ -483,6 +487,11 @@ export class PK2Sprite extends Drawable {
         this.animation(newAnimation, alusta);
     }
     
+    /** @see _animationIndex */
+    public get animationIndex(): number { return this._animationIndex; }
+    /** @see _frameIndex */
+    public get frameIndex(): number { return this._frameIndex; }
+    
     
     ///  Behaviors (AI)  ///
     
@@ -496,11 +505,6 @@ export class PK2Sprite extends Drawable {
     public hasBehavior(ai: EAi): boolean {
         return this.proto.hasBehavior(ai);
     }
-    
-    //     //AI_Functions
-    //     int AI_Kana();
-    //     int AI_Bonus();
-    //     int AI_Muna();
     
     public AI_Projectile(): void {
         if (this.x < 10) {
@@ -557,17 +561,17 @@ export class PK2Sprite extends Drawable {
         }
     }
     
-    public AI_Frog1(coef: number = 1): void {
+    public AI_Frog1(): void {
         if (this.energy > 0) {
-            if (/*this._ajastin % 100 === 0*/ this._iclk1.tics(100) && this.jumpTimer === 0 && this._ylos) {
+            if (this._ajastin % 100 === 0 /*this._iclk1.tics(100)*/ && this.jumpTimer === 0 && this._ylos) {
                 this.jumpTimer = 1;
             }
         }
     }
     
-    public AI_Frog2(coef: number = 1): void {
+    public AI_Frog2(): void {
         if (this.energy > 0) {
-            if (/*this._ajastin % 100 === 0*/ this._iclk1.tics(100) && this._ylos) {
+            if (this._ajastin % 100 === 0/*this._iclk1.tics(100)*/ && this._ylos) {
                 this.jumpTimer = 1;
             }
             
@@ -584,7 +588,7 @@ export class PK2Sprite extends Drawable {
     /**
      * SDL: PK2Sprite::AI_Perus.
      */
-    public AI_Perus(coef: number = 1): void {
+    public AI_Perus(): void {
         // Horizontal boundaries
         if (this._x < 10) {
             this._x = 10;
@@ -614,7 +618,7 @@ export class PK2Sprite extends Drawable {
             this._ajastin = 0;
         }
         // New internal clock
-        this._iclk1.incr(1 * coef);
+        this._iclk1.incr(1);
         /* if (this._iclk1 > 31320) {  //-> divisible by 360
              this._iclk1 = 0;
          }*/
@@ -653,16 +657,16 @@ export class PK2Sprite extends Drawable {
         return 0;
     }
     
-    public AI_Varoo_Kuoppaa(coef: number = 1): void {
+    public AI_Varoo_Kuoppaa(): void {
         const max: number = this.proto.maxSpeed / 3.5;
         
         if (this._energy > 0) {
             if (this.reuna_oikealla && this.a > -max) {
-                this.a -= (0.13 * coef);
+                this.a -= (0.13);
             }
             
             if (this.reuna_vasemmalla && this.a < max) {
-                this.a += (0.13 * coef);
+                this.a += (0.13);
             }
             
             // ***
@@ -728,16 +732,16 @@ export class PK2Sprite extends Drawable {
         }
     }
     
-    public AI_FollowPlayer(player: PK2Sprite, coef: number = 1): void {
+    public AI_FollowPlayer(player: PK2Sprite): void {
         if (this._energy > 0 && player.energy > 0) {
             const max: number = this.proto.maxSpeed / 3.5;
             
             if (this.a > -max && this.x > player.x) {
-                this.a -= (0.1 * coef);
+                this.a -= (0.1);
             }
             
             if (this.a < max && this.x < player.x) {
-                this.a += (0.1 * coef);
+                this.a += (0.1);
             }
             
             this._pelaaja_x = Math.floor(player.x + player.a);
@@ -753,16 +757,16 @@ export class PK2Sprite extends Drawable {
         }
     }
     
-    public AI_Seuraa_Pelaajaa_Jos_Nakee(player: PK2Sprite, coef: number = 1): void {
+    public AI_Seuraa_Pelaajaa_Jos_Nakee(player: PK2Sprite): void {
         if (this._energy > 0 && player._energy > 0) {
             const max: number = this.proto.maxSpeed / 3.5;
             
             if (this._pelaaja_x != -1) {
                 if (this.a > -max && this.x > this._pelaaja_x) {
-                    this.a -= (0.1 * coef);
+                    this.a -= (0.1);
                 }
                 if (this.a < max && this.x < this._pelaaja_x) {
-                    this.a += (0.1 * coef);
+                    this.a += (0.1);
                 }
             }
             
@@ -779,25 +783,25 @@ export class PK2Sprite extends Drawable {
         }
     }
     
-    public AI_Seuraa_Pelaajaa_Jos_Nakee_Vert_Hori(player: PK2Sprite, coef: number = 1): void {
+    public AI_Seuraa_Pelaajaa_Jos_Nakee_Vert_Hori(player: PK2Sprite): void {
         if (this._energy > 0 && player._energy > 0) {
             const max: number = this.proto.maxSpeed / 3.5;
             
             if (this._pelaaja_x != -1) {
                 if (this.a > -max && this.x > this._pelaaja_x) {
-                    this.a -= (0.1 * coef);
+                    this.a -= (0.1);
                 }
                 
                 if (this.a < max && this.x < this._pelaaja_x) {
-                    this.a += (0.1 * coef);
+                    this.a += (0.1);
                 }
                 
                 if (this.b > -max && this.y > this._pelaaja_y) {
-                    this.b -= (0.4 /** coef*/);
+                    this.b -= (0.4);
                 }
                 
                 if (this.b < max && this.y < this._pelaaja_y) {
-                    this.b += (0.4 /** coef*/);
+                    this.b += (0.4);
                 }
             }
             
@@ -814,24 +818,24 @@ export class PK2Sprite extends Drawable {
         }
     }
     
-    public AI_Seuraa_Pelaajaa_Vert_Hori(player: PK2Sprite, coef: number = 1): void {
+    public AI_Seuraa_Pelaajaa_Vert_Hori(player: PK2Sprite): void {
         if (this._energy > 0 && player._energy > 0) {
             const max: number = this.proto.maxSpeed / 3.5;
             
             if (this.a > -max && this.x > player.x) {
-                this.a -= (0.1 * coef);
+                this.a -= (0.1);
             }
             
             if (this.a < max && this.x < player.x) {
-                this.a += (0.1 * coef);
+                this.a += (0.1);
             }
             
             if (this.b > -max && this.y > player.y) {
-                this.b -= (0.4 /** coef*/);
+                this.b -= (0.4);
             }
             
             if (this.b < max && this.y < player.y) {
-                this.b += (0.4 /** coef*/);
+                this.b += (0.4);
             }
             
             this._pelaaja_x = Math.floor(player.x + player.a);
@@ -886,7 +890,10 @@ export class PK2Sprite extends Drawable {
     }
     
     /**
-     * SDL: PK2Sprite::AI_Muutos_Jos_Energiaa_Yli_1
+     * Changes sprite prototype to the given one if energy > 1 and current prototype is not already the specified.<br>
+     * Returns TRUE if the change takes effect, FALSE otherwise.
+     *
+     * SDL: PK2Sprite::AI_Muutos_Jos_Energiaa_Yli_1.
      */
     public AI_Muutos_Jos_Energiaa_Yli_1(morph: SpritePrototype): boolean {
         if (this._energy > 1 && morph != this.proto) {
@@ -916,7 +923,7 @@ export class PK2Sprite extends Drawable {
                 this._ammo1Proto = this.proto.ammo1Proto;
                 this._ammo2Proto = this.proto.ammo2Proto;
                 
-                this._animaatio_index = -1;
+                this._animationIndex = -1;
                 
                 this.animation(EAnimation.ANIMAATIO_PAIKALLA, true);
             }
@@ -939,7 +946,7 @@ export class PK2Sprite extends Drawable {
                 this._ammo1Proto = this.proto.ammo1Proto;
                 this._ammo2Proto = this.proto.ammo2Proto;
                 
-                this._animaatio_index = -1;
+                this._animationIndex = -1;
                 
                 this.animation(EAnimation.ANIMAATIO_PAIKALLA, true);
                 
@@ -969,7 +976,7 @@ export class PK2Sprite extends Drawable {
     }
     public AI_Hyokkays_1_Nonstop(): int {
         if (this._lataus === 0 && this._energy > 0) {
-            this._attack1Remaining = this.proto._hyokkays1_aika;
+            this._attack1Remaining = this.proto.attack1Duration;
             return 1;
         }
         return 0;
@@ -977,31 +984,73 @@ export class PK2Sprite extends Drawable {
     
     public AI_Hyokkays_2_Nonstop(): int {
         if (this._lataus === 0 && this._energy > 0) {
-            this._attack2Remaining = this.proto._hyokkays2_aika;
+            this._attack2Remaining = this.proto.attack2Duration;
             return 1;
         }
         return 0;
     }
     
-    //     int AI_Hyokkays_1_Jos_Pelaaja_Edessa(PK2Sprite &pelaaja);
-    //     int AI_Hyokkays_2_Jos_Pelaaja_Edessa(PK2Sprite &pelaaja);
-    //     int AI_Hyokkays_1_Jos_Pelaaja_Alapuolella(PK2Sprite &pelaaja);
+    public AI_Hyokkays_1_Jos_Pelaaja_Edessa(player: PK2Sprite): boolean {
+        if (this._energy > 0 && this._knockTimer == 0 && player._energy > 0) {
+            if ((player.x - this._x < 200 && player.x - this._x > -200) &&
+                (player.y - this._y < this.proto.height && player.y - this._y > -this.proto.height)) {
+                if ((player.x < this._x && this.flipX) || (player.x > this._x && !this.flipX)) {
+                    this._attack1Remaining = this.proto.attack1Duration;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
     
-    public AI_NonStop(coef: number = 1): void {
+    public AI_Hyokkays_2_Jos_Pelaaja_Edessa(player: PK2Sprite): boolean {
+        if (this._energy > 0 && this._knockTimer == 0 && player.energy > 0) {
+            if ((player.x - this._x < 200 && player.x - this._x > -200) &&
+                (player.y - this._y < this.proto.height && player.y - this._y > -this.proto.height)) {
+                if ((player.x < this._x && this.flipX) || (player.x > this._x && !this.flipX)) {
+                    this._attack2Remaining = this.proto.attack2Duration;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    
+    public AI_Hyokkays_1_Jos_Pelaaja_Alapuolella(player: PK2Sprite): boolean {
+        if (this._energy > 0 && this._knockTimer == 0 && player.energy > 0) {
+            if ((player.x - this._x < this.proto.width && player.x - this._x > -this.proto.width) &&
+                (player.y > this._y && player.y - this._y < 350)) {
+                this._attack1Remaining = this.proto.attack2Duration;  //TODO --> Possibly a BUG
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    public AI_NonStop(): void {
         if (this.energy > 0) {
             let max: number = this.proto.maxSpeed / 3.5;
             
             if (this.flipX) {
                 if (this.a > -max)
-                    this.a -= (0.1 * coef);
+                    this.a -= (0.1);
             } else {
                 if (this.a < max)
-                    this.a += (0.1 * coef);
+                    this.a += (0.1);
             }
         }
     }
     
-    //     int AI_Hyppy_Jos_Pelaaja_Ylapuolella(PK2Sprite &pelaaja);
+    public AI_Hyppy_Jos_Pelaaja_Ylapuolella(player: PK2Sprite): boolean {
+        if (this._energy > 0 && this.jumpTimer == 0 && player._energy > 0) {
+            if ((player.x - this.x < this.proto.width && player.x - this.x > -this.proto.width) &&
+                (player.y < this.y && this.y - player.y < 350)) {
+                this.jumpTimer = 1;
+                return true;
+            }
+        }
+        return false;
+    }
     
     public AI_Pommi(): void {
         if (this.lataus === 0) {
@@ -1015,8 +1064,8 @@ export class PK2Sprite extends Drawable {
     }
     
     /**
-     * It will be damaged by the water.
-     * SDL: PK2Sprite::AI_Vahingoittuu_Vedesta
+     * It will be damaged by the water.<br>
+     * SDL: PK2Sprite::AI_Vahingoittuu_Vedesta.
      */
     public AI_Vahingoittuu_Vedesta(): void {
         if (this._energy > 0)
@@ -1024,11 +1073,51 @@ export class PK2Sprite extends Drawable {
                 this.receivedDamage++;
     }
     
-    //     int AI_Tapa_Kaikki();
-    //     int AI_Kitka_Vaikuttaa();
-    //     int AI_Piiloutuu();
-    //     int AI_Palaa_Alkuun_X();
-    //     int AI_Palaa_Alkuun_Y();
+    public AI_Tapa_Kaikki(): void {
+        if (this._energy > 0)
+            this._enemy = !this._enemy;
+    }
+    
+    public AI_Kitka_Vaikuttaa(): void {
+        if (this._energy > 0) {
+            if (!this._alas)
+                this._a /= 1.07;
+            else
+                this._a /= 1.02;
+        }
+    }
+    
+    public AI_Piiloutuu(): void {
+        if (this._energy > 0 && this._piilossa) {
+            this._a /= 1.02;
+            this._crouched = true;
+        }
+    }
+    
+    public AI_Palaa_Alkuun_X(): void {
+        if (this._energy < 1 || this._pelaaja_x != -1)
+            return;
+        
+        const max: number = this.proto.maxSpeed / 3.5;
+        
+        if (this._x < this._alku_x - 16 && this._a < max)
+            this._a += 0.05;
+        
+        if (this._x > this._alku_x + 16 && this._a > -max)
+            this._a -= 0.05;
+    }
+    
+    public AI_Palaa_Alkuun_Y(): void {
+        if (this._energy > 0 && this._pelaaja_x == -1) {
+            const max: number = this.proto.maxSpeed / 3.5;
+            
+            if (this._y < this._alku_y - 16 && this._b < max)
+                this._b += 0.04;
+            
+            if (this._y > this._alku_y + 16 && this._b > -max)
+                this._b -= 0.04;
+        }
+    }
     
     /**
      * SDL: PK2Sprite::AI_Kaantyy_Jos_Osuttu
@@ -1651,14 +1740,22 @@ export class PK2Sprite extends Drawable {
 }
 
 export enum EAnimation {
+    // Idle
     ANIMAATIO_PAIKALLA,
+    // Walking
     ANIMAATIO_KAVELY,
+    // Jumping up
     ANIMAATIO_HYPPY_YLOS,
+    // Jumping down
     ANIMAATIO_HYPPY_ALAS,
     ANIMAATIO_KYYKKY,
+    // Hurt
     ANIMAATIO_VAHINKO,
+    // Death
     ANIMAATIO_KUOLEMA,
+    // Attack 1
     ANIMAATIO_HYOKKAYS1,
+    // Attack 2
     ANIMAATIO_HYOKKAYS2
 }
 

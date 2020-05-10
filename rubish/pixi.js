@@ -26341,7 +26341,7 @@ var RenderTexture = function (_Texture) {
      */
 
 
-    RenderTexture.create = function create(width, height, scaleMode, resolution) {
+    RenderTexture.stage = function create(width, height, scaleMode, resolution) {
         return new RenderTexture(new _BaseRenderTexture2.default(width, height, scaleMode, resolution));
     };
 

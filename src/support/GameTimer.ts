@@ -99,6 +99,9 @@ export class GameTimer {
         // Planificar siguiente disparo
         this.plan();
         
+        // TODO: Will be replaced by PAUSE
+        if (document.hidden) return;
+        
         // Hacer una copia de la lista de tareas, que podrían ser asíncronas
         const handlers = [...this._handlers.values()];
         this._handlers.clear();

@@ -331,7 +331,7 @@ export class SpriteManager extends EventEmitter {
                 if (proto.type === EProtoType.TYYPPI_TAUSTA) {
                     this.ctx.composition.addBgSprite(sprite);
                 } else {
-                    this.ctx.composition.addSprite(sprite);
+                    this.ctx.composition.addFgSprite(sprite);
                 }
                 
                 lisatty = true;

@@ -71,6 +71,13 @@ export class PkRectangleImpl implements PkRectangle {
         return this.x + separator + this.y + separator + this.width + separator + this.height;
     }
     
+    public equals(other: PkRectangle): boolean {
+        return this._rect.x == other.x
+            && this._rect.y == other.y
+            && this._rect.width == other.width
+            && this._rect.height == other.height;
+    }
+    
     public getNative(): PIXI.Rectangle {
         return this._rect;
     }

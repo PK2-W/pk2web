@@ -1,5 +1,5 @@
 import { settings } from 'pixi.js';
-import { str, bool, uint, BYTE, int } from './types';
+import { str, bool, uint, CBYTE, int } from './types';
 
 export class PK2Settings {
     private settings: TRawSettings;
@@ -148,7 +148,7 @@ export class PK2Settings {
     /// Temporal fields from Jane's code
     
     /** @deprecated */
-    public music_max_volume: BYTE;
+    public music_max_volume: CBYTE;
     
     /** @deprecated */
     public kieli: string = 'english'; // idioma

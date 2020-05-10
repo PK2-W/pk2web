@@ -6,7 +6,7 @@ import { EBlocks } from '@game/tile/DwBlock';
 import { PkRectangleImpl } from '@ng/types/pixi/PkRectangleImpl';
 import { PkImageTexture } from '@ng/types/PkImageTexture';
 import { PkRectangle } from '@ng/types/PkRectangle';
-import { BYTE, bool, int } from '../../support/types';
+import { CBYTE, bool, int } from '../../support/types';
 
 export class BlockPrototype {
     private _blockContext: BlockContext;
@@ -200,4 +200,4 @@ export class BlockPrototype {
     public get bottomMask(): number[] { return this._bottomMask; }
 }
 
-export type TBlockProtoCode = EBlockProtoCode | BYTE;
+export type TBlockProtoCode = EBlockProtoCode | CBYTE;

@@ -20,24 +20,24 @@ class LoggerImpl implements Logger {
      */
     private static color(level: TLogLevel): { c: string; m: string } {
         switch (level) {
-        case 'e':
-            return { c: '#e74c3c', m: 'log' };
-        case 'w':
-            return { c: '#f1c40f', m: 'log' };
-        case 's':
-            return { c: '#2ecc71', m: 'log' };
-        case 'v':
-        case 'vv':
-            return { c: '#444444', m: 'log' };
-        case 'nv':
-            return { c: '#9b59b6', m: 'debug' };
-        case 'ev':
-            return { c: '#3498db', m: 'debug' };
-        case 'd':
-            return { c: '#777777', m: 'log' };
-        case 'l':
-        default:
-            return { c: null, m: 'log' };
+            case 'e':
+                return { c: '#e74c3c', m: 'log' };
+            case 'w':
+                return { c: '#f1c40f', m: 'log' };
+            case 's':
+                return { c: '#2ecc71', m: 'log' };
+            case 'v':
+            case 'vv':
+                return { c: '#444444', m: 'log' };
+            case 'nv':
+                return { c: '#9b59b6', m: 'debug' };
+            case 'ev':
+                return { c: '#3498db', m: 'debug' };
+            case 'd':
+                return { c: '#777777', m: 'log' };
+            case 'l':
+            default:
+                return { c: null, m: 'log' };
         }
     }
     
@@ -85,6 +85,14 @@ class LoggerImpl implements Logger {
         // Si no se pasan argumentos o se pasa uno vacío, mostrar salto de línea
         if (args.length === 0 || args.length === 1 && LoggerImpl.trim(String(args[0])).length === 0) {
             LoggerImpl.apply([''], level, group);
+            return;
+        }
+        
+        // Si hay un solo argumento, es error, y el nivel es W o E
+        if (args.length === 1 && (level === 'e' || level === 'w') && args[0] instanceof Error) {
+            LoggerImpl.apply([args[0].message], level, false);
+            if (Log.isDebug())
+                throw args[0];
             return;
         }
         

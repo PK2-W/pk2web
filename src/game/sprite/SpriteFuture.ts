@@ -1,4 +1,4 @@
-import { BYTE, int } from '../../support/types';
+import { CBYTE, int } from '../../support/types';
 
 export interface SpriteFuture {
     /** X coordinate. */
@@ -35,5 +35,5 @@ export interface SpriteFuture {
     
     inWater: boolean;
     
-    maxSpeed: BYTE;
+    maxSpeed: CBYTE;
 }

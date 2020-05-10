@@ -2,30 +2,36 @@ import { Entropy } from '@game/Entropy';
 import { GameComposition } from '@game/game/GameComposition';
 import { TextureCache } from '@game/game/TextureCache';
 import { PK2Map } from '@game/map/PK2Map';
+import { ParticleSystem } from '@game/particle/ParticleSystem';
 import { PK2Context } from '@game/PK2Context';
+import { PkImage } from '@ng/types/PkImage';
 import { int } from '../../support/types';
 
 /**
  * The game environment is shared with all game related elements.
  */
-export class GameContext {
+export abstract class GameContext {
     protected readonly context: PK2Context;
     
     public readonly map: PK2Map;
     public readonly textureCache: TextureCache;
     public readonly composition: GameComposition;
+    public readonly particles: ParticleSystem;
     protected _camera: { x: number, y: number };
     
     protected _swichTimer1: number;
     protected _swichTimer2: number;
     protected _swichTimer3: number;
     
-    public constructor(context: PK2Context, map: PK2Map) {
+    public _stuff: PkImage;
+    
+    protected constructor(context: PK2Context, map: PK2Map) {
         this.context = context;
         this.map = map;
         
         this.textureCache = new TextureCache();
         this.composition = new GameComposition();
+        this.particles = new ParticleSystem(this);
         this._camera = { x: 0, y: 0 };
         
         this._swichTimer1 = 0;
@@ -49,6 +55,10 @@ export class GameContext {
     }
     public get screenHeight(): number {
         return this.context.screenHeight;
+    }
+    
+    public get stuff(): PkImage {
+        return this._stuff;
     }
     
     

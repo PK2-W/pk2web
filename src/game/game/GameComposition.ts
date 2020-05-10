@@ -11,7 +11,7 @@ export class GameComposition extends Drawable {
     private readonly _lyBgParticles: PIXI.Container;
     private readonly _lyBgBlocks: PIXI.Container;
     private readonly _lySprites: PIXI.Container;
-    private readonly _lyParticles: PIXI.Container;
+    private readonly _lyFgParticles: PIXI.Container;
     private readonly _lyBlocks: PIXI.Container;
     
     public constructor() {
@@ -22,7 +22,7 @@ export class GameComposition extends Drawable {
         this._lyBgParticles = this.container.addChild(new PIXI.Container());
         this._lyBgBlocks = this.container.addChild(new PIXI.Container());
         //
-        this._lyParticles = this.container.addChild(new PIXI.Container());
+        this._lyFgParticles = this.container.addChild(new PIXI.Container());
         this._lyBlocks = this.container.addChild(new PIXI.Container());
         this._lySprites = this.container.addChild(new PIXI.Container());
         
@@ -47,9 +47,19 @@ export class GameComposition extends Drawable {
         // Log.d('Sprite added to the composition (bg).');
     }
     
-    public addSprite(dw: IDrawable) {
+    public addFgSprite(dw: IDrawable) {
         this._lySprites.addChild(dw.getDrawable());
         // Log.d('Sprite added to the composition (fg).');
+    }
+    
+    public addBgParticle(dw: PIXI.DisplayObject): void {
+        this._lyBgParticles.addChild(dw);
+        // Log.d('Sprite added to the composition (bg).');
+    }
+    
+    public addFgParticle(dw: PIXI.DisplayObject): void {
+        this._lyFgParticles.addChild(dw);
+        // Log.d('Sprite added to the composition (bg).');
     }
     
     protected get container(): PIXI.Container {

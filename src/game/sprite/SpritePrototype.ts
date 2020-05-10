@@ -16,7 +16,7 @@ import {
     PK2SPRITE_VIIMEISIN_VERSIO,
     MAX_AANIA
 } from '../../support/constants';
-import { DWORD, int, str, BYTE, cvect, CVect } from '../../support/types';
+import { DWORD, int, str, CBYTE, cvect, CVect } from '../../support/types';
 
 export class SpritePrototype {
     private mContext: GameContext;
@@ -59,10 +59,11 @@ export class SpritePrototype {
      * @deprecated Use _frames.
      */
     private _framet_peilikuva: CVect<int> = cvect(SPRITE_MAX_FRAMEJA);
-    private _frameCount: BYTE;										// framejen m��r�
+    private _frameCount: CBYTE;										// framejen m��r�
+    // TODO: A prototype can have MAX animations, but a sprite only BYTE(8)
     private _animaatiot: CVect<SpriteAnimation> = cvect(SPRITE_MAX_ANIMAATIOITA);	// animaatio sekvenssit
-    private _animaatioita: BYTE;									// animaatioiden m��r�
-    private _frameRate: BYTE;										// yhden framen kesto
+    private _animaatioita: CBYTE;									// animaatioiden m��r�
+    private _frameRate: CBYTE;										// yhden framen kesto
     private _kuva_x: int;											// miss� kohtaa kuvaa sprite on
     private _kuva_y: int;											// miss� kohtaa kuvaa sprite on
     /** Width of a frame in the sheet. */
@@ -80,16 +81,16 @@ export class SpritePrototype {
     private _vihollinen: boolean;										// onko sprite vihollinen
     private _energia: int;										// monta iskua kest��
     private _causedDamage: int;										// paljon vahinkoa tekee jos osuu
-    private _causedDamageType: BYTE;									// mink� tyyppist� vahinkoa tekee (1.1)
-    private _suojaus: BYTE;										// mink� tyyppiselt� vahingolta on suojattu (1.1)
+    private _causedDamageType: CBYTE;									// mink� tyyppist� vahinkoa tekee (1.1)
+    private _suojaus: CBYTE;										// mink� tyyppiselt� vahingolta on suojattu (1.1)
     private _pisteet: int;										// paljonko siit� saa pisteit�
     
     private _AI: CVect<EAi> = cvect(SPRITE_MAX_AI);								// mit� teko�lyj� k�ytet��n
     
-    private _maxJump: BYTE;										// hypyn maksimikesto
+    private _maxJump: CBYTE;										// hypyn maksimikesto
     private _maxSpeed: number;										// maksiminopeus
     private _latausaika: int;										// ampumisen j�lkeinen odotus
-    private _vari: BYTE;											// tehd��nk� spritest� jonkin tietyn v�rinen
+    private _vari: CBYTE;											// tehd��nk� spritest� jonkin tietyn v�rinen
     /**
      * If true, the sprite will act like an obstable block.
      * SRC: este. */
@@ -98,7 +99,7 @@ export class SpritePrototype {
     private _avain: boolean;											// Voiko sprite avata lukkoja
     /** If the sprite must shake occasionally. */
     private _shakes: boolean;
-    private _bonusten_lkm: BYTE;									// Bonusten lukum��r�
+    private _bonusten_lkm: CBYTE;									// Bonusten lukum��r�
     /** Attack 1 animation duration (number of frames). */
     private _hyokkays1_aika: int;
     /** Attack 2 animation duration (number of frames). */
@@ -130,7 +131,7 @@ export class SpritePrototype {
     private _este_vasemmalle: boolean;
     
     // Lis�ykset 1.3 versiossa
-    private _lapinakyvyys: BYTE;									// 0 = ei n�y - 100 = ei l�pin�kyv�
+    private _lapinakyvyys: CBYTE;									// 0 = ei n�y - 100 = ei l�pin�kyv�
     private _hehkuu: boolean;											// 0 = ei hehku (t�ytyy olla l�pin�kyv�)
     private _tulitauko: int;										// ammuspriten ampujalle aiheuttama latausaika
     private _liitokyky: boolean;										// voiko tippua hiljaa alas?
@@ -187,7 +188,7 @@ export class SpritePrototype {
         this._leveys = 0;
         this._maxJump = 0;
         this._maxSpeed = 3;
-        this.morphProto = null
+        this.morphProto = null;
         this._weight = 0;
         this._pallarx_kerroin = 0;
         this._pisteet = 0;
@@ -245,11 +246,11 @@ export class SpritePrototype {
         }
         
         this._aani_frq = 22050;
-        this.ammo1Proto = null
-        this.ammo2Proto = null
+        this.ammo1Proto = null;
+        this.ammo2Proto = null;
         this._animaatioita = 0;
         this._avain = false;
-        this.bonusProto = null
+        this.bonusProto = null;
         this._bonusten_lkm = 1;
         this._energia = 0;
         this._obstacle = false;
@@ -271,7 +272,7 @@ export class SpritePrototype {
         this._leveys = 0;
         this._maxJump = 0;
         this._maxSpeed = 3;
-        this.morphProto = null
+        this.morphProto = null;
         this._weight = 0;
         this._pallarx_kerroin = 0;
         this._pisteet = 0;
@@ -350,35 +351,35 @@ export class SpritePrototype {
         const version = file.streamRead8CStr(4);
         
         switch (version) {
-        case '1.0':
-            //     PK2Sprite_Prototyyppi10 proto;
-            //     tiedosto->read ((char *)&proto, sizeof (proto));
-            //     this->SetProto10(proto);
-            //     strcpy(this->versio,versio);
-            //     strcpy(this->tiedosto,tiedoston_nimi);
-            break;
-        case '1.1':
-            //     PK2Sprite_Prototyyppi11 proto;
-            //     tiedosto->read ((char *)&proto, sizeof (proto));
-            //     this->SetProto11(proto);
-            //     strcpy(this->versio,versio);
-            //     strcpy(this->tiedosto,tiedoston_nimi);
-            break;
-        case '1.2':
-            //     PK2Sprite_Prototyyppi12 proto;
-            //     tiedosto->read ((char *)&proto, sizeof (proto));
-            //     this->SetProto12(proto);
-            //     strcpy(this->versio,versio);
-            //     strcpy(this->tiedosto,tiedoston_nimi);
-            break;
-        case '1.3':
-            this.loadSerialized13(file);
-            //     PK2Sprite_Prototyyppi13 proto;
-            //     tiedosto->read ((char *)&proto, sizeof (proto));
-            //     this->SetProto13(proto);
-            //     strcpy(this->versio,versio);
-            //     strcpy(this->tiedosto,tiedoston_nimi);
-            break;
+            case '1.0':
+                //     PK2Sprite_Prototyyppi10 proto;
+                //     tiedosto->read ((char *)&proto, sizeof (proto));
+                //     this->SetProto10(proto);
+                //     strcpy(this->versio,versio);
+                //     strcpy(this->tiedosto,tiedoston_nimi);
+                break;
+            case '1.1':
+                //     PK2Sprite_Prototyyppi11 proto;
+                //     tiedosto->read ((char *)&proto, sizeof (proto));
+                //     this->SetProto11(proto);
+                //     strcpy(this->versio,versio);
+                //     strcpy(this->tiedosto,tiedoston_nimi);
+                break;
+            case '1.2':
+                //     PK2Sprite_Prototyyppi12 proto;
+                //     tiedosto->read ((char *)&proto, sizeof (proto));
+                //     this->SetProto12(proto);
+                //     strcpy(this->versio,versio);
+                //     strcpy(this->tiedosto,tiedoston_nimi);
+                break;
+            case '1.3':
+                this.loadSerialized13(file);
+                //     PK2Sprite_Prototyyppi13 proto;
+                //     tiedosto->read ((char *)&proto, sizeof (proto));
+                //     this->SetProto13(proto);
+                //     strcpy(this->versio,versio);
+                //     strcpy(this->tiedosto,tiedoston_nimi);
+                break;
         }
         
         // TODO throw...
@@ -388,7 +389,7 @@ export class SpritePrototype {
         // }
         // Get sprite bmp
         // int bufferi = PisteDraw2_Image_Load(kuva,false);
-        const img = await PkAssetTk.getImage(pathJoin(fpath, this._kuvatiedosto));
+        //const img = await PkAssetTk.getImage(pathJoin(fpath, this._kuvatiedosto));
         const bmp = await PkAssetTk.getBitmap(pathJoin(fpath, this._kuvatiedosto));
         bmp.removeTransparentPixel();
         // TODO
@@ -762,13 +763,13 @@ export class SpritePrototype {
     }
     
     /** @deprecated use maxJump */
-    public get max_hyppy(): BYTE {
+    public get max_hyppy(): CBYTE {
         return this.maxJump;
     }
-    public get maxJump(): BYTE {
+    public get maxJump(): CBYTE {
         return this._maxJump;
     }
-    public set maxJump(v: BYTE) {
+    public set maxJump(v: CBYTE) {
         this._maxJump = v;
     }
     
@@ -788,6 +789,7 @@ export class SpritePrototype {
         return this._avain === true;
     }
     
+    public get tuhoutuminen() { return this._tuhoutuminen; }
     public isDestructible(): boolean {
         return this._tuhoutuminen !== EDestructionType.TUHOUTUMINEN_EI_TUHOUDU;
     }
@@ -805,7 +807,7 @@ export class SpritePrototype {
     }
 }
 
-export type TSpriteProtoCode = BYTE;
+export type TSpriteProtoCode = CBYTE;
 
 export enum EProtoType { //Type
     TYYPPI_EI_MIKAAN,

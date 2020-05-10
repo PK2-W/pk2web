@@ -4,7 +4,7 @@ import { TBlockProtoCode } from '@game/tile/BlockPrototype';
 import { PkBinary } from '@ng/types/PkBinary';
 import { str2num, pathJoin } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
-import { str, int, BYTE, uint, CVect, cvect, bool, DWORD, rand } from '../../support/types';
+import { str, int, CBYTE, uint, CVect, cvect, bool, DWORD, rand } from '../../support/types';
 
 export abstract class PK2MapInfo {
 
@@ -32,7 +32,7 @@ export class PK2Map extends PK2MapInfo {
     public _jakso: int;				// level of the episode
     public _ilma: int;				// map climate
     public _aika: int;				// map time
-    public _extra: BYTE;				// extra config - not used
+    public _extra: CBYTE;				// extra config - not used
     public _tausta: EBgMovement;				// bg movemant type
     public _kytkin1_aika: uint;		// button 1 time - not used
     public _kytkin2_aika: uint;		// button 2 time - not used
@@ -40,11 +40,11 @@ export class PK2Map extends PK2MapInfo {
     public _pelaaja_sprite: int;		// player prototype   // TODO: must be uint??
     
     /** Mapping of background tiles (256*224) */
-    public _taustat: CVect<BYTE> = cvect(PK2KARTTA_KARTTA_KOKO);
+    public _taustat: CVect<CBYTE> = cvect(PK2KARTTA_KARTTA_KOKO);
     /** Mapping of foreground tiles (256*224) */
-    public _seinat: CVect<BYTE> = cvect(PK2KARTTA_KARTTA_KOKO);
+    public _seinat: CVect<CBYTE> = cvect(PK2KARTTA_KARTTA_KOKO);
     /** Mapping of sprites (256*224) */
-    public _spritet: CVect<BYTE> = cvect(PK2KARTTA_KARTTA_KOKO);
+    public _spritet: CVect<CBYTE> = cvect(PK2KARTTA_KARTTA_KOKO);
     /** List of available sprite prototypes by their file names (*.spr). */
     public _protot: CVect<str<13>> = cvect(PK2KARTTA_KARTTA_MAX_PROTOTYYPPEJA);
     public _reunat: bool[] = new Array(PK2KARTTA_KARTTA_KOKO); // map edges - calculated during game
@@ -167,7 +167,7 @@ export class PK2Map extends PK2MapInfo {
         }
         
         let leveys: DWORD, korkeus: DWORD, aloitus_x: DWORD, aloitus_y: DWORD, x: DWORD, y: DWORD;
-        let tile: BYTE;
+        let tile: CBYTE;
         
         // taustat (backgrounds)
         aloitus_x = str2num(this._raw.streamRead8CStr(8));
@@ -365,43 +365,43 @@ export const PK2KARTTA_KARTTA_KORKEUS: uint = 224;
 export const PK2KARTTA_KARTTA_KOKO: uint = PK2KARTTA_KARTTA_LEVEYS * PK2KARTTA_KARTTA_KORKEUS;
 export const PK2KARTTA_BLOCK_PALETTI_LEVEYS: uint = 320;
 export const PK2KARTTA_BLOCK_PALETTI_KORKEUS: uint = 480;
-export const PK2KARTTA_TAUSTAKUVA_EI: BYTE = 0;
-export const PK2KARTTA_EXTRA_EI: BYTE = 0;
+export const PK2KARTTA_TAUSTAKUVA_EI: CBYTE = 0;
+export const PK2KARTTA_EXTRA_EI: CBYTE = 0;
 
 export const PK2KARTTA_KARTTA_MAX_PROTOTYYPPEJA: uint = 100;
 
-export const BLOCK_ESTO_ALAS: BYTE = 40;
-export const BLOCK_HISSI_HORI: BYTE = 41;
-export const BLOCK_HISSI_VERT: BYTE = 42;
-export const BLOCK_KYTKIN2_YLOS: BYTE = 43;
-export const BLOCK_KYTKIN2_ALAS: BYTE = 45;
-export const BLOCK_KYTKIN3_OIKEALLE: BYTE = 44;
-export const BLOCK_KYTKIN3_VASEMMALLE: BYTE = 46;
-export const BLOCK_LUKKO: BYTE = 47;
-export const BLOCK_KALLOSEINA: BYTE = 48;
-export const BLOCK_KALLOTAUSTA: BYTE = 49;
-export const BLOCK_ANIM1: BYTE = 60;
-export const BLOCK_ANIM2: BYTE = 65;
-export const BLOCK_ANIM3: BYTE = 70;
-export const BLOCK_ANIM4: BYTE = 75;
-export const BLOCK_VIRTA_VASEMMALLE: BYTE = 140;
-export const BLOCK_VIRTA_OIKEALLE: BYTE = 141;
-export const BLOCK_VIRTA_YLOS: BYTE = 142;
-export const BLOCK_PIILO: BYTE = 143;
-export const BLOCK_TULI: BYTE = 144;
-export const BLOCK_KYTKIN1: BYTE = 145;
-export const BLOCK_KYTKIN2: BYTE = 146;
-export const BLOCK_KYTKIN3: BYTE = 147;
-export const BLOCK_ALOITUS: BYTE = 148;
-export const BLOCK_LOPETUS: BYTE = 149;
+export const BLOCK_ESTO_ALAS: CBYTE = 40;
+export const BLOCK_HISSI_HORI: CBYTE = 41;
+export const BLOCK_HISSI_VERT: CBYTE = 42;
+export const BLOCK_KYTKIN2_YLOS: CBYTE = 43;
+export const BLOCK_KYTKIN2_ALAS: CBYTE = 45;
+export const BLOCK_KYTKIN3_OIKEALLE: CBYTE = 44;
+export const BLOCK_KYTKIN3_VASEMMALLE: CBYTE = 46;
+export const BLOCK_LUKKO: CBYTE = 47;
+export const BLOCK_KALLOSEINA: CBYTE = 48;
+export const BLOCK_KALLOTAUSTA: CBYTE = 49;
+export const BLOCK_ANIM1: CBYTE = 60;
+export const BLOCK_ANIM2: CBYTE = 65;
+export const BLOCK_ANIM3: CBYTE = 70;
+export const BLOCK_ANIM4: CBYTE = 75;
+export const BLOCK_VIRTA_VASEMMALLE: CBYTE = 140;
+export const BLOCK_VIRTA_OIKEALLE: CBYTE = 141;
+export const BLOCK_VIRTA_YLOS: CBYTE = 142;
+export const BLOCK_PIILO: CBYTE = 143;
+export const BLOCK_TULI: CBYTE = 144;
+export const BLOCK_KYTKIN1: CBYTE = 145;
+export const BLOCK_KYTKIN2: CBYTE = 146;
+export const BLOCK_KYTKIN3: CBYTE = 147;
+export const BLOCK_ALOITUS: CBYTE = 148;
+export const BLOCK_LOPETUS: CBYTE = 149;
 
 export const KYTKIN_ALOITUSARVO: int = 2000;
 
-export const ILMA_NORMAALI: BYTE = 0;
-export const ILMA_SADE: BYTE = 1;
-export const ILMA_METSA: BYTE = 2;
-export const ILMA_SADEMETSA: BYTE = 3;
-export const ILMA_LUMISADE: BYTE = 4;
+export const ILMA_NORMAALI: CBYTE = 0;
+export const ILMA_SADE: CBYTE = 1;
+export const ILMA_METSA: CBYTE = 2;
+export const ILMA_SADEMETSA: CBYTE = 3;
+export const ILMA_LUMISADE: CBYTE = 4;
 
 export enum EBgMovement {
     TAUSTA_STAATTINEN,
