@@ -4,6 +4,7 @@ import { TextureCache } from '@game/game/TextureCache';
 import { PK2Map } from '@game/map/PK2Map';
 import { ParticleSystem } from '@game/particle/ParticleSystem';
 import { PK2Context } from '@game/PK2Context';
+import { PKSound } from '@ng/PKSound';
 import { PkImage } from '@ng/types/PkImage';
 import { int } from '../../support/types';
 
@@ -18,6 +19,7 @@ export abstract class GameContext {
     public readonly composition: GameComposition;
     public readonly particles: ParticleSystem;
     protected _camera: { x: number, y: number };
+    protected _sound: PKSound;
     
     protected _swichTimer1: number;
     protected _swichTimer2: number;
@@ -33,6 +35,7 @@ export abstract class GameContext {
         this.composition = new GameComposition();
         this.particles = new ParticleSystem(this);
         this._camera = { x: 0, y: 0 };
+        this._sound = new PKSound();
         
         this._swichTimer1 = 0;
         this._swichTimer2 = 0;
@@ -60,6 +63,7 @@ export abstract class GameContext {
     public get stuff(): PkImage {
         return this._stuff;
     }
+    public get sound(): PKSound { return this._sound; }
     
     
     ///  Switches  ////

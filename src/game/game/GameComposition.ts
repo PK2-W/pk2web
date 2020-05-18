@@ -1,6 +1,6 @@
 import { Drawable } from '@ng/drawable/Drawable';
 import { IDrawable } from '@ng/drawable/IDrawable';
-import { DisplayContainer } from '@ng/display/DisplayContainer';
+import { DisplayGroup } from '@ng/display/DisplayGroup';
 import { Log } from '@ng/support/log/LoggerImpl';
 import * as PIXI from 'pixi.js';
 
@@ -46,10 +46,16 @@ export class GameComposition extends Drawable {
         this._lyBgSprites.addChild(dw.getDrawable());
         // Log.d('Sprite added to the composition (bg).');
     }
+    public removeBgSprite(dw: IDrawable): void {
+        this._lyBgSprites.removeChild(dw.getDrawable());
+    }
     
     public addFgSprite(dw: IDrawable) {
         this._lySprites.addChild(dw.getDrawable());
         // Log.d('Sprite added to the composition (fg).');
+    }
+    public removeFgSprite(dw: IDrawable): void {
+        this._lySprites.removeChild(dw.getDrawable());
     }
     
     public addBgParticle(dw: PIXI.DisplayObject): void {
@@ -69,4 +75,6 @@ export class GameComposition extends Drawable {
     public getDrawable(): PIXI.DisplayObject {
         return super.getDrawable();
     }
+    
+    
 }

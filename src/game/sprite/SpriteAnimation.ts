@@ -1,10 +1,9 @@
-import { SpritePrototype } from '@game/sprite/SpritePrototype';
 import { PkBinary } from '@ng/types/PkBinary';
-import { ANIMAATIO_MAX_SEKVENSSEJA, SPRITE_MAX_ANIMAATIOITA } from '../../support/constants';
-import { CVect, CBYTE, cvect, int, uint } from '../../support/types';
+import { ANIMAATIO_MAX_SEKVENSSEJA } from '../../support/constants';
+import { CVect, CBYTE, cvect, uint } from '../../support/types';
 
 /**
- * SDL: PK2SPRITE_ANIMAATIO.
+ * SRC: PK2SPRITE_ANIMAATIO.
  */
 export class SpriteAnimation {
     private _frames: CVect<CBYTE> = cvect(ANIMAATIO_MAX_SEKVENSSEJA);	// sequence

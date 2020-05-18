@@ -4,6 +4,7 @@ import { TBlockProtoCode } from '@game/tile/BlockPrototype';
 import { PkBinary } from '@ng/types/PkBinary';
 import { str2num, pathJoin } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
+import { RESOURCES_PATH } from '../../support/constants';
 import { str, int, CBYTE, uint, CVect, cvect, bool, DWORD, rand } from '../../support/types';
 
 export abstract class PK2MapInfo {
@@ -91,7 +92,7 @@ export class PK2Map extends PK2MapInfo {
         this._fpath = fpath;
         this._fname = fname;
         
-        const uri = pathJoin(fpath, fname);
+        const uri = pathJoin(RESOURCES_PATH, fpath, fname);
         this._raw = await PkAssetTk.getBinary(uri);
         
         this._loadInfo();
@@ -108,21 +109,21 @@ export class PK2Map extends PK2MapInfo {
         console.log(this._version);
         
         switch (this._version) {
-        case '1.3':
-            this._loadInfo13();
-            break;
-        case '1.2':
-            this._loadInfo12();
-            break;
-        case '1.1':
-            this._loadInfo11();
-            break;
-        case '1.0':
-            this._loadInfo10();
-            break;
-        case '0.1':
-            this._loadInfo01();
-            break;
+            case '1.3':
+                this._loadInfo13();
+                break;
+            case '1.2':
+                this._loadInfo12();
+                break;
+            case '1.1':
+                this._loadInfo11();
+                break;
+            case '1.0':
+                this._loadInfo10();
+                break;
+            case '0.1':
+                this._loadInfo01();
+                break;
         }
     }
     

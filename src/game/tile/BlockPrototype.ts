@@ -2,7 +2,7 @@ import { TEXTURE_ID_BLOCKS } from '@game/game/PK2Game';
 import { BLOCK_ESTO_ALAS, BLOCK_KYTKIN1, BLOCK_KYTKIN3 } from '@game/map/PK2Map';
 import { EBlockProtoCode, BLOCK_RAW_SIZE, BLOCK_SIZE } from '@game/tile/BlockConstants';
 import { BlockContext } from '@game/tile/BlockContext';
-import { EBlocks } from '@game/tile/DwBlock';
+import { EBlocks } from '@game/tile/Block';
 import { PkRectangleImpl } from '@ng/types/pixi/PkRectangleImpl';
 import { PkImageTexture } from '@ng/types/PkImageTexture';
 import { PkRectangle } from '@ng/types/PkRectangle';

@@ -1,9 +1,11 @@
 import { GameContext } from '@game/game/GameContext';
 import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, PK2Map } from '@game/map/PK2Map';
+import { ESpriteType } from '@game/enum/ESpriteType';
 import { PK2Sprite } from '@game/sprite/PK2Sprite';
-import { SpritePrototype, EProtoType, TSpriteProtoCode } from '@game/sprite/SpritePrototype';
+import { SpritePrototype, TSpriteProtoCode } from '@game/sprite/SpritePrototype';
 import { Log } from '@ng/support/log/LoggerImpl';
 import { pathJoin, ifnul } from '@ng/support/utils';
+import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { EventEmitter } from '@vendor/eventemitter3';
 import { MAX_SPRITES, MAX_SPRITE_TYPES, MAX_AANIA, RESOURCES_PATH } from '../../support/constants';
 import { OutOfBoundsError } from '../../support/error/OutOfBoundsError';
@@ -18,7 +20,7 @@ export class SpriteManager extends EventEmitter {
      */
     private _protot: SpritePrototype[];
     /** Sprites pool. */
-    private _spritet: CVect<PK2Sprite> = cvect(MAX_SPRITES);
+    private _sprites: CVect<PK2Sprite> = cvect(MAX_SPRITES);
     
     private _taustaspritet: CVect<int> = cvect(MAX_SPRITES);
     
@@ -38,7 +40,7 @@ export class SpriteManager extends EventEmitter {
     
     
     public get(i: int) {
-        return ifnul(this._spritet[i]);
+        return ifnul(this._sprites[i]);
     }
     
     public getPrototype(name: string) {
@@ -65,7 +67,7 @@ export class SpriteManager extends EventEmitter {
     
     private _addBg(index: int): void {
         for (let i = 0; i < MAX_SPRITES; i++) {
-            if (this._taustaspritet[i] === -1) {
+            if (this._taustaspritet[i] == null) {
                 this._taustaspritet[i] = index;
                 return;
             }
@@ -87,7 +89,8 @@ export class SpriteManager extends EventEmitter {
             
             if (protoName !== '') {
                 lastProtoIndex = i;
-                let path = pathJoin(RESOURCES_PATH, 'episodes', tmpEpidoseName);
+                // 🏠/episodes/episodename/protoname
+                let path = pathJoin('episodes', tmpEpidoseName);
                 
                 try {
                     proto = await this.loadProto(path, protoName);
@@ -96,13 +99,14 @@ export class SpriteManager extends EventEmitter {
                 } catch (err) {
                     // TODO specify error
                     try {
-                        proto = await this.loadProto(pathJoin(RESOURCES_PATH, 'sprites'), protoName);
+                        // 🏠/sprites/protoname
+                        proto = await this.loadProto('sprites', protoName);
                         proto.assignIndex(this._nextFreeProtoIndex);
                         this._protot[this._nextFreeProtoIndex] = proto;
                         
                     } catch (err) {
-                        console.warn(`PK2     - Can't load sprite ${ protoName }. It will not appear.`);
-                        console.debug(err);
+                        Log.w(`[SpriteManager] Can't load sprite ${ protoName }. It will not appear.`);
+                        Log.w(err);
                     }
                 }
             }
@@ -141,25 +145,31 @@ export class SpriteManager extends EventEmitter {
         //Load sounds
         for (let i = 0; i < MAX_AANIA; i++) {
             //     if (strcmp(protot[_nextFreeProtoIndex].aanitiedostot[i],"")!=0){
-            //
-            //     strcpy(testipolku,aanipolku);
-            //     strcat(testipolku,"/");
-            //     strcat(testipolku,protot[_nextFreeProtoIndex].aanitiedostot[i]);
-            //
+            
+            // Log.l(fpath + '/' + proto.getSoundName(i));
+            // Log.l(pathJoin(RESOURCES_PATH, 'sprites', proto.getSoundName(i));
+            
+            // debugger;
+            
             //     if (PK_Check_File(testipolku))
             //     protot[_nextFreeProtoIndex].aanet[i] = protot_get_sound(aanipolku,protot[_nextFreeProtoIndex].aanitiedostot[i]);
-            //     else{
-            //     getcwd(aanipolku, PE_PATH_SIZE);
-            //     strcat(aanipolku,"/sprites/");
-            //
-            //     strcpy(testipolku,aanipolku);
-            //     strcat(testipolku,"/");
-            //     strcat(testipolku,protot[_nextFreeProtoIndex].aanitiedostot[i]);
-            //
-            //     if (PK_Check_File(testipolku))
-            //     protot[_nextFreeProtoIndex].aanet[i] = protot_get_sound(aanipolku,protot[_nextFreeProtoIndex].aanitiedostot[i]);
-            // }
-            // }
+            const fname = proto.getSoundName(i);
+            if (fname != null) {
+                proto._aanet[i] = await PkAssetTk.getSound(pathJoin(RESOURCES_PATH, fpath, fname));
+                
+                //     else{
+                //     getcwd(aanipolku, PE_PATH_SIZE);
+                //     strcat(aanipolku,"/sprites/");
+                //
+                //     strcpy(testipolku,aanipolku);
+                //     strcat(testipolku,"/");
+                //     strcat(testipolku,protot[_nextFreeProtoIndex].aanitiedostot[i]);
+                //
+                //     if (PK_Check_File(testipolku))
+                //     protot[_nextFreeProtoIndex].aanet[i] = protot_get_sound(aanipolku,protot[_nextFreeProtoIndex].aanitiedostot[i]);
+                // }
+                // }
+            }
         }
         
         return proto;
@@ -258,8 +268,8 @@ export class SpriteManager extends EventEmitter {
     
     public clear(): void {
         for (let i = 0; i < MAX_SPRITES; i++) {
-            this._spritet[i] = new PK2Sprite();
-            this._taustaspritet[i] = -1;
+            this._sprites[i] = new PK2Sprite();
+            this._taustaspritet[i] = null;
         }
         
         this._player = null;
@@ -271,14 +281,17 @@ export class SpriteManager extends EventEmitter {
      */
     public addMapSprites(map: PK2Map) {
         this.clear();
-        this.addMapSprite(map.getPlayerSprite(), true, 0, 0, MAX_SPRITES, false);
+        const playerId = map.getPlayerSprite();
+        const playerProto = this.getPrototypeAt(playerId);
+        this.addSprite(playerProto, true, 0, 0, null, false);
         
         for (let x = 0; x < PK2KARTTA_KARTTA_LEVEYS; x++) {
             for (let y = 0; y < PK2KARTTA_KARTTA_KORKEUS; y++) {
                 const protoId: int = map.getSpriteCode(x, y);
+                const proto = this.getPrototypeAt(protoId);
                 
-                if (protoId !== null && this._protot[protoId].height > 0) {
-                    this.addMapSprite(protoId, false, x * 32, y * 32 - this._protot[protoId].height + 32, MAX_SPRITES, false);
+                if (proto != null && proto.height > 0) {
+                    this.addSprite(proto, false, x * 32, y * 32 - proto.height + 32, null, false);
                 }
             }
         }
@@ -286,22 +299,18 @@ export class SpriteManager extends EventEmitter {
         this.sortBg();
     }
     
-    public addMapSprite(protoId: int, isPlayer: boolean, x: number, y: number, emo: int, isBonus: boolean) {
-        const proto = this._protot[protoId];
+    public addSprite(proto: SpritePrototype, isPlayer: boolean, x: number, y: number, parent: PK2Sprite, isBonus: boolean) {
         let lisatty: boolean = false;
         let i: int = 0;
         
         while (!lisatty && i < MAX_SPRITES) {
-            let sprite = this._spritet[i];
+            let sprite = this._sprites[i];
             
-            if (sprite.piilota) {
+            if (sprite.isDiscarded()) {
                 sprite.reuseWith(proto, isPlayer, false, x, y);
                 
                 if (isPlayer) {
                     this._player = sprite;
-                    
-                    // In debug, player is available globally
-                    if (Log.isDebug()) window['player'] = this;
                 }
                 
                 if (isBonus) { //If it is a bonus dropped by enemy
@@ -319,20 +328,22 @@ export class SpriteManager extends EventEmitter {
                     sprite.initialY = sprite.y;
                 }
                 
-                if (proto.type === EProtoType.TYYPPI_TAUSTA)
-                    this._addBg(i);
+                sprite.parent = parent;
                 
-                if (emo !== MAX_SPRITES)
-                    sprite.emosprite = emo;
-                else
-                    sprite.emosprite = i;
+                // Add to the background index
+                if (proto.type === ESpriteType.TYYPPI_TAUSTA) {
+                    this._addBg(i);
+                }
                 
                 // Add to the scene
-                if (proto.type === EProtoType.TYYPPI_TAUSTA) {
+                if (proto.type === ESpriteType.TYYPPI_TAUSTA) {
                     this.ctx.composition.addBgSprite(sprite);
                 } else {
                     this.ctx.composition.addFgSprite(sprite);
                 }
+                
+                // Listen for disposal
+                sprite.once(PK2Sprite.EV_SPRITE_DISCARDED, this.onSpriteDiscarded.bind(this));
                 
                 lisatty = true;
             } else {
@@ -341,14 +352,23 @@ export class SpriteManager extends EventEmitter {
         }
     }
     
+    private onSpriteDiscarded(sprite: PK2Sprite): void {
+        // Remove from scene
+        if (sprite.proto.type === ESpriteType.TYYPPI_TAUSTA) {
+            this.ctx.composition.removeBgSprite(sprite);
+        } else {
+            this.ctx.composition.removeFgSprite(sprite);
+        }
+    }
+    
     private addAmmo(proto: SpritePrototype, isPlayer: int, x: number, y: number, emo: int) {
         let lisatty: boolean = false;
         let i = 0;
         
         while (!lisatty && i < MAX_SPRITES) {
-            let sprite = this._spritet[i];
+            let sprite = this._sprites[i];
             
-            if (sprite.piilota) {
+            if (sprite.isDiscarded()) {
                 sprite = PK2Sprite(proto, isPlayer, false, x/*-proto.leveys/2*/, y);   // TODO: Ojo! los reusa sin destruirlo porque es un pool
                 
                 //sprite.x += sprite.proto.leveys;
@@ -421,10 +441,10 @@ export class SpriteManager extends EventEmitter {
             lopeta = true;
             
             for (let i = 0; i < MAX_SPRITES - 1; i++) {
-                if (this._taustaspritet [i] === -1 || this._taustaspritet [i + 1] === -1) {
+                if (this._taustaspritet[i] === null || this._taustaspritet[i + 1] == null) {
                     i = MAX_SPRITES;
                 } else {
-                    if (this._spritet[this._taustaspritet[i]].proto.pallarx_kerroin > this._spritet[this._taustaspritet [i + 1]].proto.pallarx_kerroin) {
+                    if (this._sprites[this._taustaspritet[i]].proto.pallarx_kerroin > this._sprites[this._taustaspritet [i + 1]].proto.pallarx_kerroin) {
                         vali = this._taustaspritet[i];
                         this._taustaspritet[i] = this._taustaspritet[i + 1];
                         this._taustaspritet[i + 1] = vali;
@@ -438,9 +458,9 @@ export class SpriteManager extends EventEmitter {
     
     public startDirections(): void {
         for (let i = 0; i < MAX_SPRITES; i++) {
-            let sprite = this._spritet[i];
+            let sprite = this._sprites[i];
             
-            if (/*pelaaja_index >= 0 && pelaaja_index < MAX_SPRITEJA && */!sprite.piilota) {
+            if (/*pelaaja_index >= 0 && pelaaja_index < MAX_SPRITEJA && */!sprite.isDiscarded()) {
                 sprite.a = 0;
                 
                 if (sprite.hasBehavior(EAi.AI_RANDOM_ALOITUSSUUNTA_HORI)) {
@@ -517,6 +537,14 @@ export class SpriteManager extends EventEmitter {
     
     public onSpriteCreated(fn: (sprite: PK2Sprite) => void, context: any) {
         return this.on(Ev.SPRITE_CREATED, fn, context);
+    }
+    
+    public getByPrototype(proto: SpritePrototype): PK2Sprite[] {
+        return this._sprites.filter(s => s.proto === proto);
+    }
+    
+    public getByType(type: ESpriteType): PK2Sprite[] {
+        return this._sprites.filter(s => s.proto.type === type);
     }
 }
 
@@ -600,6 +628,7 @@ export enum EAi { //AI
     AI_KIIPEILIJA,
     AI_KIIPEILIJA2,
     AI_PAKENEE_PELAAJAA_JOS_NAKEE,
+    /** New if destroyed. */
     AI_UUSI_JOS_TUHOUTUU,
     
     AI_NUOLI_VASEMMALLE,

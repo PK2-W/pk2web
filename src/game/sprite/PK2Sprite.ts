@@ -1,20 +1,27 @@
+import { EAnimation } from '@game/enum/EAnimation';
+import { EDamageType } from '@game/enum/EDamageType';
 import { SpriteAnimation } from '@game/sprite/SpriteAnimation';
 import { SpriteFuture } from '@game/sprite/SpriteFuture';
 import { EAi } from '@game/sprite/SpriteManager';
 import { SpritePrototype } from '@game/sprite/SpritePrototype';
-import { Block } from '@game/tile/Block';
-import { TBlockProtoCode } from '@game/tile/BlockPrototype';
+import { BlockCollider } from '@game/tile/BlockCollider';
+import { BLOCK_SIZE } from '@game/tile/BlockConstants';
 import { Drawable } from '@ng/drawable/Drawable';
 import { PkImageTextureImpl } from '@ng/types/pixi/PkImageTextureImpl';
 import * as PIXI from 'pixi.js';
 import { VAHINKO_AIKA } from '../../support/constants';
-import { int, CBYTE, rand, bool, uint } from '../../support/types';
+import { int, CBYTE, rand } from '../../support/types';
 
+/**
+ * @fires PK2Sprite#EV_SPRITE_DISCARDED.
+ */
 export class PK2Sprite extends Drawable {
+    public static readonly EV_SPRITE_DISCARDED = 'discarded.sprite.ev';
+    
     private _aktiivinen: boolean;			// true / false
     private _pelaaja: int;			// 0 = ei pelaaja, 1 = pelaaja
     private _tyyppi: SpritePrototype;	// osoitin spriten prototyyppiin
-    private _piilota: boolean;			// true = ei toiminnassa, false = toiminnassa
+    private _discarded: boolean = true;			// true = ei toiminnassa, false = toiminnassa
     private _alku_x: number;				// spriten alkuper�inen x sijainti
     private _alku_y: number;				// spriten alkuper�inen y sijainti
     private _x: number;					// x-kordinaatti pelikent�ll�
@@ -41,7 +48,7 @@ export class PK2Sprite extends Drawable {
     private _reuna_vasemmalla: boolean;	// onko spriten vasemmalla puolella kuoppa?
     private _reuna_oikealla: boolean;		// onko spriten vasemmalla puolella kuoppa?
     private _energy: int;			// monta osumaa sprite viel� kest��
-    private _emosprite: int;			// jos spriten on luonut jokin toinen sprite
+    private _emosprite: PK2Sprite;			// jos spriten on luonut jokin toinen sprite
     private _kytkinpaino: number;		// spriten paino + muiden spritejen panot, joihin kosketaan
     /** Crouched. */
     private _crouched: boolean;				// onko sprite kyykyss�
@@ -106,12 +113,12 @@ export class PK2Sprite extends Drawable {
     }
     
     public reuse() {
-        if (this._piilota === false)
+        if (!this.isDiscarded())
             throw new Error('This sprite is still being used, so it cannot be recycled.');
         
         this._tyyppi = null;
         this._pelaaja = 0;
-        this._piilota = true;
+        this._discarded = true;
         this._x = 0;
         this._y = 0;
         this._alku_x = 0;
@@ -166,7 +173,7 @@ export class PK2Sprite extends Drawable {
         if (proto != null) {
             this._tyyppi = proto;
             this._pelaaja = isPlayer ? 1 : 0;  // TODO Convert to boolean
-            this._piilota = discarded;
+            this._discarded = discarded;
             this._x = x;
             this._y = y;
             this._alku_x = x;
@@ -533,7 +540,7 @@ export class PK2Sprite extends Drawable {
         }
         
         if (this._energy < 1) {
-            this._piilota = true;
+            this._discarded = true;
         }
     }
     
@@ -1188,7 +1195,22 @@ export class PK2Sprite extends Drawable {
         this.flipX = false;
     }
     
-    //     int AI_Teleportti(int i, PK2Sprite *spritet, int max, PK2Sprite &pelaaja);
+    /**
+     * SDL: PK2Sprite::AI_Teleportti (~).
+     *
+     * @param sprite Sprite to teleport.
+     */
+    public AI_Teleportti(sprite: PK2Sprite) {
+        if (this._energy > 0 && this._lataus == 0 && this._attack1Remaining == 0) {
+            if (sprite.x <= this.right && sprite.x >= this.left &&
+                sprite.y <= this.bottom && sprite.y >= this.top) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
     
     /**
      * SDL: PK2Sprite::AI_Kiipeilija
@@ -1360,7 +1382,7 @@ export class PK2Sprite extends Drawable {
         }
         
         if (this.lataus === 1) {
-            this.piilota = true;
+            this.discord();
         }
     }
     
@@ -1482,14 +1504,34 @@ export class PK2Sprite extends Drawable {
     /** @deprecated */ public vihollinen(): boolean { return this.isEnemy(); }
     
     /**
-     * Indicates that the sprite is ¿permanently? hidden and can be reused from the sprite pool.
+     * @deprecated Use {@link discard} and {@link isDiscarded}.
      */
-    public get piilota(): boolean {
-        return this._piilota;
+    public get piilota(): boolean { return this._discarded; }
+    
+    /**
+     * Marks the item for deletion.<br>
+     * When a sprite is dicarded it won't be drawn anymore and will be reused when needed.
+     *
+     * @fires PK2Sprite#EV_SPRITE_DISCARDED.
+     */
+    public discard(): void {
+        this._discarded = true;
+        
+        /**
+         * dummy description
+         *
+         * @event PK2Sprite#EV_SPRITE_DISCARDED
+         * @type {PK2Sprite}
+         */
+        this.emit(PK2Sprite.EV_SPRITE_DISCARDED, this);
     }
-    /** @deprecated: Must use hide methods. */
-    public set piilota(v: boolean) {
-        this._piilota = v;
+    
+    /**
+     * Returns TRUE if sprite is discarded, FALSE otherwise.<br>
+     * More information: {@link discard}.
+     */
+    public isDiscarded(): boolean {
+        return this._discarded == true;
     }
     
     /**
@@ -1532,6 +1574,7 @@ export class PK2Sprite extends Drawable {
         this._attack2Remaining = v;
     }
     
+    /** Cooldown time. */
     public get lataus(): int {
         return this._lataus;
     }
@@ -1619,11 +1662,15 @@ export class PK2Sprite extends Drawable {
         this._inWater = v;
     }
     
-    public get emosprite(): int {
+    public get parent(): PK2Sprite {
         return this._emosprite;
     }
-    public set emosprite(v: int) {
+    public set parent(v: PK2Sprite) {
         this._emosprite = v;
+    }
+    /** @deprecated */
+    public get emosprite(): PK2Sprite {
+        return this._emosprite;
     }
     
     /**
@@ -1712,108 +1759,44 @@ export class PK2Sprite extends Drawable {
         };
     }
     
-    public getCollider(ignoreBarriers?: boolean): Block {
-        return {
-            code: 0,
-            
-            i: null,
-            j: null,
-            x: this._x,
-            y: this._y,
-            
-            topIsBarrier: true,
-            rightIsBarrier: true,
-            bottomIsBarrier: true,
-            leftIsBarrier: true,
-            
-            top: Math.floor(this._y - this.proto.height / 2),
-            right: Math.floor(this._x + this.proto.width / 2),
-            bottom: Math.floor(this._y + this.proto.height / 2),
-            left: Math.floor(this._x - this.proto.width / 2),
-            
-            // Indicates if it's background tile
-            tausta: false,
-            edge: this.proto.este,
-            water: false
-        };
+    /**
+     * Returns the {@link BlockCollider} object for this sprite to check for collision of another
+     * sprite (sprite) with this one (sprite2).
+     *
+     * @param dst             - For optimization, if a plain object is specified, the values are written to the
+     *                          provided one, instead of to new object.
+     * @param inheritBarriers - If FALSE (default), edge barriers of the generadted object are TRUE.
+     *                          If TRUE is specified, edge barriers values are inherited from sprite prototype.
+     */
+    public getCollider(dst?: { [p: string]: any }, inheritBarriers: boolean = false): BlockCollider {
+        if (dst == null) dst = {};
+        
+        dst.code = 0;
+        
+        dst.i = this._x / BLOCK_SIZE;
+        dst.j = this._x / BLOCK_SIZE;
+        dst.x = this._x;
+        dst.y = this._y;
+        
+        dst.topIsBarrier = inheritBarriers ? this.proto.este_alas : true;
+        dst.rightIsBarrier = inheritBarriers ? this.proto.este_oikealle : true;
+        dst.bottomIsBarrier = inheritBarriers ? this.proto.este_ylos : true;
+        dst.leftIsBarrier = inheritBarriers ? this.proto.este_vasemmalle : true;
+        
+        dst.top = Math.floor(this._y - this.proto.height / 2);
+        dst.right = Math.floor(this._x + this.proto.width / 2);
+        dst.bottom = Math.floor(this._y + this.proto.height / 2);
+        dst.left = Math.floor(this._x - this.proto.width / 2);
+        
+        // Indicates if it's background tile
+        dst.tausta = false;
+        dst.edge = this.proto.este;
+        dst.water = false;
+        
+        return dst as BlockCollider;
     }
 }
 
-export enum EAnimation {
-    // Idle
-    ANIMAATIO_PAIKALLA,
-    // Walking
-    ANIMAATIO_KAVELY,
-    // Jumping up
-    ANIMAATIO_HYPPY_YLOS,
-    // Jumping down
-    ANIMAATIO_HYPPY_ALAS,
-    ANIMAATIO_KYYKKY,
-    // Hurt
-    ANIMAATIO_VAHINKO,
-    // Death
-    ANIMAATIO_KUOLEMA,
-    // Attack 1
-    ANIMAATIO_HYOKKAYS1,
-    // Attack 2
-    ANIMAATIO_HYOKKAYS2
-}
-
-export enum EDamageType {
-    /** No damage. */
-    VAHINKO_EI,
-    VAHINKO_ISKU,
-    VAHINKO_PUDOTUS,
-    VAHINKO_MELU,
-    VAHINKO_TULI,
-    VAHINKO_VESI,
-    VAHINKO_LUMI,
-    VAHINKO_BONUS,
-    /** Electric damage. */
-    VAHINKO_SAHKO,
-    VAHINKO_ITSARI,
-    VAHINKO_PURISTUS,
-    VAHINKO_HAJU,
-    VAHINKO_KAIKKI,
-    VAHINKO_PISTO
-}
-
-export enum EDestructionType {
-    TUHOUTUMINEN_EI_TUHOUDU,
-    TUHOUTUMINEN_HOYHENET,
-    TUHOUTUMINEN_TAHDET_HARMAA,
-    TUHOUTUMINEN_TAHDET_SININEN,
-    TUHOUTUMINEN_TAHDET_PUNAINEN,
-    TUHOUTUMINEN_TAHDET_VIHREA,
-    TUHOUTUMINEN_TAHDET_ORANSSI,
-    TUHOUTUMINEN_TAHDET_VIOLETTI,
-    TUHOUTUMINEN_TAHDET_TURKOOSI,
-    TUHOUTUMINEN_RAJAHDYS_HARMAA,
-    TUHOUTUMINEN_RAJAHDYS_SININEN,
-    TUHOUTUMINEN_RAJAHDYS_PUNAINEN,
-    TUHOUTUMINEN_RAJAHDYS_VIHREA,
-    TUHOUTUMINEN_RAJAHDYS_ORANSSI,
-    TUHOUTUMINEN_RAJAHDYS_VIOLETTI,
-    TUHOUTUMINEN_RAJAHDYS_TURKOOSI,
-    TUHOUTUMINEN_SAVU_HARMAA,
-    TUHOUTUMINEN_SAVU_SININEN,
-    TUHOUTUMINEN_SAVU_PUNAINEN,
-    TUHOUTUMINEN_SAVU_VIHREA,
-    TUHOUTUMINEN_SAVU_ORANSSI,
-    TUHOUTUMINEN_SAVU_VIOLETTI,
-    TUHOUTUMINEN_SAVU_TURKOOSI,
-    TUHOUTUMINEN_SAVUPILVET,
-    TUHOUTUMINEN_ANIMAATIO = 100
-}
-
-export enum EType {
-    TYYPPI_EI_MIKAAN,
-    TYYPPI_PELIHAHMO,
-    TYYPPI_BONUS,
-    TYYPPI_AMMUS,
-    TYYPPI_TELEPORTTI,
-    TYYPPI_TAUSTA
-}
 
 class InternalClock {
     static IID = 0;

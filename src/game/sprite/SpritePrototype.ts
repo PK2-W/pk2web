@@ -1,5 +1,8 @@
+import { EColor } from '@game/enum/EColor';
+import { EDamageType } from '@game/enum/EDamageType';
+import { EDestructionType } from '@game/enum/EDestructionType';
+import { ESpriteType } from '@game/enum/ESpriteType';
 import { GameContext } from '@game/game/GameContext';
-import { EDamageType, EDestructionType } from '@game/sprite/PK2Sprite';
 import { SpriteAnimation } from '@game/sprite/SpriteAnimation';
 import { EAi } from '@game/sprite/SpriteManager';
 import { Log } from '@ng/support/log/LoggerImpl';
@@ -8,13 +11,15 @@ import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { PkRectangleImpl } from '@ng/types/pixi/PkRectangleImpl';
 import { PkBinary } from '@ng/types/PkBinary';
 import { PkImageTexture } from '@ng/types/PkImageTexture';
+import { PkSound } from '@ng/types/PkSound';
 import {
     SPRITE_MAX_AI,
     SPRITE_MAX_FRAMEJA,
     SPRITE_MAX_ANIMAATIOITA,
     ANIMAATIO_MAX_SEKVENSSEJA,
     PK2SPRITE_VIIMEISIN_VERSIO,
-    MAX_AANIA
+    MAX_AANIA,
+    RESOURCES_PATH
 } from '../../support/constants';
 import { DWORD, int, str, CBYTE, cvect, CVect } from '../../support/types';
 
@@ -26,14 +31,14 @@ export class SpritePrototype {
     /** Source file. */
     private _fname: string;
     
-    // Version
+    /** Versión. */
     private _version: str<4>;
     //.spr filename
     private _tiedosto: str<255>;
     //Prototype index
     private _index: int;
-    //Sprite type
-    private _tyyppi: EProtoType;
+    /** Sprite family (bonus, background, teleporter, ...). */
+    private _type: ESpriteType;
     
     //.bmp filename
     private _kuvatiedosto: str<100>;								// .BMP jossa ovat spriten grafiikat
@@ -41,7 +46,7 @@ export class SpritePrototype {
     // Spriteen liittyv�t ��nitehosteet
     
     private _aanitiedostot: CVect<str<100>> = cvect(MAX_AANIA);					// ��nitehostetiedostot
-    private _aanet: CVect<int> = cvect(MAX_AANIA);							// ��nitehosteet (indeksit buffereihin)
+    private _aanet: CVect<PkSound> = cvect(MAX_AANIA);							// ��nitehosteet (indeksit buffereihin)
     
     // Spriten kuva- ja animaatio-ominaisuudet
     /**
@@ -99,7 +104,8 @@ export class SpritePrototype {
     private _avain: boolean;											// Voiko sprite avata lukkoja
     /** If the sprite must shake occasionally. */
     private _shakes: boolean;
-    private _bonusten_lkm: CBYTE;									// Bonusten lukum��r�
+    /** Number of bonus sprite that it can leave. */
+    private _bonusten_lkm: CBYTE;
     /** Attack 1 animation duration (number of frames). */
     private _hyokkays1_aika: int;
     /** Attack 2 animation duration (number of frames). */
@@ -136,7 +142,8 @@ export class SpritePrototype {
     private _tulitauko: int;										// ammuspriten ampujalle aiheuttama latausaika
     private _liitokyky: boolean;										// voiko tippua hiljaa alas?
     private _boss: boolean;											// onko johtaja
-    private _bonus_aina: boolean;										// j�tt�� aina bonuksen tuhoutuessa
+    /** If TRUE, always (100% probability) leaves bonus when it's destroyed. */
+    private _bonus_aina: boolean;
     private _osaa_uida: boolean;										// vaikuttaako painovoima vedess�?
     
     public static async loadFromFile(ctx: GameContext, path: string, file: string) {
@@ -197,7 +204,7 @@ export class SpritePrototype {
         this._shakes = false;
         this._tiletarkistus = true;
         this._tuhoutuminen = EDestructionType.TUHOUTUMINEN_ANIMAATIO;
-        this._tyyppi = EProtoType.TYYPPI_EI_MIKAAN;
+        this._type = ESpriteType.TYYPPI_EI_MIKAAN;
         this._causedDamage = 0;
         this._causedDamageType = EDamageType.VAHINKO_ISKU;
         this._vari = EColor.VARI_NORMAALI;
@@ -281,7 +288,7 @@ export class SpritePrototype {
         this._shakes = false;
         this._tiletarkistus = true;
         this._tuhoutuminen = EDestructionType.TUHOUTUMINEN_ANIMAATIO;
-        this._tyyppi = EProtoType.TYYPPI_EI_MIKAAN;
+        this._type = ESpriteType.TYYPPI_EI_MIKAAN;
         this._causedDamage = 0;
         this._causedDamageType = EDamageType.VAHINKO_ISKU;
         this._vari = EColor.VARI_NORMAALI;
@@ -338,7 +345,7 @@ export class SpritePrototype {
         this._fpath = fpath;
         this._fname = fname;
         
-        const uri = pathJoin(fpath, fname);
+        const uri = pathJoin(RESOURCES_PATH, fpath, fname);
         const file = await PkAssetTk.getBinary(uri);
         
         // TODO throw...
@@ -374,11 +381,6 @@ export class SpritePrototype {
                 break;
             case '1.3':
                 this.loadSerialized13(file);
-                //     PK2Sprite_Prototyyppi13 proto;
-                //     tiedosto->read ((char *)&proto, sizeof (proto));
-                //     this->SetProto13(proto);
-                //     strcpy(this->versio,versio);
-                //     strcpy(this->tiedosto,tiedoston_nimi);
                 break;
         }
         
@@ -390,7 +392,7 @@ export class SpritePrototype {
         // Get sprite bmp
         // int bufferi = PisteDraw2_Image_Load(kuva,false);
         //const img = await PkAssetTk.getImage(pathJoin(fpath, this._kuvatiedosto));
-        const bmp = await PkAssetTk.getBitmap(pathJoin(fpath, this._kuvatiedosto));
+        const bmp = await PkAssetTk.getBitmap(pathJoin(RESOURCES_PATH, fpath, this._kuvatiedosto));
         bmp.removeTransparentPixel();
         // TODO
         //  if (bufferi == -1)
@@ -479,13 +481,15 @@ export class SpritePrototype {
      * @param stream
      */
     private loadSerialized13(stream: PkBinary): void {
-        this._tyyppi = stream.streamReadUint(4) as EProtoType;
+        this._type = stream.streamReadUint(4) as ESpriteType;
         this._kuvatiedosto = stream.streamReadCStr(100);
         for (let i = 0; i < 7; i++) {
-            this._aanitiedostot[i] = stream.streamReadCStr(100);
+            this._aanitiedostot[i] = ifempty(stream.streamReadCStr(100));
         }
         for (let i = 0; i < 7; i++) {
-            this._aanet[i] = stream.streamReadInt(4);
+            const sfx = stream.streamReadInt(4);
+            // All has to be -1, any other thing will be overwriten when load sounds
+            this._aanet[i] = sfx != -1 ? sfx : null;
         }
         
         this._frameCount = stream.streamReadByte();
@@ -563,8 +567,8 @@ export class SpritePrototype {
     
     ///  Accessors  ///
     
-    public get type(): EProtoType {
-        return this._tyyppi;
+    public get type(): ESpriteType {
+        return this._type;
     }
     
     public get index(): int {
@@ -591,6 +595,19 @@ export class SpritePrototype {
     
     public getBehavior(i: int): EAi {
         return this._AI[i];
+    }
+    
+    public getSoundName(i: number): string {
+        return this._aanitiedostot[i];
+    }
+    public getSound(i: number): PkSound {
+        return this._aanet[i];
+    }
+    public get soundFreq(): number {
+        return this._aani_frq;
+    }
+    public get soundRandomFreq(): boolean {
+        return this._random_frq;
     }
     
     // Bonus prototype
@@ -782,7 +799,7 @@ export class SpritePrototype {
     }
     
     public isBackground(): boolean {
-        return this.type === EProtoType.TYYPPI_TAUSTA;
+        return this.type === ESpriteType.TYYPPI_TAUSTA;
     }
     
     public isKey(): boolean {
@@ -798,10 +815,7 @@ export class SpritePrototype {
         return this._osaa_uida === true;
     }
     
-    /** @deprecated Use canFly() */
-    public get liitokyky() {
-        return this._liitokyky;
-    }
+    /** @deprecated Use canFly() */ public get liitokyky() { return this._liitokyky; }
     public canFly(): boolean {
         return this._liitokyky === true;
     }
@@ -809,22 +823,3 @@ export class SpritePrototype {
 
 export type TSpriteProtoCode = CBYTE;
 
-export enum EProtoType { //Type
-    TYYPPI_EI_MIKAAN,
-    TYYPPI_PELIHAHMO,
-    TYYPPI_BONUS,
-    TYYPPI_AMMUS,
-    TYYPPI_TELEPORTTI,
-    TYYPPI_TAUSTA
-}
-
-export enum EColor { //Color
-    VARI_HARMAA = 0,
-    VARI_SININEN = 32,
-    VARI_PUNAINEN = 64,
-    VARI_VIHREA = 96,
-    VARI_ORANSSI = 128,
-    VARI_VIOLETTI = 160,
-    VARI_TURKOOSI = 192,
-    VARI_NORMAALI = 255
-}

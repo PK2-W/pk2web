@@ -15,6 +15,11 @@
     <script type="text/javascript" src="j/vendor/xm.js"></script>
 
     <script src="j/vendor/pixi.min.js"></script>
-    <script src="pk2w/pk2web.min.js"></script>
+    <!--script src="pk2w/pk2web.min.js"></script-->
+    <script>
+        const scr = document.createElement('script');
+        scr.src = './pk2w/pk2web.min.js' + '?ts=' + new Date().getTime();
+        document.getElementsByTagName('head')[0].appendChild(scr);
+    </script>
 </body>
 </html>

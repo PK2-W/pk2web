@@ -6,6 +6,7 @@ import { PkImageImpl } from '@ng/types/pixi/PkImageImpl';
 import { PkBinary } from '@ng/types/PkBinary';
 import { PkBitmap } from '@ng/types/PkBitmap';
 import { PkImage } from '@ng/types/PkImage';
+import { PkSound } from '@ng/types/PkSound';
 
 export class PkAssetTk {
     private constructor() {
@@ -52,6 +53,12 @@ export class PkAssetTk {
     public static async getBitmap(uri: string): Promise<PkBitmap> {
         return PkBitmapImpl.fromBinary(
             await this.getBinary(uri));
+    }
+    
+    public static async getSound(uri: string): Promise<PkSound> {
+        Log.d('[PkAssetTk] Getting sound at "', uri, '"...');
+        const raw = await this.getArrayBuffer(uri);
+        return await PkSound.fromArrayBuffer(raw);
     }
     
     // public static async getSprite(uri: string): Promise<any> {

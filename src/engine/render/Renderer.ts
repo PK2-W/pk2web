@@ -3,7 +3,7 @@
 //by Janne Kivilahti from Piste Gamez
 //#########################
 
-import { DisplayContainer } from '@ng/display/DisplayContainer';
+import { DisplayGroup } from '@ng/display/DisplayGroup';
 import { RenderContext } from '@ng/render/RenderContext';
 import * as PIXI from 'pixi.js';
 import { WEB_CANVAS_QS } from '../../support/constants';

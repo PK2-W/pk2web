@@ -14,11 +14,11 @@ import {
     PK2KARTTA_KARTTA_KORKEUS,
     KYTKIN_ALOITUSARVO
 } from '@game/map/PK2Map';
-import { Block } from '@game/tile/Block';
+import { BlockCollider } from '@game/tile/BlockCollider';
 import { BLOCK_SIZE, EBlockProtoCode } from '@game/tile/BlockConstants';
 import { BlockContext } from '@game/tile/BlockContext';
 import { BlockPrototype, TBlockProtoCode } from '@game/tile/BlockPrototype';
-import { DwBlock } from '@game/tile/DwBlock';
+import { Block } from '@game/tile/Block';
 import { ResourceNotFoundError } from '@ng/error/ResourceNotFoundError';
 import { Log } from '@ng/support/log/LoggerImpl';
 import { pathJoin } from '@ng/support/utils';
@@ -35,21 +35,21 @@ export class BlockManager {
     private _prevCulling: { ax: number, ay: number, bx: number, by: number };
     
     //PALIKAT JA MASKIT
-    private _palikat: CVect<DwBlock> = cvect(300);
+    private _palikat: CVect<Block> = cvect(300);
     /** SDL: lasketut_palikat */
     private _prototypes: CVect<BlockPrototype> = cvect(150);
     
     // Context to share with blocks
     private readonly _blockCtx: BlockContext;
     /** Map-matrix for the background blocks (~taustat). */
-    private readonly _bgBlocks: DwBlock[];
+    private readonly _bgBlocks: Block[];
     /** Map-matrix for the foreground blocks (~seinat). */
-    private readonly _fgBlocks: DwBlock[];
+    private readonly _fgBlocks: Block[];
     /** Map-matrix for the edge blocks (~reunat). */
     private readonly _edges: boolean[];
     
     /** SRC: animaatio */
-    private _animatedBlocks: Set<DwBlock>;
+    private _animatedBlocks: Set<Block>;
     private _blockAnimTicker: number;
     
     public constructor(ctx: GameContext) {
@@ -73,7 +73,7 @@ export class BlockManager {
                     const proto = this.getProto(code);
                     
                     // Create the block at the correct position
-                    const block = new DwBlock(this._blockCtx, proto, i, j, TEXTURE_ID_BLOCKS);
+                    const block = new Block(this._blockCtx, proto, i, j, TEXTURE_ID_BLOCKS);
                     
                     // Add to the game
                     this.setBgBlock(block);
@@ -97,7 +97,7 @@ export class BlockManager {
                     const proto = this.getProto(code);
                     
                     // Create the block at the correct position
-                    const block = new DwBlock(this._blockCtx, proto, i, j, TEXTURE_ID_BLOCKS);
+                    const block = new Block(this._blockCtx, proto, i, j, TEXTURE_ID_BLOCKS);
                     
                     // Add to the game
                     this.setFgBlock(block);
@@ -112,7 +112,7 @@ export class BlockManager {
      * SDL: PK2Kartta::Calculate_Edges.
      */
     public calculateEdges() {
-        let block: DwBlock;
+        let block: Block;
         let tile1: TBlockProtoCode;
         let tile2: TBlockProtoCode;
         let tile3: TBlockProtoCode;
@@ -169,7 +169,7 @@ export class BlockManager {
      * CPP: PK_Palikka_Este
      * SDL: PK_Block_Set_Barriers
      */
-    public PK_Block_Set_Barriers(block: Block) {
+    public PK_Block_Set_Barriers(block: BlockCollider) {
         block.tausta = false;
         
         block.rightIsBarrier = true;
@@ -490,10 +490,10 @@ export class BlockManager {
      * @param i - Block x coordinate in the matrix.
      * @param j - Block y coordinate in the matrix.
      */
-    public getBgBlock(i: number, j: number): DwBlock {
+    public getBgBlock(i: number, j: number): Block {
         return this._bgBlocks[BlockManager.get1DIdx(i, j)];
     }
-    public setBgBlock(block: DwBlock): void {
+    public setBgBlock(block: Block): void {
         // Save in position
         this._bgBlocks[BlockManager.get1DIdx(block.i, block.j)] = block;
         
@@ -527,10 +527,10 @@ export class BlockManager {
      * @param i - Block x coordinate in the matrix.
      * @param j - Block y coordinate in the matrix.
      */
-    public getFgBlock(i: number, j: number): DwBlock {
+    public getFgBlock(i: number, j: number): Block {
         return this._fgBlocks[BlockManager.get1DIdx(i, j)];
     }
-    public setFgBlock(block: DwBlock): void {
+    public setFgBlock(block: Block): void {
         // Save in position
         this._fgBlocks[BlockManager.get1DIdx(block.i, block.j)] = block;
         
@@ -553,7 +553,7 @@ export class BlockManager {
         return this._edges[BlockManager.get1DIdx(i, j)] === true;
     }
     
-    public getVoidBlock(i: int, j: int): Block {
+    public getVoidBlock(i: int, j: int): BlockCollider {
         return {
             code: 255,
             
@@ -584,13 +584,13 @@ export class BlockManager {
      * @param i
      * @param j
      */
-    public getBlockCollider(i: int, j: int): Block {
+    public getBlockCollider(i: int, j: int): BlockCollider {
         // Block out of limits
         if (i < 0 || i > PK2KARTTA_KARTTA_LEVEYS || j < 0 || j > PK2KARTTA_KARTTA_LEVEYS) {
             return this.getVoidBlock(i, j);
         }
         
-        let plain: Block;
+        let plain: BlockCollider;
         let block = this.getFgBlock(i, j);
         
         // If it is ground
@@ -639,7 +639,7 @@ export class BlockManager {
     /** @deprecated Use _blockAnimTicker */
     public get animaatio(): number { return this._blockAnimTicker;}
     
-    public isInCamera(block: DwBlock): boolean {
+    public isInCamera(block: Block): boolean {
         return block.x < this.ctx.cameraX + this.ctx.screenWidth
             && block.y < this.ctx.cameraY + this.ctx.screenHeight
             && block.x + BLOCK_SIZE > this.ctx.cameraX
@@ -649,7 +649,7 @@ export class BlockManager {
     /**
      * Returns if the block is of an animated type.
      */
-    public isAnimated(block: DwBlock): boolean {
+    public isAnimated(block: Block): boolean {
         return block.code === EBlockProtoCode.BLOCK_ANIM1
             || block.code === EBlockProtoCode.BLOCK_ANIM2
             || block.code === EBlockProtoCode.BLOCK_ANIM3
@@ -666,10 +666,10 @@ export class BlockManager {
             Log.v('[BlockManager] Updating blocks culling...');
             
             let ai: number, aj: number, bi: number, bj: number;
-            let block: DwBlock;
+            let block: Block;
             
-            const show = new Set<DwBlock>();
-            const hide = new Set<DwBlock>();
+            const show = new Set<Block>();
+            const hide = new Set<Block>();
             
             // Blocks hiding
             if (this._prevCulling != null) {
@@ -772,7 +772,7 @@ export class BlockManager {
                 ajastin3_x = KYTKIN_ALOITUSARVO - this.ctx.switchTimer3;
         }
         
-        let block: DwBlock;
+        let block: Block;
         
         for (let i = 0; i < PK2KARTTA_KARTTA_LEVEYS; i++) {
             for (let j = 0; j < PK2KARTTA_KARTTA_KORKEUS; j++) {

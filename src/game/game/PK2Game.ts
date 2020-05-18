@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import { Effects } from '@game/effects/Effects';
+import { ESound } from '@game/enum';
 import { GameContext } from '@game/game/GameContext';
 import { GiftManager } from '@game/gift/GiftManager';
 import {
@@ -14,14 +15,16 @@ import {
     ILMA_LUMISADE
 } from '@game/map/PK2Map';
 import { EParticle } from '@game/particle/Particle';
-import { ParticleSystem } from '@game/particle/ParticleSystem';
 import { PK2Context } from '@game/PK2Context';
-import { PK2Sprite, EDamageType, EAnimation, EDestructionType } from '@game/sprite/PK2Sprite';
+import { EDamageType } from '@game/enum/EDamageType';
+import { EAnimation } from '@game/enum/EAnimation';
+import { EDestructionType } from '@game/enum/EDestructionType';
+import { ESpriteType } from '@game/enum/ESpriteType';
+import { PK2Sprite} from '@game/sprite/PK2Sprite';
 import { SpriteFuture } from '@game/sprite/SpriteFuture';
 import { SpriteManager, EAi } from '@game/sprite/SpriteManager';
-import { EProtoType } from '@game/sprite/SpritePrototype';
 import { TX } from '@game/texts';
-import { Block } from '@game/tile/Block';
+import { BlockCollider } from '@game/tile/BlockCollider';
 import { EBlockProtoCode } from '@game/tile/BlockConstants';
 import { BlockManager } from '@game/tile/BlockManager';
 import { ResourceNotFoundError } from '@ng/error/ResourceNotFoundError';
@@ -30,7 +33,7 @@ import { pathJoin } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { PkImageTextureImpl } from '@ng/types/pixi/PkImageTextureImpl';
 import { PkImage } from '@ng/types/PkImage';
-import { PkImageTexture } from '@ng/types/PkImageTexture';
+import { PkSound } from '@ng/types/PkSound';
 import * as PIXI from 'pixi.js';
 import { MAX_SPRITES, RESOURCES_PATH, InputAction, SPRITE_MAX_AI, VAHINKO_AIKA } from '../../support/constants';
 import { int, rand, bool, uint, DWORD } from '../../support/types';
@@ -85,6 +88,9 @@ export class PK2Game extends GameContext {
     public constructor(context: PK2Context, map: PK2Map) {
         super(context, map);
         
+        // In debug, game is available globally
+        if (Log.isDebug()) window['game'] = this;
+        
         this._sprites = new SpriteManager(this);
         this._gifts = new GiftManager(this);
         this._blocks = new BlockManager(this);
@@ -92,7 +98,7 @@ export class PK2Game extends GameContext {
         this._paused = false;
         
         this._sprites.onSpriteCreated((sprite) => {
-            if (sprite.proto.type === EProtoType.TYYPPI_TAUSTA) {
+            if (sprite.proto.type === ESpriteType.TYYPPI_TAUSTA) {
                 this.composition.addBgSprite(sprite);
             } else {
                 this.composition.addFgSprite(sprite);
@@ -121,7 +127,7 @@ export class PK2Game extends GameContext {
             this.loadBgImage(this.map.fpath, this.map.bgImageFilename);
             
             // TODO: Temporal location
-            this._stuff = await PkAssetTk.getBitmap('./pk2w/res/gfx/pk2stuff.bmp');
+            this._stuff = await PkAssetTk.getBitmap(pathJoin(RESOURCES_PATH, 'gfx/pk2stuff.bmp'));
             this._stuff.removeTransparentPixel();
             
             // PND	PK_New_Save();
@@ -227,7 +233,7 @@ export class PK2Game extends GameContext {
         
         if (!this._paused) {
             // Increment degreee
-            this.entropy.degree = /*(delta * PK2GAMELOOP / 1000) +*/ this.entropy.degree % 359;
+            this.entropy.degree = /*(delta * PK2GAMELOOP / 1000) +*/ 1 + this.entropy.degree % 359;
             
             // Decrement timers
             // this.entropy.tickTimers(10 * delta); ¬
@@ -496,7 +502,7 @@ export class PK2Game extends GameContext {
             const sprite: PK2Sprite = this._sprites.get(o);
             
             if (sprite.proto != null && i !== -1) {
-                if (!sprite.piilota && sprite.proto.type === EProtoType.TYYPPI_TAUSTA) {
+                if (!sprite.isDiscarded() && sprite.proto.type === ESpriteType.TYYPPI_TAUSTA) {
                     //Tarkistetaanko onko sprite tai osa siit� kuvassa
                     
                     alku_x = sprite.initialX;
@@ -590,14 +596,14 @@ export class PK2Game extends GameContext {
             // Onko sprite n�kyv�
             const sprite: PK2Sprite = this._sprites.get(i);
             
-            if (!sprite.piilota && sprite.proto.type != EProtoType.TYYPPI_TAUSTA) {
+            if (!sprite.isDiscarded() && sprite.proto.type != ESpriteType.TYYPPI_TAUSTA) {
                 //Check whether or not sprite is on the screen
                 if (sprite.x - sprite.proto.width / 2 < this.cameraX + this.screenWidth &&
                     sprite.x + sprite.proto.width / 2 > this.cameraX &&
                     sprite.y - sprite.proto.height / 2 < this.cameraY + this.screenHeight &&
                     sprite.y + sprite.proto.height / 2 > this.cameraY) {
                     
-                    if (sprite.isku > 0 && sprite.proto.type != EProtoType.TYYPPI_BONUS && sprite.energy < 1) {
+                    if (sprite.isku > 0 && sprite.proto.type != ESpriteType.TYYPPI_BONUS && sprite.energy < 1) {
                         // TODO
                         // int framex = ((degree%12)/3) * 58;
                         // DWORD hit_x = sprite->x-8, hit_y = sprite->y-8;
@@ -608,7 +614,7 @@ export class PK2Game extends GameContext {
                     if (this._nakymattomyys === 0 || (!doublespeed && this._nakymattomyys % 2 == 0) || (doublespeed && this._nakymattomyys % 4 <= 1) || sprite != this._sprites.player/*i != pelaaja_index*/)
                         sprite.Piirra(null, null);
                     
-                    if (sprite.energy < 1 && sprite.proto.type != EProtoType.TYYPPI_AMMUS) {
+                    if (sprite.energy < 1 && sprite.proto.type != ESpriteType.TYYPPI_AMMUS) {
                         // TODO
                         // sx = (int)sprite->x;
                         // for (stars=0; stars<3; stars++){
@@ -625,9 +631,9 @@ export class PK2Game extends GameContext {
                     sprite.Animoi();
                     //     }
                     //
-                    //     if (sprite.energy < 1) {
-                    //         sprite. piilota = true;
-                    //     }
+                    if (sprite.energy < 1) {
+                        sprite.discard();
+                    }
                 }
                 
                 // debug_sprites++;
@@ -786,7 +792,7 @@ export class PK2Game extends GameContext {
                 sprite.aktiivinen = false;
             }
             
-            if (sprite.piilota) {
+            if (sprite.isDiscarded()) {
                 sprite.aktiivinen = false;
             }
         }
@@ -794,8 +800,8 @@ export class PK2Game extends GameContext {
         for (let i = 0; i < MAX_SPRITES; i++) {
             sprite = this._sprites.get(i);
             
-            if (sprite.aktiivinen && sprite.proto.type !== EProtoType.TYYPPI_TAUSTA) {
-                if (sprite.proto.type === EProtoType.TYYPPI_BONUS) {
+            if (sprite.aktiivinen && sprite.proto.type !== ESpriteType.TYYPPI_TAUSTA) {
+                if (sprite.proto.type === ESpriteType.TYYPPI_BONUS) {
                     this.updateBonusSpriteMovement(sprite);
                 } else {
                     this.updateSpriteMovement(sprite, coef);
@@ -868,10 +874,12 @@ export class PK2Game extends GameContext {
             /* ATTACK 1 */
             if (this.context.input.isActing(InputAction.INPUT_ATTACK1) && sprite.lataus == 0 && sprite.ammo1Proto != null) {
                 sprite.attack1Remaining = sprite.proto.attack1Duration;
+                Log.d('[Game] Attack 1 for ', sprite.attack1Remaining, ' ticks.');
             } else
                 /* ATTACK 2 */
             if (this.context.input.isActing(InputAction.INPUT_ATTACK2) && sprite.lataus == 0 && sprite.ammo2Proto != null) {
                 sprite.attack2Remaining = sprite.proto.attack2Duration;
+                Log.d('[Game] Attack 2 for ', sprite.attack2Remaining, ' ticks.');
             }
             
             /* CROUCH */
@@ -996,7 +1004,7 @@ export class PK2Game extends GameContext {
             }
             
             /* It is not acceptable that a player is anything other than the game character */ //TODO Este no es el lugar para esto...
-            if (sprite.proto.type !== EProtoType.TYYPPI_PELIHAHMO) {
+            if (sprite.proto.type !== ESpriteType.TYYPPI_PELIHAHMO) {
                 sprite.energy = 0;
             }
         }
@@ -1104,7 +1112,7 @@ export class PK2Game extends GameContext {
             /* Going through the blocks around the sprite.                                           */
             /*****************************************************************************************/
             
-            let collider: Block;
+            let collider: BlockCollider;
             for (y = 0; y < palikat_y_lkm; y++) {
                 for (x = 0; x < palikat_x_lkm; x++) {
                     p = x + y * palikat_x_lkm;
@@ -1121,6 +1129,7 @@ export class PK2Game extends GameContext {
         /* If the sprite is under water                                                          */
         /*****************************************************************************************/
         
+        // Sinking in water
         if (sprite.inWater) {
             if (!sprite.proto.canSwim() || sprite.energy < 1) {
                 /*
@@ -1139,7 +1148,7 @@ export class PK2Game extends GameContext {
                 this.particles.newParticle(EParticle.PARTICLE_SPARK, future.x - 4, future.y, 0, -0.5 - rand() % 2, rand() % 30 + 30, 0, 32);
         }
         
-        // If sprite enters or exist from water, splash
+        // Enters or exist from water, splash
         if (future.inWater !== sprite.inWater) {
             Effects.splash(this, Math.floor(future.x), Math.floor(future.y), 32);
         }
@@ -1166,7 +1175,7 @@ export class PK2Game extends GameContext {
         
         // ~ PK2BLOCK spritepalikka;
         let sprite2: PK2Sprite;
-        let collider: Block;
+        let collider: BlockCollider;
         
         // Compare this sprite with every sprite in the game
         for (let sprite_index = 0; sprite_index < MAX_SPRITES; sprite_index++) {
@@ -1187,7 +1196,7 @@ export class PK2Game extends GameContext {
                         future.y + future.height / 2 + future.b >= sprite2.y - sprite2.proto.height / 2) {
                         
                         // ~ sprite collider
-                        collider = sprite2.getCollider();
+                        collider = sprite2.getCollider(collider);
                         
                         // Janne // spritepalikka.koodi = BLOCK_HISSI_VERT;
                         
@@ -1266,10 +1275,10 @@ export class PK2Game extends GameContext {
                                 sprite.pelaaja_x = -1;
                              } */
                     
-                    if (sprite.isEnemy() != sprite2.isEnemy() && sprite.emosprite != sprite_index) {
-                        if (sprite2.proto.type != EProtoType.TYYPPI_TAUSTA &&
-                            sprite.proto.type != EProtoType.TYYPPI_TAUSTA &&
-                            sprite2.proto.type != EProtoType.TYYPPI_TELEPORTTI &&
+                    if (sprite.isEnemy() != sprite2.isEnemy() && sprite.parent != sprite2) {
+                        if (sprite2.proto.type != ESpriteType.TYYPPI_TAUSTA &&
+                            sprite.proto.type != ESpriteType.TYYPPI_TAUSTA &&
+                            sprite2.proto.type != ESpriteType.TYYPPI_TELEPORTTI &&
                             sprite2.isku == 0 &&
                             sprite.isku == 0 &&
                             sprite2.energy > 0 &&
@@ -1288,7 +1297,7 @@ export class PK2Game extends GameContext {
                             }
                             
                             // If there is another sprite damaging
-                            if (sprite.proto.causedDamage > 0 && sprite2.proto.type != EProtoType.TYYPPI_BONUS) {
+                            if (sprite.proto.causedDamage > 0 && sprite2.proto.type != ESpriteType.TYYPPI_BONUS) {
                                 
                                 sprite2.causeDamage(sprite.proto.causedDamage, sprite.proto.causedDamageType);
                                 
@@ -1296,11 +1305,11 @@ export class PK2Game extends GameContext {
                                     sprite.attack1Remaining = sprite.proto.attack1Duration; //Then sprite attack
                                 
                                 // The projectiles are shattered by shock
-                                if (sprite2.proto.type == EProtoType.TYYPPI_AMMUS) {
+                                if (sprite2.proto.type == ESpriteType.TYYPPI_AMMUS) {
                                     sprite.causeDamage(1 /* JANNE / sprite2->tyyppi->vahinko */, sprite2.proto.causedDamageType);
                                 }
                                 
-                                if (sprite.proto.type == EProtoType.TYYPPI_AMMUS) {
+                                if (sprite.proto.type == ESpriteType.TYYPPI_AMMUS) {
                                     sprite.causeDamage(1 /* JANNE / sprite2->tyyppi->vahinko */, sprite2.proto.causedDamageType);
                                 }
                             }
@@ -1329,20 +1338,19 @@ export class PK2Game extends GameContext {
             if (sprite.proto.suojaus != sprite.receivedDamageType || sprite.proto.suojaus == EDamageType.VAHINKO_EI) {
                 sprite.energy -= sprite.receivedDamage;
                 
-                Log.d(`Received damage; energy now is: ${ sprite.energy }`);
+                Log.d(`[Game] Received damage; energy now is: ${ sprite.energy }`);
                 
                 sprite.knockTimer = VAHINKO_AIKA;
                 
                 if (sprite.receivedDamageType == EDamageType.VAHINKO_SAHKO)
                     sprite.knockTimer *= 6;
                 
-                // 			PK_Play_Sound(sprite.tyyppi->aanet[AANI_VAHINKO], 100, (int)sprite.x, (int)sprite.y,
-                // 						  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
-                //
+                this.playSpriteSound(sprite, ESound.AANI_VAHINKO, 100);
+                
                 if (sprite.proto.tuhoutuminen % 100 == EDestructionType.TUHOUTUMINEN_HOYHENET)
                     Effects.destruction(this, EDestructionType.TUHOUTUMINEN_HOYHENET, Math.floor(sprite.x), Math.floor(sprite.y));
                 
-                if (sprite.proto.type != EProtoType.TYYPPI_AMMUS) {
+                if (sprite.proto.type != ESpriteType.TYYPPI_AMMUS) {
                     this.particles.newParticle(EParticle.PARTICLE_STAR, future.x, future.y, -1, -1, 60, 0.01, 128);
                     this.particles.newParticle(EParticle.PARTICLE_STAR, future.x, future.y, 0, -1, 60, 0.01, 128);
                     this.particles.newParticle(EParticle.PARTICLE_STAR, future.x, future.y, 1, -1, 60, 0.01, 128);
@@ -1370,39 +1378,40 @@ export class PK2Game extends GameContext {
             /*****************************************************************************************/
             
             if (sprite.energy < 1) {
-                // 			tuhoutuminen = sprite.tyyppi->tuhoutuminen;
-                //
-                // 			if (tuhoutuminen != TUHOUTUMINEN_EI_TUHOUDU){
-                // 				if (sprite.tyyppi->bonus > -1 && sprite.tyyppi->bonusten_lkm > 0)
-                // 					if (sprite.tyyppi->bonus_aina || rand()%4 == 1)
-                // 						for (int bi=0; bi<sprite.tyyppi->bonusten_lkm; bi++)
-                // 							Game::Sprites->add(sprite.tyyppi->bonus,0,future.x-11+(10-rand()%20),
-                // 											  sprite_ala-16-(10+rand()%20), i, true);
-                //
-                // 				if (sprite.Onko_AI(AI_VAIHDA_KALLOT_JOS_TYRMATTY) && !sprite.Onko_AI(AI_VAIHDA_KALLOT_JOS_OSUTTU))
-                // 					kartta->Change_SkullBlocks();
-                //
-                // 				if (tuhoutuminen >= TUHOUTUMINEN_ANIMAATIO)
-                // 					tuhoutuminen -= TUHOUTUMINEN_ANIMAATIO;
-                // 				else
-                // 					sprite.piilota = true;
-                //
-                // 				Effect::Destruction(tuhoutuminen, (DWORD)sprite.x, (DWORD)sprite.y);
-                // 				PK_Play_Sound(sprite.tyyppi->aanet[AANI_TUHOUTUMINEN],100, (int)sprite.x, (int)sprite.y,
-                // 							  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
-                //
-                // 				if (sprite.Onko_AI(AI_UUSI_JOS_TUHOUTUU)) {
-                // 					Game::Sprites->add(sprite.tyyppi->indeksi,0,sprite.alku_x-sprite.tyyppi->leveys, sprite.alku_y-sprite.tyyppi->korkeus,i, false);
-                // 				} //TODO - does sprite.tyyppi->indeksi work
-                //
-                // 				if (sprite.tyyppi->tyyppi == TYYPPI_PELIHAHMO && sprite.tyyppi->pisteet != 0){
-                // 					char luku[10];
-                // 					itoa(sprite.tyyppi->pisteet,luku,10);
-                // 					PK_Fadetext_New(fontti2,luku,(int)Game::Sprites->spritet[i].x-8,(int)Game::Sprites->spritet[i].y-8,80,false);
-                // 					piste_lisays += sprite.tyyppi->pisteet;
-                // 				}
-                // 			} else
-                // 				sprite.energy = 1;
+                let tuhoutuminen = sprite.proto.tuhoutuminen;
+                
+                if (tuhoutuminen != EDestructionType.TUHOUTUMINEN_EI_TUHOUDU) {
+                    if (sprite.proto.bonusProto != null && sprite.proto._bonusten_lkm > 0)
+                        if (sprite.proto._bonus_aina || rand() % 4 == 1)
+                            for (let bi = 0; bi < sprite.proto._bonusten_lkm; bi++)
+                                
+                                this._sprites.addSprite(sprite.proto.bonusProto, false,
+                                    future.x - 11 + (10 - rand() % 20), future.bottom - 16 - (10 + rand() % 20), sprite, true);
+                    
+                    // 				if (sprite.Onko_AI(AI_VAIHDA_KALLOT_JOS_TYRMATTY) && !sprite.Onko_AI(AI_VAIHDA_KALLOT_JOS_OSUTTU))
+                    // 					kartta->Change_SkullBlocks();
+                    
+                    if (tuhoutuminen >= EDestructionType.TUHOUTUMINEN_ANIMAATIO)
+                        tuhoutuminen -= EDestructionType.TUHOUTUMINEN_ANIMAATIO;
+                    else
+                        sprite.discard();
+                    
+                    Effects.destruction(this, tuhoutuminen, Math.floor(sprite.x), Math.floor(sprite.y));
+                    this.playSound(sprite.proto.getSound(ESound.AANI_TUHOUTUMINEN), 100, sprite.x, sprite.y, sprite.proto.soundFreq, sprite.proto.soundRandomFreq);
+                    
+                    if (sprite.hasBehavior(EAi.AI_UUSI_JOS_TUHOUTUU)) {
+                        this._sprites.addSprite(sprite.proto, false, sprite.initialX - sprite.proto.width, sprite.initialY - sprite.proto.height, sprite, false);
+                    } //TODO - does sprite.tyyppi->indeksi work
+                    
+                    // 				if (sprite.tyyppi->tyyppi == TYYPPI_PELIHAHMO && sprite.tyyppi->pisteet != 0){
+                    // 					char luku[10];
+                    // 					itoa(sprite.tyyppi->pisteet,luku,10);
+                    // 					PK_Fadetext_New(fontti2,luku,(int)Game::Sprites->spritet[i].x-8,(int)Game::Sprites->spritet[i].y-8,80,false);
+                    // 					piste_lisays += sprite.tyyppi->pisteet;
+                    // 				}
+                } else {
+                    sprite.energy = 1;
+                }
             }
         }
         
@@ -1708,23 +1717,23 @@ export class PK2Game extends GameContext {
                         if (sprite.proto.morphProto != null)
                             sprite.AI_Muutos_Jos_Osuttu(sprite.proto.morphProto);
                         break;
-                    
-                    // 				case EAi.AI_TELEPORTTI:
-                    // 				if (sprite.AI_Teleportti(i, Game::Sprites->spritet, MAX_SPRITEJA, *Game::Sprites->player)==1)
-                    // 													{
-                    //
-                    // 														Game::camera_x = (int)Game::Sprites->player->x;
-                    // 														Game::camera_y = (int)Game::Sprites->player->y;
-                    // 														this._dcameraX = Game::camera_x-screen_width/2;
-                    // 														this._dcameraY = Game::camera_y-screen_height/2;
-                    // 														PisteDraw2_FadeIn(PD_FADE_NORMAL);
-                    // 														if (sprite.tyyppi->aanet[AANI_HYOKKAYS2] != -1)
-                    // 															PK_Play_MenuSound(sprite.tyyppi->aanet[AANI_HYOKKAYS2], 100);
-                    // 															//PK_Play_Sound(, 100, Game::camera_x, Game::camera_y, SOUND_SAMPLERATE, false);
-                    //
-                    //
-                    // 													}
-                    // 													break;
+                    case EAi.AI_TELEPORTTI:
+                        if (sprite.AI_Teleportti(this._sprites.player)) {
+                            if (this.teleport(sprite, this._sprites.player)) {
+                                this._camera.x = Math.floor(this._sprites.player.x);
+                                this._camera.y = Math.floor(this._sprites.player.y);
+                                this._dcameraX = this._camera.x - this.screenWidth / 2;
+                                this._dcameraY = this._camera.y - this.screenHeight / 2;
+                                // TODO: PisteDraw2_FadeIn(PD_FADE_NORMAL);
+                                
+                                if (sprite.proto.getSound(ESound.AANI_HYOKKAYS2) != null) {
+                                    this.playMenuSound(sprite.proto.getSound(ESound.AANI_HYOKKAYS2), 100);
+                                    // 															PK_Play_MenuSound(sprite.tyyppi->aanet[AANI_HYOKKAYS2], 100);
+                                    // 															//PK_Play_Sound(, 100, Game::camera_x, Game::camera_y, SOUND_SAMPLERATE, false);
+                                }
+                            }
+                        }
+                        break;
                     case  EAi.AI_KIIPEILIJA:
                         sprite.AI_Climber(/**/);
                         break;
@@ -1939,7 +1948,7 @@ export class PK2Game extends GameContext {
             
             sprite.y = PK2KARTTA_KARTTA_KORKEUS * 32 + future.height;
             sprite.energy = 0;
-            sprite.piilota = true;
+            sprite.discard();
             
             // if (sprite.kytkinpaino >= 1)
             // 	this._vibration = 50;
@@ -2004,11 +2013,11 @@ export class PK2Game extends GameContext {
             // 		}
         }
         
-        // 	// Random sounds
-        // 	if (sprite.tyyppi->aanet[AANI_RANDOM] != -1 && rand()%200 == 1 && sprite.energy > 0)
-        // 		PK_Play_Sound(sprite.tyyppi->aanet[AANI_RANDOM],80,(int)sprite_x, (int)sprite_y,
-        // 					  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
-        //
+        // Random sounds
+        if (sprite.proto.getSound(ESound.AANI_RANDOM) != null && rand() % 200 == 1 && sprite.energy > 0) {
+            this.playSound(sprite.proto.getSound(ESound.AANI_RANDOM), 80, sprite.x, sprite.y, sprite.proto.soundFreq, sprite.proto.soundRandomFreq);
+        }
+        
         //
         // 	// KEHITYSVAIHEEN APUTOIMINTOJA
         //
@@ -2093,9 +2102,8 @@ export class PK2Game extends GameContext {
         
         // Hyppyyn liittyv�t seikat
         
-        // TODO
-        // if (this._kytkin_tarina + PkEngine::vibration > 0 && sprite.hyppy_ajastin == 0)
-        // 	sprite.hyppy_ajastin = sprite.tyyppi->max_hyppy / 2;
+        if (this._kytkin_tarina + this._vibration > 0 && sprite.jumpTimer == 0)
+            sprite.jumpTimer = sprite.proto.maxJump / 2;
         
         if (sprite.jumpTimer > 0 && sprite.jumpTimer < sprite.proto.maxJump) {
             sprite.jumpTimer += (1);
@@ -2130,12 +2138,12 @@ export class PK2Game extends GameContext {
             
             // ~ PK2BLOCK spritepalikka;
             let sprite2: PK2Sprite;
-            let collider: Block;
+            let collider: BlockCollider;
             
             for (let sprite_index = 0; sprite_index < MAX_SPRITES; sprite_index++) {
                 sprite2 = this._sprites.get(sprite_index);
                 
-                if (sprite2 != sprite && !sprite2.piilota) {
+                if (sprite2 != sprite && !sprite2.isDiscarded()) {
                     if (sprite2.proto.este && sprite.proto.tiletarkistus) {
                         if (future.x - future.width / 2 + future.a <= sprite2.x + sprite2.proto.width / 2 &&
                             future.x + future.width / 2 + future.a >= sprite2.x - sprite2.proto.width / 2 &&
@@ -2143,17 +2151,22 @@ export class PK2Game extends GameContext {
                             future.y + future.height / 2 + future.b >= sprite2.y - sprite2.proto.height / 2) {
                             
                             // ~ sprite collider
-                            collider = sprite2.getCollider();
+                            collider = sprite2.getCollider(collider);
                             
-                            // if (!sprite2.proto.este_alas)
-                            // 	collider.alas		 = BLOCK_TAUSTA;
-                            // if (!sprite2.proto.este_ylos)
-                            // 	collider.ylos		 = BLOCK_TAUSTA;
-                            // if (!sprite2.proto.este_oikealle)
-                            // 	collider.oikealle   = BLOCK_TAUSTA;
-                            // if (!sprite2.proto.este_vasemmalle)
-                            // 	collider.vasemmalle = BLOCK_TAUSTA;
-                            
+                            // Juande
+                            // PK_Block_Set_Barriers only undo the next lines
+                            // So all these are unnecessary
+                            //
+                            // // Equivalent to getCollider(true)
+                            // if (!spritet[sprite_index].tyyppi->este_alas)
+                            // 	spritepalikka.alas		 = PALIKKA_TAUSTA;
+                            // if (!spritet[sprite_index].tyyppi->este_ylos)
+                            // 	spritepalikka.ylos		 = PALIKKA_TAUSTA;
+                            // if (!spritet[sprite_index].tyyppi->este_oikealle)
+                            // 	spritepalikka.oikealle   = PALIKKA_TAUSTA;
+                            // if (!spritet[sprite_index].tyyppi->este_vasemmalle)
+                            // 	spritepalikka.vasemmalle = PALIKKA_TAUSTA;
+                            //
                             // PK_Block_Set_Barriers(spritepalikka);
                             
                             this.checkBlocks2(sprite, collider, future);
@@ -2166,7 +2179,7 @@ export class PK2Game extends GameContext {
                         future.y > sprite2.y - sprite2.proto.korkeus / 2 &&
                         sprite.isku == 0) {
                         
-                        if (sprite2.proto.type != EProtoType.TYYPPI_BONUS &&
+                        if (sprite2.proto.type != ESpriteType.TYYPPI_BONUS &&
                             !(sprite2 === this._sprites.player && sprite.proto.isDestructible())) {
                             
                             future.a += sprite2.a * (rand() % 4);
@@ -2203,240 +2216,229 @@ export class PK2Game extends GameContext {
             if (future.a > 3) /***/ future.a = 3;
             if (future.a < -3) /**/ future.a = -3;
             
-            // Lasketaan
+            // Lasketaan (calculated)
+            // Blocks colision -
             
-            //		int palikat_x_lkm = 0,
-            //			palikat_y_lkm = 0;
+            // TODO: Duplicated
+            let palikat_x_lkm: int;
+            let palikat_y_lkm: int;
             
-            // 		if (sprite.tyyppi.tiletarkistus)
-            // 		{
-            //
-            // 			palikat_x_lkm = (int)((sprite_leveys) /32)+4;
-            // 			palikat_y_lkm = (int)((sprite_korkeus)/32)+4;
-            //
-            // 			kartta_vasen = (int)(sprite_vasen)/32;
-            // 			kartta_yla	 = (int)(sprite_yla)/32;
-            //
-            // 			for (y=0;y<palikat_y_lkm;y++)
-            // 				for (x=0;x<palikat_x_lkm;x++)
-            // 				{
-            // 					palikat[x+y*palikat_x_lkm] = PK_Block_Get(kartta_vasen+x-1,kartta_yla+y-1);
-            // 				}
-            //
-            // 			// Tutkitaan t�rm��k� palikkaan
-            //
-            // 			for (y=0;y<palikat_y_lkm;y++)
-            // 				for (x=0;x<palikat_x_lkm;x++)
-            // 					PK_Check_Blocks(sprite, palikat[x+y*palikat_x_lkm]);
-            // 			/*
-            // 			PK_Check_Blocks_Debug(sprite, palikat[x+y*palikat_x_lkm],
-            // 					sprite_x,
-            // 					sprite_y,
-            // 					sprite_a,
-            // 					sprite_b,
-            // 					sprite_vasen,
-            // 					sprite_oikea,
-            // 					sprite_yla,
-            // 					sprite_ala,
-            // 					sprite_leveys,
-            // 					sprite_korkeus,
-            // 					kartta_vasen,
-            // 					kartta_yla,
-            // 					oikealle,
-            // 					vasemmalle,
-            // 					ylos,
-            // 					alas);*/
-            //
-            //
-            // 		}
-            //
-            // 		if (vedessa != sprite.vedessa)
-            // 			Effect::Splash((int)sprite_x,(int)sprite_y,32);
-            //
-            //
-            // 		if (!oikealle)
-            // 		{
-            // 			if (sprite_a > 0)
-            // 				sprite_a = -sprite_a/1.5;
-            // 		}
-            //
-            // 		if (!vasemmalle)
-            // 		{
-            // 			if (sprite_a < 0)
-            // 				sprite_a = -sprite_a/1.5;
-            // 		}
-            //
-            // 		if (!ylos)
-            // 		{
-            // 			if (sprite_b < 0)
-            // 				sprite_b = 0;
-            //
-            // 			sprite.hyppy_ajastin = sprite.tyyppi->max_hyppy;
-            // 		}
-            //
-            // 		if (!alas)
-            // 		{
-            // 			if (sprite_b >= 0)
-            // 			{
-            // 				if (sprite.hyppy_ajastin > 0)
-            // 				{
-            // 					sprite.hyppy_ajastin = 0;
-            // 				//	if (/*sprite_b == 4*/!maassa)
-            // 				//		PK_Play_Sound(tomahdys_aani,20,(int)sprite_x, (int)sprite_y,
-            // 				//				      int(25050-sprite.tyyppi->paino*4000),true);
-            // 				}
-            //
-            // 				if (sprite_b > 2)
-            // 					sprite_b = -sprite_b/(3+rand()%2);
-            // 				else
-            // 					sprite_b = 0;
-            // 			}
-            // 			//sprite_a /= kitka;
-            // 			sprite_a /= 1.07;
-            // 		}
-            // 		else
-            // 		{
-            // 			sprite_a /= 1.02;
-            // 		}
-            //
-            // 		sprite_b /= 1.5;
-            //
-            // 		if (sprite_b > 4)
-            // 			sprite_b = 4;
-            //
-            // 		if (sprite_b < -4)
-            // 			sprite_b = -4;
-            //
-            // 		if (sprite_a > 4)
-            // 			sprite_a = 4;
-            //
-            // 		if (sprite_a < -4)
-            // 			sprite_a = -4;
-            //
-            // 		sprite_x += sprite_a;
-            // 		sprite_y += sprite_b;
-            //
-            // 		sprite.x = sprite_x;
-            // 		sprite.y = sprite_y;
-            // 		sprite.a = sprite_a;
-            // 		sprite.b = sprite_b;
-            //
-            // 		sprite.oikealle = oikealle;
-            // 		sprite.vasemmalle = vasemmalle;
-            // 		sprite.alas = alas;
-            // 		sprite.ylos = ylos;
-            // 	}
-            // 	else	// jos spriten paino on nolla, tehd��n spritest� "kelluva"
-            // 	{
-            // 		sprite.y = sprite.alku_y + cos_table[int(_degree+(sprite.alku_x+sprite.alku_y))%360] / 3.0;
-            // 		sprite_y = sprite.y;
-            // 	}
-            //
-            // 	sprite.paino = sprite.alkupaino;
-            //
-            // 	int tuhoutuminen;
-            
-            // Check if player touches bonus
-            if (future.x < this._sprites.player.x + this._sprites.player.proto.width / 2 &&
-                future.x > this._sprites.player.x - this._sprites.player.proto.width / 2 &&
-                future.y < this._sprites.player.y + this._sprites.player.proto.height / 2 &&
-                future.y > this._sprites.player.y - this._sprites.player.proto.height / 2 &&
-                sprite.isku == 0) {
+            if (sprite.proto.tiletarkistus) { //Find the tiles that the sprite occupies
+                // Number of blocks to check
+                palikat_x_lkm = Math.floor((future.width) / 32) + 4; //Number of blocks
+                palikat_y_lkm = Math.floor((future.height) / 32) + 4;
                 
-                // Both player and bonus have to be alive
-                if (sprite.energy > 0 && this._sprites.player.energy > 0) {
-                    if (sprite.proto.score != 0) {
-                        // 				piste_lisays += sprite.tyyppi->pisteet;
-                        // 				char luku[6];
-                        // 				itoa(sprite.tyyppi->pisteet,luku,10);
-                        // 				if (sprite.tyyppi->pisteet >= 50)
-                        // 					PK_Fadetext_New(fontti2,luku,(int)sprite.x-8,(int)sprite.y-8,100,false);
-                        // 				else
-                        // 					PK_Fadetext_New(fontti1,luku,(int)sprite.x-8,(int)sprite.y-8,100,false);
-                        
-                        Log.d('[Game] Score ', (sprite.proto.score > 0 ? '+' : '-'), sprite.proto.score, ' -> ', 0);
+                // Position in tile map (upper-left corner)
+                kartta_vasen = Math.floor((future.left) / 32);
+                kartta_yla = Math.floor((future.top) / 32);
+                
+                // Not necessary
+                // 		for (y=0;y<palikat_y_lkm;y++)
+                // 			for (x=0;x<palikat_x_lkm;x++) //For each block, create a array of blocks around the sprite
+                // 				// palikat[x+(y*palikat_x_lkm)] = PK_Block_Get(kartta_vasen+x-1,kartta_yla+y-1); //x = 0, y = 0
+                // this._blocks.getFgBlock(x, y);
+                
+                // Tutkitaan törmääkö palikkaan
+                
+                let collider: BlockCollider;
+                for (y = 0; y < palikat_y_lkm; y++) {
+                    for (x = 0; x < palikat_x_lkm; x++) {
+                        collider = this._blocks.getBlockCollider(kartta_vasen + x - 1, kartta_yla + y - 1);
+                        this.checkBlocks(sprite, future, collider);
+                    }
+                }
+                
+                // Janne
+                // PK_Check_Blocks_Debug(sprite, palikat[x+y*palikat_x_lkm],
+                // 		sprite_x,
+                // 		sprite_y,
+                // 		sprite_a,
+                // 		sprite_b,
+                // 		sprite_vasen,
+                // 		sprite_oikea,
+                // 		sprite_yla,
+                // 		sprite_ala,
+                // 		sprite_leveys,
+                // 		sprite_korkeus,
+                // 		kartta_vasen,
+                // 		kartta_yla,
+                // 		oikealle,
+                // 		vasemmalle,
+                // 		ylos,
+                // 		alas);
+            }
+            
+            // Enters or exist from water, splash
+            if (future.inWater !== sprite.inWater) {
+                Effects.splash(this, Math.floor(future.x), Math.floor(future.y), 32);
+            }
+            
+            // Bounce
+            if (!future.canGoRight) {
+                if (future.a > 0)
+                    future.a = -future.a / 1.5;
+            }
+            
+            if (!future.canGoLeft) {
+                if (future.a < 0)
+                    future.a = -future.a / 1.5;
+            }
+            
+            if (!future.canGoUp) {
+                if (future.b < 0)
+                    future.b = 0;
+                
+                sprite.jumpTimer = sprite.proto.maxSpeed;
+            }
+            
+            if (!future.canGoDown) {
+                if (future.b >= 0) {
+                    if (sprite.jumpTimer > 0) {
+                        sprite.jumpTimer = 0;
+                        // Janne
+                        //	if (/*future.b == 4*/!maassa)
+                        //		PK_Play_Sound(tomahdys_aani,20,(int)future.x, (int)future.y,
+                        //				      int(25050-sprite.tyyppi->paino*4000),true);
                     }
                     
-                    if (sprite.hasBehavior(EAi.AI_BONUS_AIKA)) {
-                        this.increase_time += sprite.proto.latausaika;
-                        Log.d('[Game] Level timeout increased (+', sprite.proto.latausaika, ' ticks)');
-                    }
-                    
-                    if (sprite.hasBehavior(EAi.AI_BONUS_NAKYMATTOMYYS)) {
-                        this.nakymattomyys = sprite.proto.latausaika;
-                        Log.d('[Game] Invisible for ', sprite.proto.latausaika, ' ticks');
-                    }
-                    
-                    // 			//kartta->spritet[(int)(sprite.alku_x/32) + (int)(sprite.alku_y/32)*PK2KARTTA_KARTTA_LEVEYS] = 255;
-                    //
-                    // 			if (sprite.tyyppi->vahinko != 0 && sprite.tyyppi->tuhoutuminen != TUHOUTUMINEN_EI_TUHOUDU){
-                    // 				PkEngine::Sprites->player->energy -= sprite.tyyppi->vahinko;
-                    // 				//if (player->energy > player->tyyppi->energy){ //TODO - set correct energy
-                    // 				//	player->energy = player->tyyppi->energy;
-                    // 				//}
-                    // 			}
-                    //
-                    // 			tuhoutuminen = sprite.tyyppi->tuhoutuminen;
-                    //
-                    // 			if (tuhoutuminen != TUHOUTUMINEN_EI_TUHOUDU)
-                    // 			{
-                    // 				if (tuhoutuminen >= TUHOUTUMINEN_ANIMAATIO)
-                    // 					tuhoutuminen -= TUHOUTUMINEN_ANIMAATIO;
+                    if (future.b > 2)
+                        future.b = -future.b / (3 + rand() % 2);
+                    else
+                        future.b = 0;
+                }
+                // Janne / future.a /= kitka;
+                future.a /= 1.07;
+            } else {
+                future.a /= 1.02;
+            }
+            
+            future.b /= 1.5;
+            
+            // Limit the speed
+            if (future.b > 4) /***/ future.b = 4;
+            if (future.b < -4) /**/ future.b = -4;
+            if (future.a > 4) /***/ future.a = 4;
+            if (future.a < -4) /**/ future.a = -4;
+            
+            // Apply speed
+            future.x += future.a;
+            future.y += future.b;
+            
+            // Set changes
+            sprite.x = future.x;
+            sprite.y = future.y;
+            sprite.a = future.a;
+            sprite.b = future.b;
+            
+            sprite.rightIsBarrier = future.canGoRight;
+            sprite.leftIsBarrier = future.canGoLeft;
+            sprite.bottomIsBarrier = future.canGoDown;
+            sprite.topIsBarrier = future.canGoUp;
+            
+        } else {	// jos spriten paino on nolla, tehd��n spritest� "kelluva"
+            sprite.y = sprite.initialY + this.context.entropy.cos(Math.floor(this.context.entropy.degree + (sprite.initialX + sprite.initialY)) % 360) / 3.0;
+            future.y = sprite.y;
+        }
+        
+        sprite.weight = sprite.initialWeight;
+        
+        let tuhoutuminen: EDestructionType;
+        
+        // Check if player touches bonus
+        if (future.x < this._sprites.player.x + this._sprites.player.proto.width / 2 &&
+            future.x > this._sprites.player.x - this._sprites.player.proto.width / 2 &&
+            future.y < this._sprites.player.y + this._sprites.player.proto.height / 2 &&
+            future.y > this._sprites.player.y - this._sprites.player.proto.height / 2 &&
+            sprite.isku == 0) {
+            
+            // Both player and bonus have to be alive
+            if (sprite.energy > 0 && this._sprites.player.energy > 0) {
+                if (sprite.proto.score != 0) {
+                    // 				piste_lisays += sprite.tyyppi->pisteet;
+                    // 				char luku[6];
+                    // 				itoa(sprite.tyyppi->pisteet,luku,10);
+                    // 				if (sprite.tyyppi->pisteet >= 50)
+                    // 					PK_Fadetext_New(fontti2,luku,(int)sprite.x-8,(int)sprite.y-8,100,false);
                     // 				else
-                    // 				{
-                    // 					if (sprite.tyyppi->avain)
-                    // 					{
-                    // 						avaimia--;
-                    //
-                    // 						if (avaimia < 1)
-                    // 							kartta->Open_Locks();
-                    // 					}
-                    //
-                    // 					sprite.piilota = true;
-                    // 				}
-                    //
-                    // 				if (sprite.Onko_AI(AI_UUSI_JOS_TUHOUTUU)) {
-                    // 					double ax, ay;
-                    // 					ax = sprite.alku_x;//-sprite.tyyppi->leveys;
-                    // 					ay = sprite.alku_y-sprite.tyyppi->korkeus/2.0;
-                    // 					PkEngine::Sprites->add(sprite.tyyppi->indeksi,0,ax-17, ay,i, false);
-                    // 					for (int r=1;r<6;r++)
-                    // 						this._particles.new_particle(PARTICLE_SPARK,ax+rand()%10-rand()%10, ay+rand()%10-rand()%10,0,0,rand()%100,0.1,32);
-                    //
-                    // 				}
-                    //
+                    // 					PK_Fadetext_New(fontti1,luku,(int)sprite.x-8,(int)sprite.y-8,100,false);
+                    
+                    Log.d('[Game] Score ', (sprite.proto.score > 0 ? '+' : '-'), sprite.proto.score, ' -> ', 0);
+                }
+                
+                if (sprite.hasBehavior(EAi.AI_BONUS_AIKA)) {
+                    this.increase_time += sprite.proto.latausaika;
+                    Log.d('[Game] Level timeout increased (+', sprite.proto.latausaika, ' ticks)');
+                }
+                
+                if (sprite.hasBehavior(EAi.AI_BONUS_NAKYMATTOMYYS)) {
+                    this.nakymattomyys = sprite.proto.latausaika;
+                    Log.d('[Game] Invisible for ', sprite.proto.latausaika, ' ticks');
+                }
+                
+                // Janne / kartta->spritet[(int)(sprite.alku_x/32) + (int)(sprite.alku_y/32)*PK2KARTTA_KARTTA_LEVEYS] = 255;
+                
+                if (sprite.proto.causedDamage != 0 && sprite.proto.isDestructible()) {
+                    this._sprites.player.energy -= sprite.proto.causedDamage;
+                    // Janne
+                    //if (player->energy > player->proto.energy){ //TODO - set correct energy
+                    //	player->energy = player->proto.energy;
+                    //}
+                }
+                
+                tuhoutuminen = sprite.proto.tuhoutuminen;
+                
+                if (tuhoutuminen != EDestructionType.TUHOUTUMINEN_EI_TUHOUDU) {
+                    if (tuhoutuminen >= EDestructionType.TUHOUTUMINEN_ANIMAATIO) {
+                        tuhoutuminen -= EDestructionType.TUHOUTUMINEN_ANIMAATIO;
+                    } else {
+                        if (sprite.proto._avain) {
+                            avaimia--;
+                            
+                            // if (avaimia < 1)
+                            // 	kartta->Open_Locks();
+                        }
+                        
+                        sprite.discard();
+                    }
+                    
+                    if (sprite.hasBehavior(EAi.AI_UUSI_JOS_TUHOUTUU)) {
+                        const ax = sprite.initialX;//-sprite.tyyppi->leveys;
+                        const ay = sprite.initialY - sprite.proto.height / 2.0;
+                        // 					PkEngine::Sprites->add(sprite.tyyppi->indeksi,0,ax-17, ay,i, false);
+                        for (let r = 1; r < 6; r++)
+                            this.particles.newParticle(EParticle.PARTICLE_SPARK,
+                                ax + rand() % 10 - rand() % 10, ay + rand() % 10 - rand() % 10,
+                                0, 0, rand() % 100,
+                                0.1, 32);
+                    }
+                    
                     // 				if (sprite.tyyppi->bonus  != -1)
                     // 					PkEngine::Gifts->add(sprite.tyyppi->bonus);
-                    //
-                    // 				if (sprite.tyyppi->muutos != -1)
-                    // 				{
-                    // 					if (PkEngine::Sprites->protot[sprite.tyyppi->muutos].AI[0] != AI_BONUS)
-                    // 					{
-                    // 						PkEngine::Sprites->player->tyyppi = &PkEngine::Sprites->protot[sprite.tyyppi->muutos];
-                    // 						PkEngine::Sprites->player->ammus1 = PkEngine::Sprites->player->tyyppi->ammus1;
-                    // 						PkEngine::Sprites->player->ammus2 = PkEngine::Sprites->player->tyyppi->ammus2;
-                    // 						PkEngine::Sprites->player->alkupaino = PkEngine::Sprites->player->tyyppi->paino;
-                    // 						PkEngine::Sprites->player->y -= PkEngine::Sprites->player->tyyppi->korkeus/2;
-                    // 						//PK_Start_Info("pekka has been transformed!");
-                    // 					}
-                    // 				}
-                    //
-                    // 				if (sprite.tyyppi->ammus1 != -1)
-                    // 				{
-                    // 					PkEngine::Sprites->player->ammus1 = sprite.tyyppi->ammus1;
-                    // 					PK_Start_Info(tekstit->Hae_Teksti(PK_txt.game_newegg));
-                    // 				}
-                    //
-                    // 				if (sprite.tyyppi->ammus2 != -1)
-                    // 				{
-                    // 					PkEngine::Sprites->player->ammus2 = sprite.tyyppi->ammus2;
-                    // 					PK_Start_Info(tekstit->Hae_Teksti(PK_txt.game_newdoodle));
-                    // 				}
-                    //
-                    // 				PK_Play_Sound(sprite.tyyppi->aanet[AANI_TUHOUTUMINEN],100, (int)sprite.x, (int)sprite.y,
-                    // 							  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
-                    //
-                    // 				Effect::Destruction(tuhoutuminen, (uint)sprite_x, (uint)sprite_y);
+                    
+                    if (sprite.proto.morphProto != null) {
+                        if (sprite.proto.morphProto.getBehavior(0) != EAi.AI_BONUS) {
+                            this._sprites.player._tyyppi = sprite.proto.morphProto;
+                            this._sprites.player._ammo1Proto = this._sprites.player.proto.ammo1Proto;
+                            this._sprites.player._ammo2Proto = this._sprites.player.proto.ammo2Proto;
+                            this._sprites.player._initialWeight = this._sprites.player.proto.weight;
+                            this._sprites.player.y -= this._sprites.player.proto.height / 2;
+                            // Janne / PK_Start_Info("pekka has been transformed!");
+                        }
+                    }
+                    
+                    if (sprite.proto.ammo1Proto != null) {
+                        this._sprites.player._ammo1Proto = sprite.proto.ammo1Proto;
+                        //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.game_newegg));
+                    }
+                    
+                    if (sprite.proto.ammo2Proto != null) {
+                        this._sprites.player._ammo2Proto = sprite.proto.ammo2Proto;
+                        //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.game_newdoodle));
+                    }
+                    
+                    this.playSound(sprite.proto.getSound(ESound.AANI_TUHOUTUMINEN), 100, sprite.x, sprite.y, sprite.proto.soundFreq, sprite.proto.soundRandomFreq);
+                    
+                    Effects.destruction(this, tuhoutuminen, Math.floor(future.x), Math.floor(future.y));
                 }
             }
         }
@@ -2482,7 +2484,7 @@ export class PK2Game extends GameContext {
      * CPP: PK_Tutki_Seina (2 args).
      * SDL: PK_Check_Blocks.
      */
-    private checkBlocks(sprite: PK2Sprite, future: SpriteFuture, block: Block): void {
+    private checkBlocks(sprite: PK2Sprite, future: SpriteFuture, block: BlockCollider): void {
         let mask_index: int;
         
         //If sprite is in the block (NO 255)
@@ -2567,7 +2569,7 @@ export class PK2Game extends GameContext {
                 //	kartta->seinat[block.vasen/32+(block.yla/32)*PK2KARTTA_KARTTA_LEVEYS] = 255;
                 //	kartta->Calculate_Edges();
                 
-                sprite.piilota = true;
+                sprite.discard();
                 
                 if (sprite.proto.isDestructible()) {
                     avaimia--;
@@ -2702,7 +2704,7 @@ export class PK2Game extends GameContext {
      * CPP: PK_Tutki_Seina (17 args).
      * SDL: PK_Check_Blocks2.
      */
-    private checkBlocks2(sprite: PK2Sprite, block: Block, future: SpriteFuture) {
+    private checkBlocks2(sprite: PK2Sprite, block: BlockCollider, future: SpriteFuture) {
         //left and right
         if (future.top < block.bottom && future.bottom - 1 > block.top) {
             if (future.right + future.a - 1 > block.left && future.left + future.a < block.right) {
@@ -2800,6 +2802,65 @@ export class PK2Game extends GameContext {
         
         this._bgImage.x += this.cameraX;
         this._bgImage.y += this.cameraY;
+    }
+    
+    private playSpriteSound(sprite: PK2Sprite, soundIndex: int, intensity): void {
+        this.playSound(sprite.proto.getSound(soundIndex), intensity, Math.floor(sprite.x), Math.floor(sprite.y),
+            sprite.proto.soundFreq, sprite.proto.soundRandomFreq);
+    }
+    
+    private playMenuSound(sound: PkSound, intensity): void {
+        if (sound == null) {
+            Log.w(new Error(`The sound to play was not found.`));
+            return;
+        }
+        
+        sound.play();
+    }
+    
+    private playSound(sound: PkSound, intensity, x, y, freq, randomFreq): void {
+        if (sound == null) {
+            Log.w(new Error(`The sound to play was not found.`));
+            return;
+        }
+        
+        sound.play();
+    }
+    
+    private teleport(src: PK2Sprite, sprite: PK2Sprite): boolean {
+        const destinations: PK2Sprite[] = [];
+        let queried: PK2Sprite[];
+        
+        // Destinations of the same prototype (self-excluding)
+        queried = this._sprites.getByPrototype(src.proto).filter(s => s !== src);
+        destinations.push(...queried);
+        
+        // If no destination found, include destinations of different prototype
+        if (destinations.length === 0) {
+            queried = this._sprites.getByType(ESpriteType.TYYPPI_TELEPORTTI);
+            destinations.push(...queried);
+        }
+        
+        // If no destination found, teleport can't be done
+        if (destinations.length === 0)
+            return false;
+        
+        // 			if (porttien_maara > 1119/*599*/)
+        // 				porttien_maara = 1119/*599*/;
+        
+        const dst = destinations[Math.floor(Math.random() * destinations.length)];
+        
+        // Teleport
+        sprite.x = dst.x;
+        sprite.y = dst.y;
+        // Janne / lataus    = tyyppi->latausaika;
+        // Janne / hyokkays1 = tyyppi->hyokkays1_aika;
+        // Janne / spritet[i].lataus    = spritet[i].tyyppi->latausaika;
+        dst.attack1Remaining = dst.proto.attack1Duration;
+        src.lataus = 0;
+        dst.lataus = 0;
+        
+        return true;
     }
     
     ///  Accessors  ///

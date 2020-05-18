@@ -104,7 +104,7 @@ class LoggerImpl implements Logger {
             if (currStrLike) {
                 // Si el previo es ~string
                 if (prevStrLike) {
-                    currArgs[0] = currArgs[0] + ' ' + String(arg);
+                    currArgs[0] = currArgs[0] + String(arg);
                 }
                 // Si el previo es nulo o ~object
                 else {

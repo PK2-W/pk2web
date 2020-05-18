@@ -54,6 +54,12 @@ export class PkInput {
         if (action === InputAction.INPUT_WALK_SLOW)
             return this.pressedKeys.has(Key.AltGraph);
         
+        if (action === InputAction.INPUT_ATTACK1)
+            return this.pressedKeys.has(Key.Control);
+        
+        if (action === InputAction.INPUT_ATTACK2)
+            return this.pressedKeys.has(Key.Alt);
+        
         return false;
     }
     
