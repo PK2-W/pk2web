@@ -20,7 +20,7 @@ import { EDamageType } from '@game/enum/EDamageType';
 import { EAnimation } from '@game/enum/EAnimation';
 import { EDestructionType } from '@game/enum/EDestructionType';
 import { ESpriteType } from '@game/enum/ESpriteType';
-import { PK2Sprite} from '@game/sprite/PK2Sprite';
+import { Sprite} from '@game/sprite/Sprite';
 import { SpriteFuture } from '@game/sprite/SpriteFuture';
 import { SpriteManager, EAi } from '@game/sprite/SpriteManager';
 import { TX } from '@game/texts';
@@ -394,7 +394,7 @@ export class PK2Game extends GameContext {
         // 				for (int r = 1; r<6; r++)
         // 					//this._particles.new_particle(PARTICLE_SPARK, player->x + rand() % 10 - rand() % 10, player->y + rand() % 10 - rand() % 10, 0, 0, rand() % 100, 0.1, 32);
         // 					this._particles.new_particle(PARTICLE_SPARK, PkEngine::Sprites->player->x + rand() % 10 - rand() % 10, PkEngine::Sprites->player->y + rand() % 10 - rand() % 10, 0, 0, rand() % 100, 0.1, 32);
-        // 				*PkEngine::Sprites->player = PK2Sprite(&PkEngine::Sprites->protot[PROTOTYYPPI_KANA], 1, false, PkEngine::Sprites->player->x, PkEngine::Sprites->player->y);
+        // 				*PkEngine::Sprites->player = Sprite(&PkEngine::Sprites->protot[PROTOTYYPPI_KANA], 1, false, PkEngine::Sprites->player->x, PkEngine::Sprites->player->y);
         // 			}
         // 		}
         // 		if (PisteInput_Keydown(PI_U))
@@ -499,7 +499,7 @@ export class PK2Game extends GameContext {
         let i: int;
         
         for (let o = 0; o < MAX_SPRITES; o++) {
-            const sprite: PK2Sprite = this._sprites.get(o);
+            const sprite: Sprite = this._sprites.get(o);
             
             if (sprite.proto != null && i !== -1) {
                 if (!sprite.isDiscarded() && sprite.proto.type === ESpriteType.TYYPPI_TAUSTA) {
@@ -594,7 +594,7 @@ export class PK2Game extends GameContext {
         
         for (let i = 0; i < MAX_SPRITES; i++) {
             // Onko sprite n�kyv�
-            const sprite: PK2Sprite = this._sprites.get(i);
+            const sprite: Sprite = this._sprites.get(i);
             
             if (!sprite.isDiscarded() && sprite.proto.type != ESpriteType.TYYPPI_TAUSTA) {
                 //Check whether or not sprite is on the screen
@@ -778,7 +778,7 @@ export class PK2Game extends GameContext {
      */
     public updateSprites(coef: number): void {
         // 	debug_active_sprites = 0;
-        let sprite: PK2Sprite;
+        let sprite: Sprite;
         
         for (let i = 0; i < MAX_SPRITES; i++) { //Activate sprite if it is on screen
             sprite = this._sprites.get(i);
@@ -820,7 +820,7 @@ export class PK2Game extends GameContext {
      * @param coef   - Game loop coefficient; variation between expected time from the last game loop (i.e. 10ms)
      *                 and the real elapsed time.
      */
-    private updateSpriteMovement(sprite: PK2Sprite, coef: number): void {
+    private updateSpriteMovement(sprite: Sprite, coef: number): void {
         // TODO - Caution with this: Dead sprites are going to be updated
         if (sprite.proto == null)
             return;
@@ -1174,7 +1174,7 @@ export class PK2Game extends GameContext {
         let sprite2_yla: number = 0; // kyykistymiseen liittyv�
         
         // ~ PK2BLOCK spritepalikka;
-        let sprite2: PK2Sprite;
+        let sprite2: Sprite;
         let collider: BlockCollider;
         
         // Compare this sprite with every sprite in the game
@@ -2078,7 +2078,7 @@ export class PK2Game extends GameContext {
      * @param sprite
      * @param coef
      */
-    private updateBonusSpriteMovement(sprite: PK2Sprite, coef: number = 1): void {
+    private updateBonusSpriteMovement(sprite: Sprite, coef: number = 1): void {
         const future: SpriteFuture = sprite.getPackedAttributes();
         
         let x = 0;
@@ -2137,7 +2137,7 @@ export class PK2Game extends GameContext {
             // 		/* TOISET SPRITET */
             
             // ~ PK2BLOCK spritepalikka;
-            let sprite2: PK2Sprite;
+            let sprite2: Sprite;
             let collider: BlockCollider;
             
             for (let sprite_index = 0; sprite_index < MAX_SPRITES; sprite_index++) {
@@ -2484,7 +2484,7 @@ export class PK2Game extends GameContext {
      * CPP: PK_Tutki_Seina (2 args).
      * SDL: PK_Check_Blocks.
      */
-    private checkBlocks(sprite: PK2Sprite, future: SpriteFuture, block: BlockCollider): void {
+    private checkBlocks(sprite: Sprite, future: SpriteFuture, block: BlockCollider): void {
         let mask_index: int;
         
         //If sprite is in the block (NO 255)
@@ -2704,7 +2704,7 @@ export class PK2Game extends GameContext {
      * CPP: PK_Tutki_Seina (17 args).
      * SDL: PK_Check_Blocks2.
      */
-    private checkBlocks2(sprite: PK2Sprite, block: BlockCollider, future: SpriteFuture) {
+    private checkBlocks2(sprite: Sprite, block: BlockCollider, future: SpriteFuture) {
         //left and right
         if (future.top < block.bottom && future.bottom - 1 > block.top) {
             if (future.right + future.a - 1 > block.left && future.left + future.a < block.right) {
@@ -2804,7 +2804,7 @@ export class PK2Game extends GameContext {
         this._bgImage.y += this.cameraY;
     }
     
-    private playSpriteSound(sprite: PK2Sprite, soundIndex: int, intensity): void {
+    private playSpriteSound(sprite: Sprite, soundIndex: int, intensity): void {
         this.playSound(sprite.proto.getSound(soundIndex), intensity, Math.floor(sprite.x), Math.floor(sprite.y),
             sprite.proto.soundFreq, sprite.proto.soundRandomFreq);
     }
@@ -2827,9 +2827,9 @@ export class PK2Game extends GameContext {
         sound.play();
     }
     
-    private teleport(src: PK2Sprite, sprite: PK2Sprite): boolean {
-        const destinations: PK2Sprite[] = [];
-        let queried: PK2Sprite[];
+    private teleport(src: Sprite, sprite: Sprite): boolean {
+        const destinations: Sprite[] = [];
+        let queried: Sprite[];
         
         // Destinations of the same prototype (self-excluding)
         queried = this._sprites.getByPrototype(src.proto).filter(s => s !== src);

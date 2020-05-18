@@ -1,7 +1,7 @@
 import { GameContext } from '@game/game/GameContext';
 import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, PK2Map } from '@game/map/PK2Map';
 import { ESpriteType } from '@game/enum/ESpriteType';
-import { PK2Sprite } from '@game/sprite/PK2Sprite';
+import { Sprite } from '@game/sprite/Sprite';
 import { SpritePrototype, TSpriteProtoCode } from '@game/sprite/SpritePrototype';
 import { Log } from '@ng/support/log/LoggerImpl';
 import { pathJoin, ifnul } from '@ng/support/utils';
@@ -20,11 +20,11 @@ export class SpriteManager extends EventEmitter {
      */
     private _protot: SpritePrototype[];
     /** Sprites pool. */
-    private _sprites: CVect<PK2Sprite> = cvect(MAX_SPRITES);
+    private _sprites: CVect<Sprite> = cvect(MAX_SPRITES);
     
     private _taustaspritet: CVect<int> = cvect(MAX_SPRITES);
     
-    private _player: PK2Sprite;
+    private _player: Sprite;
     private _nextFreeProtoIndex: int = 0;
     
     
@@ -268,7 +268,7 @@ export class SpriteManager extends EventEmitter {
     
     public clear(): void {
         for (let i = 0; i < MAX_SPRITES; i++) {
-            this._sprites[i] = new PK2Sprite();
+            this._sprites[i] = new Sprite();
             this._taustaspritet[i] = null;
         }
         
@@ -299,7 +299,7 @@ export class SpriteManager extends EventEmitter {
         this.sortBg();
     }
     
-    public addSprite(proto: SpritePrototype, isPlayer: boolean, x: number, y: number, parent: PK2Sprite, isBonus: boolean) {
+    public addSprite(proto: SpritePrototype, isPlayer: boolean, x: number, y: number, parent: Sprite, isBonus: boolean) {
         let lisatty: boolean = false;
         let i: int = 0;
         
@@ -343,7 +343,7 @@ export class SpriteManager extends EventEmitter {
                 }
                 
                 // Listen for disposal
-                sprite.once(PK2Sprite.EV_SPRITE_DISCARDED, this.onSpriteDiscarded.bind(this));
+                sprite.once(Sprite.EV_SPRITE_DISCARDED, this.onSpriteDiscarded.bind(this));
                 
                 lisatty = true;
             } else {
@@ -352,7 +352,7 @@ export class SpriteManager extends EventEmitter {
         }
     }
     
-    private onSpriteDiscarded(sprite: PK2Sprite): void {
+    private onSpriteDiscarded(sprite: Sprite): void {
         // Remove from scene
         if (sprite.proto.type === ESpriteType.TYYPPI_TAUSTA) {
             this.ctx.composition.removeBgSprite(sprite);
@@ -369,7 +369,7 @@ export class SpriteManager extends EventEmitter {
             let sprite = this._sprites[i];
             
             if (sprite.isDiscarded()) {
-                sprite = PK2Sprite(proto, isPlayer, false, x/*-proto.leveys/2*/, y);   // TODO: Ojo! los reusa sin destruirlo porque es un pool
+                sprite = Sprite(proto, isPlayer, false, x/*-proto.leveys/2*/, y);   // TODO: Ojo! los reusa sin destruirlo porque es un pool
                 
                 //sprite.x += sprite.proto.leveys;
                 //sprite.y += sprite.proto.korkeus/2;
@@ -528,22 +528,22 @@ export class SpriteManager extends EventEmitter {
     /**
      * Returns the player sprite.
      */
-    public get player(): PK2Sprite {
+    public get player(): Sprite {
         return this._player;
     }
     
     
     ///  Events  ///
     
-    public onSpriteCreated(fn: (sprite: PK2Sprite) => void, context: any) {
+    public onSpriteCreated(fn: (sprite: Sprite) => void, context: any) {
         return this.on(Ev.SPRITE_CREATED, fn, context);
     }
     
-    public getByPrototype(proto: SpritePrototype): PK2Sprite[] {
+    public getByPrototype(proto: SpritePrototype): Sprite[] {
         return this._sprites.filter(s => s.proto === proto);
     }
     
-    public getByType(type: ESpriteType): PK2Sprite[] {
+    public getByType(type: ESpriteType): Sprite[] {
         return this._sprites.filter(s => s.proto.type === type);
     }
 }

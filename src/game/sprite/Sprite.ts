@@ -13,9 +13,9 @@ import { VAHINKO_AIKA } from '../../support/constants';
 import { int, CBYTE, rand } from '../../support/types';
 
 /**
- * @fires PK2Sprite#EV_SPRITE_DISCARDED.
+ * @fires Sprite#EV_SPRITE_DISCARDED.
  */
-export class PK2Sprite extends Drawable {
+export class Sprite extends Drawable {
     public static readonly EV_SPRITE_DISCARDED = 'discarded.sprite.ev';
     
     private _aktiivinen: boolean;			// true / false
@@ -48,7 +48,7 @@ export class PK2Sprite extends Drawable {
     private _reuna_vasemmalla: boolean;	// onko spriten vasemmalla puolella kuoppa?
     private _reuna_oikealla: boolean;		// onko spriten vasemmalla puolella kuoppa?
     private _energy: int;			// monta osumaa sprite viel� kest��
-    private _emosprite: PK2Sprite;			// jos spriten on luonut jokin toinen sprite
+    private _emosprite: Sprite;			// jos spriten on luonut jokin toinen sprite
     private _kytkinpaino: number;		// spriten paino + muiden spritejen panot, joihin kosketaan
     /** Crouched. */
     private _crouched: boolean;				// onko sprite kyykyss�
@@ -739,7 +739,7 @@ export class PK2Sprite extends Drawable {
         }
     }
     
-    public AI_FollowPlayer(player: PK2Sprite): void {
+    public AI_FollowPlayer(player: Sprite): void {
         if (this._energy > 0 && player.energy > 0) {
             const max: number = this.proto.maxSpeed / 3.5;
             
@@ -764,7 +764,7 @@ export class PK2Sprite extends Drawable {
         }
     }
     
-    public AI_Seuraa_Pelaajaa_Jos_Nakee(player: PK2Sprite): void {
+    public AI_Seuraa_Pelaajaa_Jos_Nakee(player: Sprite): void {
         if (this._energy > 0 && player._energy > 0) {
             const max: number = this.proto.maxSpeed / 3.5;
             
@@ -790,7 +790,7 @@ export class PK2Sprite extends Drawable {
         }
     }
     
-    public AI_Seuraa_Pelaajaa_Jos_Nakee_Vert_Hori(player: PK2Sprite): void {
+    public AI_Seuraa_Pelaajaa_Jos_Nakee_Vert_Hori(player: Sprite): void {
         if (this._energy > 0 && player._energy > 0) {
             const max: number = this.proto.maxSpeed / 3.5;
             
@@ -825,7 +825,7 @@ export class PK2Sprite extends Drawable {
         }
     }
     
-    public AI_Seuraa_Pelaajaa_Vert_Hori(player: PK2Sprite): void {
+    public AI_Seuraa_Pelaajaa_Vert_Hori(player: Sprite): void {
         if (this._energy > 0 && player._energy > 0) {
             const max: number = this.proto.maxSpeed / 3.5;
             
@@ -863,7 +863,7 @@ export class PK2Sprite extends Drawable {
      * It will run away if it sees the player.
      * SDL: PK2Sprite::AI_Pakenee_Pelaajaa_Jos_Nakee
      */
-    public AI_Pakenee_Pelaajaa_Jos_Nakee(player: PK2Sprite): void {
+    public AI_Pakenee_Pelaajaa_Jos_Nakee(player: Sprite): void {
         if (this._energy > 0 && player._energy > 0) {
             if ((player.x < this.x && this.flipX && !player.flipX) || (player.x > this.x && !this.flipX && player.flipX))
                 if ((player.x - this.x < 300 && player.x - this.x > -300) &&
@@ -997,7 +997,7 @@ export class PK2Sprite extends Drawable {
         return 0;
     }
     
-    public AI_Hyokkays_1_Jos_Pelaaja_Edessa(player: PK2Sprite): boolean {
+    public AI_Hyokkays_1_Jos_Pelaaja_Edessa(player: Sprite): boolean {
         if (this._energy > 0 && this._knockTimer == 0 && player._energy > 0) {
             if ((player.x - this._x < 200 && player.x - this._x > -200) &&
                 (player.y - this._y < this.proto.height && player.y - this._y > -this.proto.height)) {
@@ -1010,7 +1010,7 @@ export class PK2Sprite extends Drawable {
         return false;
     }
     
-    public AI_Hyokkays_2_Jos_Pelaaja_Edessa(player: PK2Sprite): boolean {
+    public AI_Hyokkays_2_Jos_Pelaaja_Edessa(player: Sprite): boolean {
         if (this._energy > 0 && this._knockTimer == 0 && player.energy > 0) {
             if ((player.x - this._x < 200 && player.x - this._x > -200) &&
                 (player.y - this._y < this.proto.height && player.y - this._y > -this.proto.height)) {
@@ -1023,7 +1023,7 @@ export class PK2Sprite extends Drawable {
         return false;
     }
     
-    public AI_Hyokkays_1_Jos_Pelaaja_Alapuolella(player: PK2Sprite): boolean {
+    public AI_Hyokkays_1_Jos_Pelaaja_Alapuolella(player: Sprite): boolean {
         if (this._energy > 0 && this._knockTimer == 0 && player.energy > 0) {
             if ((player.x - this._x < this.proto.width && player.x - this._x > -this.proto.width) &&
                 (player.y > this._y && player.y - this._y < 350)) {
@@ -1048,7 +1048,7 @@ export class PK2Sprite extends Drawable {
         }
     }
     
-    public AI_Hyppy_Jos_Pelaaja_Ylapuolella(player: PK2Sprite): boolean {
+    public AI_Hyppy_Jos_Pelaaja_Ylapuolella(player: Sprite): boolean {
         if (this._energy > 0 && this.jumpTimer == 0 && player._energy > 0) {
             if ((player.x - this.x < this.proto.width && player.x - this.x > -this.proto.width) &&
                 (player.y < this.y && this.y - player.y < 350)) {
@@ -1200,7 +1200,7 @@ export class PK2Sprite extends Drawable {
      *
      * @param sprite Sprite to teleport.
      */
-    public AI_Teleportti(sprite: PK2Sprite) {
+    public AI_Teleportti(sprite: Sprite) {
         if (this._energy > 0 && this._lataus == 0 && this._attack1Remaining == 0) {
             if (sprite.x <= this.right && sprite.x >= this.left &&
                 sprite.y <= this.bottom && sprite.y >= this.top) {
@@ -1270,7 +1270,7 @@ export class PK2Sprite extends Drawable {
         }
     }
     
-    public AI_Info(player: PK2Sprite): boolean {
+    public AI_Info(player: Sprite): boolean {
         if ((player.x - this.x < 10 && player.x - this.x > -10) &&
             (player.y - this.y < this.proto.height && player.y - this.y > -this.proto.height)) {
             return true;
@@ -1512,7 +1512,7 @@ export class PK2Sprite extends Drawable {
      * Marks the item for deletion.<br>
      * When a sprite is dicarded it won't be drawn anymore and will be reused when needed.
      *
-     * @fires PK2Sprite#EV_SPRITE_DISCARDED.
+     * @fires Sprite#EV_SPRITE_DISCARDED.
      */
     public discard(): void {
         this._discarded = true;
@@ -1520,10 +1520,10 @@ export class PK2Sprite extends Drawable {
         /**
          * dummy description
          *
-         * @event PK2Sprite#EV_SPRITE_DISCARDED
-         * @type {PK2Sprite}
+         * @event Sprite#EV_SPRITE_DISCARDED
+         * @type {Sprite}
          */
-        this.emit(PK2Sprite.EV_SPRITE_DISCARDED, this);
+        this.emit(Sprite.EV_SPRITE_DISCARDED, this);
     }
     
     /**
@@ -1662,14 +1662,14 @@ export class PK2Sprite extends Drawable {
         this._inWater = v;
     }
     
-    public get parent(): PK2Sprite {
+    public get parent(): Sprite {
         return this._emosprite;
     }
-    public set parent(v: PK2Sprite) {
+    public set parent(v: Sprite) {
         this._emosprite = v;
     }
     /** @deprecated */
-    public get emosprite(): PK2Sprite {
+    public get emosprite(): Sprite {
         return this._emosprite;
     }
     
