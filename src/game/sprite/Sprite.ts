@@ -19,9 +19,12 @@ export class Sprite extends Drawable {
     public static readonly EV_SPRITE_DISCARDED = 'discarded.sprite.ev';
     
     private _aktiivinen: boolean;			// true / false
-    private _pelaaja: int;			// 0 = ei pelaaja, 1 = pelaaja
-    private _tyyppi: SpritePrototype;	// osoitin spriten prototyyppiin
-    private _discarded: boolean = true;			// true = ei toiminnassa, false = toiminnassa
+    /** Indicates that this sprite is a player. */
+    private _isPlayer: int;
+    /** Prototype. */
+    private _proto: SpritePrototype;
+    /** When a sprite is dicarded it won't be drawn anymore and it will be reused when needed. */
+    private _discarded: boolean;
     private _alku_x: number;				// spriten alkuper�inen x sijainti
     private _alku_y: number;				// spriten alkuper�inen y sijainti
     private _x: number;					// x-kordinaatti pelikent�ll�
@@ -47,8 +50,10 @@ export class Sprite extends Drawable {
     private _vasemmalle: boolean;			// voiko sprite juuri nyt liikkua ....
     private _reuna_vasemmalla: boolean;	// onko spriten vasemmalla puolella kuoppa?
     private _reuna_oikealla: boolean;		// onko spriten vasemmalla puolella kuoppa?
-    private _energy: int;			// monta osumaa sprite viel� kest��
-    private _emosprite: Sprite;			// jos spriten on luonut jokin toinen sprite
+    /** HP-like level. When energy reach 0, sprite "dies", or equivalent status. */
+    private _energy: int;
+    /** If not null, this sprite is child of the given one. */
+    private _parent: Sprite;
     private _kytkinpaino: number;		// spriten paino + muiden spritejen panot, joihin kosketaan
     /** Crouched. */
     private _crouched: boolean;				// onko sprite kyykyss�
@@ -56,7 +61,8 @@ export class Sprite extends Drawable {
     private _lataus: int;				// jos on ammuttu, odotetaan
     private _attack1Remaining: int;			// ajastin joka laskee hy�kk�ys 1:n j�lkeen
     private _attack2Remaining: int;			// ajastin joka laskee hy�kk�ys 2:n j�lkeen
-    private _inWater: boolean;			// onko sprite vedess�
+    /** Indicates that this sprite is in the water. */
+    private _inWater: boolean;
     private _piilossa: boolean;			// onko sprite piilossa
     /** Sprite weight. */
     private _weight: number;
@@ -109,6 +115,9 @@ export class Sprite extends Drawable {
     public constructor(proto?: SpritePrototype, isPlayer?: boolean, discarded?: boolean, x?: number, y?: number) {
         super(new PIXI.Container());
         
+        // Sprite borns discarded
+        this._discarded = true;
+        
         this.reuseWith(proto, isPlayer, discarded, x, y);
     }
     
@@ -116,8 +125,8 @@ export class Sprite extends Drawable {
         if (!this.isDiscarded())
             throw new Error('This sprite is still being used, so it cannot be recycled.');
         
-        this._tyyppi = null;
-        this._pelaaja = 0;
+        this._proto = null;
+        this._isPlayer = 0;
         this._discarded = true;
         this._x = 0;
         this._y = 0;
@@ -171,8 +180,8 @@ export class Sprite extends Drawable {
         this.reuse();
         
         if (proto != null) {
-            this._tyyppi = proto;
-            this._pelaaja = isPlayer ? 1 : 0;  // TODO Convert to boolean
+            this._proto = proto;
+            this._isPlayer = isPlayer ? 1 : 0;  // TODO Convert to boolean
             this._discarded = discarded;
             this._x = x;
             this._y = y;
@@ -886,7 +895,7 @@ export class Sprite extends Drawable {
     /** Changes prototype if energy < 2. */
     public AI_Muutos_Jos_Energiaa_Alle_2(muutos: SpritePrototype): boolean {
         if (this._energy < 2 && muutos !== this.proto) {
-            this._tyyppi = muutos;
+            this._proto = muutos;
             this._initialWeight = this.proto.weight;
             // Janne
             // ammus1 = tyyppi->ammus1;
@@ -904,7 +913,7 @@ export class Sprite extends Drawable {
      */
     public AI_Muutos_Jos_Energiaa_Yli_1(morph: SpritePrototype): boolean {
         if (this._energy > 1 && morph != this.proto) {
-            this._tyyppi = morph;
+            this._proto = morph;
             this._initialWeight = this.proto.weight;
             // Janne
             // ammus1 = tyyppi->ammus1;
@@ -924,7 +933,7 @@ export class Sprite extends Drawable {
                 this._muutos_ajastin/*lataus*/ = this.proto.latausaika;
             
             if (this.muutos_ajastin/*lataus*/ == 1) {
-                this._tyyppi = morph;
+                this._proto = morph;
                 this._initialWeight = this.proto.weight;
                 
                 this._ammo1Proto = this.proto.ammo1Proto;
@@ -947,7 +956,7 @@ export class Sprite extends Drawable {
     public AI_Muutos_Jos_Osuttu(morph: SpritePrototype): boolean {
         if (this._energy > 0 && morph != this.proto) {
             if (this._receivedDamage > 0) {
-                this._tyyppi = morph;
+                this._proto = morph;
                 this._initialWeight = this.proto.weight;
                 
                 this._ammo1Proto = this.proto.ammo1Proto;
@@ -1392,7 +1401,7 @@ export class Sprite extends Drawable {
     ///  Accessors  ///
     
     public get proto() {
-        return this._tyyppi;
+        return this._proto;
     }
     
     public get x(): number {
@@ -1539,13 +1548,13 @@ export class Sprite extends Drawable {
      * The use of isPlayer is preferred.
      */
     public get pelaaja(): int {
-        return this._pelaaja;
+        return this._isPlayer;
     }
     /**
      *
      */
     public isPlayer(): boolean {
-        return this._pelaaja !== 0;
+        return this._isPlayer !== 0;
     }
     
     /** @deprecated use remainingAttack1 */
@@ -1663,14 +1672,14 @@ export class Sprite extends Drawable {
     }
     
     public get parent(): Sprite {
-        return this._emosprite;
+        return this._parent;
     }
     public set parent(v: Sprite) {
-        this._emosprite = v;
+        this._parent = v;
     }
     /** @deprecated */
     public get emosprite(): Sprite {
-        return this._emosprite;
+        return this._parent;
     }
     
     /**
