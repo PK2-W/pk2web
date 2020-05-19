@@ -1,8 +1,9 @@
-import { EBlockPrototype } from '@game/enum/EBlockPrototype';
 import { EBgImageMovement } from '@game/enum/EBgImageMovement';
+import { EBlockPrototype } from '@game/enum/EBlockPrototype';
 import { PK2Context } from '@game/PK2Context';
 import { TSpriteProtoCode } from '@game/sprite/SpritePrototype';
 import { TBlockProtoCode } from '@game/tile/BlockPrototype';
+import { Log } from '@ng/support/log/LoggerImpl';
 import { str2num, pathJoin } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { PkBinary } from '@ng/types/PkBinary';
@@ -29,8 +30,9 @@ export class PK2Map extends PK2MapInfo {
     private _musiikki: str<13>;
     
     /** Map name. */
-    private _nimi: str<40>;
-    private _tekija: str<40>;			// map author
+    private _name: str<40>;
+    /** Map author. */
+    private _author: str<40>;
     
     public _jakso: int;				// level of the episode
     public _ilma: int;				// map climate
@@ -106,9 +108,9 @@ export class PK2Map extends PK2MapInfo {
     
     private _loadInfo(): void {
         this._raw.streamRewind();
-        
         this._version = this._raw.streamReadCStr(5);
-        console.log(this._version);
+        
+        Log.d('[LevelMap] Version of map file is: ', this._version);
         
         switch (this._version) {
             case '1.3':
@@ -130,7 +132,7 @@ export class PK2Map extends PK2MapInfo {
     }
     
     private _loadInfo13() {
-        console.log('load map 13');
+        Log.d('[LevelMap] Loading map for version 1.3...');
         
         // Fill structures with "empty"
         this._taustat.fill(255);
@@ -142,8 +144,8 @@ export class PK2Map extends PK2MapInfo {
         this._palikka_bmp = this._raw.streamReadCStr(13);
         this._taustakuva = this._raw.streamReadCStr(13);
         this._musiikki = this._raw.streamReadCStr(13);
-        this._nimi = this._raw.streamReadCStr(40);
-        this._tekija = this._raw.streamReadCStr(40);
+        this._name = this._raw.streamReadCStr(40);
+        this._author = this._raw.streamReadCStr(40);
         
         this._jakso = str2num(this._raw.streamRead8CStr(8));
         this._ilma = str2num(this._raw.streamRead8CStr(8));
@@ -299,17 +301,15 @@ export class PK2Map extends PK2MapInfo {
     
     ///  Accessors  ///
     
-    public get fpath(): string {
-        return this._fpath;
-    }
+    public get fpath(): string { return this._fpath; }
+    public get fname(): string { return this._fname; }
     
-    public get fname(): string {
-        return this._fname;
-    }
+    public get version(): string { return this._version; }
+    public get name(): string {return this._name; }
+    /** @deprecated */ public get nimi(): string {return this.name; }
+    public get author(): string { return this._author; }
+    /** @deprecated */ public get tekija(): string {return this.author; }
     
-    public get version(): string {
-        return this._version;
-    }
     
     public get bgImageFilename(): string {
         return this._taustakuva;
