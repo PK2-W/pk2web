@@ -1,13 +1,16 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import { Effects } from '@game/effects/Effects';
 import { ESound } from '@game/enum';
+import { EAnimation } from '@game/enum/EAnimation';
+import { EDamageType } from '@game/enum/EDamageType';
+import { EDestructionType } from '@game/enum/EDestructionType';
+import { ESpriteType } from '@game/enum/ESpriteType';
 import { GameContext } from '@game/game/GameContext';
 import { GiftManager } from '@game/gift/GiftManager';
 import {
     PK2KARTTA_KARTTA_LEVEYS,
     PK2KARTTA_KARTTA_KORKEUS,
     PK2Map,
-    BLOCK_TULI,
     KYTKIN_ALOITUSARVO,
     EBgMovement,
     ILMA_SADE,
@@ -16,17 +19,13 @@ import {
 } from '@game/map/PK2Map';
 import { EParticle } from '@game/particle/Particle';
 import { PK2Context } from '@game/PK2Context';
-import { EDamageType } from '@game/enum/EDamageType';
-import { EAnimation } from '@game/enum/EAnimation';
-import { EDestructionType } from '@game/enum/EDestructionType';
-import { ESpriteType } from '@game/enum/ESpriteType';
-import { Sprite} from '@game/sprite/Sprite';
+import { Sprite } from '@game/sprite/Sprite';
 import { SpriteFuture } from '@game/sprite/SpriteFuture';
 import { SpriteManager, EAi } from '@game/sprite/SpriteManager';
 import { TX } from '@game/texts';
 import { BlockCollider } from '@game/tile/BlockCollider';
-import { EBlockProtoCode } from '@game/tile/BlockConstants';
 import { BlockManager } from '@game/tile/BlockManager';
+import { EBlockPrototype } from '@game/enum/EBlockPrototype';
 import { ResourceNotFoundError } from '@ng/error/ResourceNotFoundError';
 import { Log } from '@ng/support/log/LoggerImpl';
 import { pathJoin } from '@ng/support/utils';
@@ -1220,11 +1219,11 @@ export class PK2Game extends GameContext {
                         
                         // TODO: This is weird
                         if (sprite2.a > 0)
-                            collider.code = EBlockProtoCode.BLOCK_HISSI_HORI;
+                            collider.code = EBlockPrototype.BLOCK_HISSI_HORI;
                         
                         // TODO: This is weird
                         if (sprite2.b > 0)
-                            collider.code = EBlockProtoCode.BLOCK_HISSI_HORI;
+                            collider.code = EBlockPrototype.BLOCK_HISSI_HORI;
                         
                         this.checkBlocks2(sprite, collider, future);
                     }
@@ -2499,7 +2498,7 @@ export class PK2Game extends GameContext {
             /**********************************************************************/
             /* Examine if it touches the fire                                     */
             /**********************************************************************/
-            if (block.code === BLOCK_TULI && this.switchTimer1 === 0 && sprite.knockTimer === 0) {
+            if (block.code === EBlockPrototype.BLOCK_TULI && this.switchTimer1 === 0 && sprite.knockTimer === 0) {
                 sprite.receivedDamage = 2;
                 sprite.receivedDamageType = EDamageType.VAHINKO_TULI;
             }
@@ -2507,13 +2506,13 @@ export class PK2Game extends GameContext {
             /**********************************************************************/
             /* Examine if bloc is hideway                                         */
             /**********************************************************************/
-            if (block.code === EBlockProtoCode.BLOCK_PIILO)
+            if (block.code === EBlockPrototype.BLOCK_PIILO)
                 sprite.piilossa = true;
             
             /**********************************************************************/
             /* Examine if block is the exit                                       */
             /**********************************************************************/
-            if (block.code === EBlockProtoCode.BLOCK_LOPETUS && sprite.isPlayer()) {
+            if (block.code === EBlockPrototype.BLOCK_LOPETUS && sprite.isPlayer()) {
                 // if (!jakso_lapaisty){
                 // 	if (PisteSound_StartMusic("music/hiscore.xm") != 0){
                 // 		PK2_error = true;
@@ -2535,14 +2534,14 @@ export class PK2Game extends GameContext {
             /**********************************************************************/
             /* Examine if it touches the fire                                     */
             /**********************************************************************/
-            if (block.code === BLOCK_TULI && this.switchTimer1 === 0 && sprite.knockTimer === 0) {
+            if (block.code === EBlockPrototype.BLOCK_TULI && this.switchTimer1 === 0 && sprite.knockTimer === 0) {
                 sprite.receivedDamage = 2;
                 sprite.receivedDamageType = EDamageType.VAHINKO_TULI;
             }
         }
         
         // Examine if there is a block on bottom
-        if ((block.code < 80 || block.code > 139) && block.code !== EBlockProtoCode.BLOCK_ESTO_ALAS && block.code < 150) {
+        if ((block.code < 80 || block.code > 139) && block.code !== EBlockPrototype.BLOCK_ESTO_ALAS && block.code < 150) {
             mask_index = Math.floor((future.x + future.a) - block.left);
             
             if (mask_index < 0)
@@ -2565,7 +2564,7 @@ export class PK2Game extends GameContext {
             /**********************************************************************/
             /* Examine if it is a key and touches lock wall                       */
             /**********************************************************************/
-            if (block.code === EBlockProtoCode.BLOCK_LUKKO && sprite.proto.isKey()) {
+            if (block.code === EBlockPrototype.BLOCK_LUKKO && sprite.proto.isKey()) {
                 //	kartta->seinat[block.vasen/32+(block.yla/32)*PK2KARTTA_KARTTA_LEVEYS] = 255;
                 //	kartta->Calculate_Edges();
                 
@@ -2584,10 +2583,10 @@ export class PK2Game extends GameContext {
             /**********************************************************************/
             /* Make wind effects                                                  */
             /**********************************************************************/
-            if (block.code === EBlockProtoCode.BLOCK_VIRTA_VASEMMALLE && future.canGoLeft)
+            if (block.code === EBlockPrototype.BLOCK_VIRTA_VASEMMALLE && future.canGoLeft)
                 future.a -= 0.02;
             
-            if (block.code === EBlockProtoCode.BLOCK_VIRTA_OIKEALLE && future.canGoRight)
+            if (block.code === EBlockPrototype.BLOCK_VIRTA_OIKEALLE && future.canGoRight)
                 future.a += 0.02;	//0.05
             
             /*********************************************************************/
@@ -2613,7 +2612,7 @@ export class PK2Game extends GameContext {
                     if (block.rightIsBarrier) {
                         future.canGoRight = false;
                         
-                        if (block.code === EBlockProtoCode.BLOCK_HISSI_HORI)
+                        if (block.code === EBlockPrototype.BLOCK_HISSI_HORI)
                             future.x = block.left - future.width / 2;
                     }
                 }
@@ -2622,7 +2621,7 @@ export class PK2Game extends GameContext {
                     if (block.leftIsBarrier) {
                         future.canGoLeft = false;
                         
-                        if (block.code === EBlockProtoCode.BLOCK_HISSI_HORI)
+                        if (block.code === EBlockPrototype.BLOCK_HISSI_HORI)
                             future.x = block.right + future.width / 2;
                     }
                 }
@@ -2638,18 +2637,18 @@ export class PK2Game extends GameContext {
                 if (future.bottom + future.b - 1 <= block.bottom) { //Just in the sprite's foot
                     if (block.bottomIsBarrier) { //If it is a wall
                         future.canGoDown = false;
-                        if (block.code === EBlockProtoCode.BLOCK_HISSI_VERT)
+                        if (block.code === EBlockPrototype.BLOCK_HISSI_VERT)
                             future.y = block.top - future.height / 2;
                         
                         if (future.bottom - 1 >= block.top && future.b >= 0) {
                             //sprite_y -= sprite_ala - block.yla;
-                            if (block.code !== EBlockProtoCode.BLOCK_HISSI_HORI) {
+                            if (block.code !== EBlockPrototype.BLOCK_HISSI_HORI) {
                                 future.y = block.top - future.height / 2;
                             }
                         }
                         
                         if (sprite.kytkinpaino >= 1) { // Sprite can press the buttons
-                            if (block.code === EBlockProtoCode.BLOCK_KYTKIN1 && this.switchTimer1 === 0) {
+                            if (block.code === EBlockPrototype.BLOCK_KYTKIN1 && this.switchTimer1 === 0) {
                                 this._swichTimer1 = KYTKIN_ALOITUSARVO;
                                 this._kytkin_tarina = 64;
                                 //PK_Play_Sound(kytkin_aani, 100, (int)future.x, (int)sprite_y, SOUND_SAMPLERATE, false);
@@ -2657,7 +2656,7 @@ export class PK2Game extends GameContext {
                                 Log.d(`[Game] Switch 1 activated`);
                             }
                             
-                            if (block.code === EBlockProtoCode.BLOCK_KYTKIN2 && this.switchTimer2 === 0) {
+                            if (block.code === EBlockPrototype.BLOCK_KYTKIN2 && this.switchTimer2 === 0) {
                                 this._swichTimer2 = KYTKIN_ALOITUSARVO;
                                 this._kytkin_tarina = 64;
                                 //PK_Play_Sound(kytkin_aani, 100, (int)future.x, (int)sprite_y, SOUND_SAMPLERATE, false);
@@ -2665,7 +2664,7 @@ export class PK2Game extends GameContext {
                                 Log.d(`[Game] Switch 2 activated`);
                             }
                             
-                            if (block.code === EBlockProtoCode.BLOCK_KYTKIN3 && this.switchTimer3 === 0) {
+                            if (block.code === EBlockPrototype.BLOCK_KYTKIN3 && this.switchTimer3 === 0) {
                                 this._swichTimer3 = KYTKIN_ALOITUSARVO;
                                 this._kytkin_tarina = 64;
                                 //PK_Play_Sound(kytkin_aani, 100, (int)future.x, (int)sprite_y, SOUND_SAMPLERATE, false);
@@ -2681,12 +2680,12 @@ export class PK2Game extends GameContext {
                         future.canGoUp = false;
                         
                         if (future.top < block.bottom) {
-                            if (block.code === EBlockProtoCode.BLOCK_HISSI_VERT && sprite.kyykky) {
+                            if (block.code === EBlockPrototype.BLOCK_HISSI_VERT && sprite.kyykky) {
                                 sprite.receivedDamage = 2;
                                 sprite.receivedDamageType = EDamageType.VAHINKO_ISKU;
                             }
                             
-                            if (block.code !== EBlockProtoCode.BLOCK_HISSI_HORI) {
+                            if (block.code !== EBlockPrototype.BLOCK_HISSI_HORI) {
                                 // Source commented:
                                 // if (sprite.kyykky)
                                 //	sprite_y = block.ala + sprite_korkeus /2;
@@ -2713,7 +2712,7 @@ export class PK2Game extends GameContext {
                     // Onko block sein�?
                     if (block.rightIsBarrier) {
                         future.canGoRight = false;
-                        if (block.code == EBlockProtoCode.BLOCK_HISSI_HORI)
+                        if (block.code == EBlockPrototype.BLOCK_HISSI_HORI)
                             future.x = block.left - future.width / 2;
                     }
                 }
@@ -2722,7 +2721,7 @@ export class PK2Game extends GameContext {
                     if (block.leftIsBarrier) {
                         future.canGoLeft = false;
                         
-                        if (block.code == EBlockProtoCode.BLOCK_HISSI_HORI)
+                        if (block.code == EBlockPrototype.BLOCK_HISSI_HORI)
                             future.x = block.right + future.width / 2;
                         
                     }
@@ -2741,11 +2740,11 @@ export class PK2Game extends GameContext {
                     if (block.bottomIsBarrier) {
                         future.canGoDown = false;
                         
-                        if (block.code == EBlockProtoCode.BLOCK_HISSI_VERT)
+                        if (block.code == EBlockPrototype.BLOCK_HISSI_VERT)
                             future.y = block.top - future.height / 2;
                         
                         if (future.bottom - 1 >= block.top && future.b >= 0)
-                            if (block.code != EBlockProtoCode.BLOCK_HISSI_HORI)
+                            if (block.code != EBlockPrototype.BLOCK_HISSI_HORI)
                                 future.y = block.top - future.height / 2;
                     }
                 }
@@ -2755,7 +2754,7 @@ export class PK2Game extends GameContext {
                         future.canGoUp = false;
                         
                         if (future.top < block.bottom)
-                            if (block.code != EBlockProtoCode.BLOCK_HISSI_HORI)
+                            if (block.code != EBlockPrototype.BLOCK_HISSI_HORI)
                                 sprite.kyykky = true;
                     }
                 }

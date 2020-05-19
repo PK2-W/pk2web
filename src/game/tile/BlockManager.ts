@@ -1,24 +1,12 @@
 import { GameContext } from '@game/game/GameContext';
 import { TEXTURE_ID_BLOCKS } from '@game/game/PK2Game';
-import {
-    BLOCK_KYTKIN1,
-    BLOCK_KYTKIN3,
-    BLOCK_HISSI_HORI,
-    BLOCK_HISSI_VERT,
-    BLOCK_KYTKIN2_YLOS,
-    BLOCK_KYTKIN2_ALAS,
-    BLOCK_KYTKIN2,
-    BLOCK_KYTKIN3_OIKEALLE,
-    BLOCK_KYTKIN3_VASEMMALLE,
-    PK2KARTTA_KARTTA_LEVEYS,
-    PK2KARTTA_KARTTA_KORKEUS,
-    KYTKIN_ALOITUSARVO
-} from '@game/map/PK2Map';
+import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, KYTKIN_ALOITUSARVO } from '@game/map/PK2Map';
+import { Block } from '@game/tile/Block';
 import { BlockCollider } from '@game/tile/BlockCollider';
-import { BLOCK_SIZE, EBlockProtoCode } from '@game/tile/BlockConstants';
+import { BLOCK_SIZE} from '@game/tile/BlockConstants';
 import { BlockContext } from '@game/tile/BlockContext';
 import { BlockPrototype, TBlockProtoCode } from '@game/tile/BlockPrototype';
-import { Block } from '@game/tile/Block';
+import { EBlockPrototype } from '@game/enum/EBlockPrototype';
 import { ResourceNotFoundError } from '@ng/error/ResourceNotFoundError';
 import { Log } from '@ng/support/log/LoggerImpl';
 import { pathJoin } from '@ng/support/utils';
@@ -132,7 +120,7 @@ export class BlockManager {
                 
                 tile2 = this.getFgBlockCode(x, y + 1);              // Bottom
                 
-                tile1 = (tile1 > 79 || tile1 === EBlockProtoCode.BLOCK_ESTO_ALAS) ? tile1 = 1 : tile1 = 0;
+                tile1 = (tile1 > 79 || tile1 === EBlockPrototype.BLOCK_ESTO_ALAS) ? tile1 = 1 : tile1 = 0;
                 tile2 = (tile2 > 79) ? tile2 = 1 : tile2 = 0;
                 
                 if (tile1 === 1 && tile2 === 1) {
@@ -145,14 +133,14 @@ export class BlockManager {
                     if (tile1 === 1) {
                         tile3 = this.getFgBlockCode(x + 1, y);      // Right
                         
-                        if (tile3 > 79 || (tile3 < 60 && tile3 > 49) || tile3 === EBlockProtoCode.BLOCK_ESTO_ALAS)
+                        if (tile3 > 79 || (tile3 < 60 && tile3 > 49) || tile3 === EBlockPrototype.BLOCK_ESTO_ALAS)
                             isEdge = true;
                     }
                     
                     if (tile2 === 1) {
                         tile3 = this.getFgBlockCode(x - 1, y);      // Left
                         
-                        if (tile3 > 79 || (tile3 < 60 && tile3 > 49) || tile3 === EBlockProtoCode.BLOCK_ESTO_ALAS)
+                        if (tile3 > 79 || (tile3 < 60 && tile3 > 49) || tile3 === EBlockPrototype.BLOCK_ESTO_ALAS)
                             isEdge = true;
                     }
                     
@@ -176,7 +164,7 @@ export class BlockManager {
         block.leftIsBarrier = true;
         block.topIsBarrier = true;
         block.bottomIsBarrier = true;
-    
+        
         // TODO: Unusable code, we set the code to 0 before call!
         
         // // Special floor
@@ -256,7 +244,7 @@ export class BlockManager {
         //     if (kytkin3 > KYTKIN_ALOITUSARVO-64)
         //         kytkin3_x = KYTKIN_ALOITUSARVO - kytkin3;
         // }
-
+        
         // if (palikka.koodi == PALIKKA_KYTKIN2_YLOS) {
         //     palikka.ala -= kytkin2_y/2;
         //     palikka.yla -= kytkin2_y/2;
@@ -316,11 +304,11 @@ export class BlockManager {
      * SDL: PK_Calculate_MovableBlocks_Position.
      */
     public calculateMovableBlocksPosition(): void {
-        this._prototypes[BLOCK_HISSI_HORI].vasen = Math.floor(this._context.entropy.cos(this._context.entropy.degree % 360));
-        this._prototypes[BLOCK_HISSI_HORI].oikea = Math.floor(this._context.entropy.cos(this._context.entropy.degree % 360));
+        this._prototypes[EBlockPrototype.BLOCK_HISSI_HORI].vasen = Math.floor(this._context.entropy.cos(this._context.entropy.degree % 360));
+        this._prototypes[EBlockPrototype.BLOCK_HISSI_HORI].oikea = Math.floor(this._context.entropy.cos(this._context.entropy.degree % 360));
         
-        this._prototypes[BLOCK_HISSI_VERT].ala = Math.floor(this._context.entropy.sin(this._context.entropy.degree % 360));
-        this._prototypes[BLOCK_HISSI_VERT].yla = Math.floor(this._context.entropy.sin(this._context.entropy.degree % 360));
+        this._prototypes[EBlockPrototype.BLOCK_HISSI_VERT].ala = Math.floor(this._context.entropy.sin(this._context.entropy.degree % 360));
+        this._prototypes[EBlockPrototype.BLOCK_HISSI_VERT].yla = Math.floor(this._context.entropy.sin(this._context.entropy.degree % 360));
         
         let kytkin1_y: int = 0;
         let kytkin2_y: int = 0;
@@ -360,28 +348,28 @@ export class BlockManager {
         kytkin2_y /= 2;
         kytkin3_x /= 2;
         
-        this._prototypes[BLOCK_KYTKIN1].ala = kytkin1_y;
-        this._prototypes[BLOCK_KYTKIN1].yla = kytkin1_y;
+        this._prototypes[EBlockPrototype.BLOCK_KYTKIN1].ala = kytkin1_y;
+        this._prototypes[EBlockPrototype.BLOCK_KYTKIN1].yla = kytkin1_y;
         
-        this._prototypes[BLOCK_KYTKIN2_YLOS].ala = -kytkin2_y;
-        this._prototypes[BLOCK_KYTKIN2_YLOS].yla = -kytkin2_y;
+        this._prototypes[EBlockPrototype.BLOCK_KYTKIN2_YLOS].ala = -kytkin2_y;
+        this._prototypes[EBlockPrototype.BLOCK_KYTKIN2_YLOS].yla = -kytkin2_y;
         
-        this._prototypes[BLOCK_KYTKIN2_ALAS].ala = kytkin2_y;
-        this._prototypes[BLOCK_KYTKIN2_ALAS].yla = kytkin2_y;
+        this._prototypes[EBlockPrototype.BLOCK_KYTKIN2_ALAS].ala = kytkin2_y;
+        this._prototypes[EBlockPrototype.BLOCK_KYTKIN2_ALAS].yla = kytkin2_y;
         
-        this._prototypes[BLOCK_KYTKIN2].ala = kytkin2_y;
-        this._prototypes[BLOCK_KYTKIN2].yla = kytkin2_y;
+        this._prototypes[EBlockPrototype.BLOCK_KYTKIN2].ala = kytkin2_y;
+        this._prototypes[EBlockPrototype.BLOCK_KYTKIN2].yla = kytkin2_y;
         
-        this._prototypes[BLOCK_KYTKIN3_OIKEALLE].oikea = kytkin3_x;
-        this._prototypes[BLOCK_KYTKIN3_OIKEALLE].vasen = kytkin3_x;
-        this._prototypes[BLOCK_KYTKIN3_OIKEALLE].koodi = BLOCK_HISSI_HORI;
+        this._prototypes[EBlockPrototype.BLOCK_KYTKIN3_OIKEALLE].oikea = kytkin3_x;
+        this._prototypes[EBlockPrototype.BLOCK_KYTKIN3_OIKEALLE].vasen = kytkin3_x;
+        this._prototypes[EBlockPrototype.BLOCK_KYTKIN3_OIKEALLE].koodi = EBlockPrototype.BLOCK_HISSI_HORI;
         
-        this._prototypes[BLOCK_KYTKIN3_VASEMMALLE].oikea = -kytkin3_x;
-        this._prototypes[BLOCK_KYTKIN3_VASEMMALLE].vasen = -kytkin3_x;
-        this._prototypes[BLOCK_KYTKIN3_VASEMMALLE].koodi = BLOCK_HISSI_HORI;
+        this._prototypes[EBlockPrototype.BLOCK_KYTKIN3_VASEMMALLE].oikea = -kytkin3_x;
+        this._prototypes[EBlockPrototype.BLOCK_KYTKIN3_VASEMMALLE].vasen = -kytkin3_x;
+        this._prototypes[EBlockPrototype.BLOCK_KYTKIN3_VASEMMALLE].koodi = EBlockPrototype.BLOCK_HISSI_HORI;
         
-        this._prototypes[BLOCK_KYTKIN3].ala = kytkin3_x;
-        this._prototypes[BLOCK_KYTKIN3].yla = kytkin3_x;
+        this._prototypes[EBlockPrototype.BLOCK_KYTKIN3].ala = kytkin3_x;
+        this._prototypes[EBlockPrototype.BLOCK_KYTKIN3].yla = kytkin3_x;
     }
     
     
@@ -650,10 +638,10 @@ export class BlockManager {
      * Returns if the block is of an animated type.
      */
     public isAnimated(block: Block): boolean {
-        return block.code === EBlockProtoCode.BLOCK_ANIM1
-            || block.code === EBlockProtoCode.BLOCK_ANIM2
-            || block.code === EBlockProtoCode.BLOCK_ANIM3
-            || block.code === EBlockProtoCode.BLOCK_ANIM4;
+        return block.code === EBlockPrototype.BLOCK_ANIM1
+            || block.code === EBlockPrototype.BLOCK_ANIM2
+            || block.code === EBlockPrototype.BLOCK_ANIM3
+            || block.code === EBlockPrototype.BLOCK_ANIM4;
     }
     
     public updateCulling(): void {
@@ -778,38 +766,38 @@ export class BlockManager {
             for (let j = 0; j < PK2KARTTA_KARTTA_KORKEUS; j++) {
                 block = this.getFgBlock(i, j);
                 
-                if (block != null && !(!editor && block.code === EBlockProtoCode.BLOCK_ESTO_ALAS)) {
+                if (block != null && !(!editor && block.code === EBlockPrototype.BLOCK_ESTO_ALAS)) {
                     // px = ((palikka % 10) * 32);
                     // py = ((palikka / 10) * 32);
                     xOffset = 0;
                     yOffset = 0;
                     
                     if (!editor) {
-                        if (block.code === EBlockProtoCode.BLOCK_HISSI_VERT)
+                        if (block.code === EBlockPrototype.BLOCK_HISSI_VERT)
                             yOffset = Math.floor(this.ctx.entropy.sin(this.ctx.entropy.degree % 360));
                         
-                        if (block.code === EBlockProtoCode.BLOCK_HISSI_HORI)
+                        if (block.code === EBlockPrototype.BLOCK_HISSI_HORI)
                             xOffset = Math.floor(this.ctx.entropy.cos(this.ctx.entropy.degree % 360));
                         
-                        if (block.code === EBlockProtoCode.BLOCK_KYTKIN1)
+                        if (block.code === EBlockPrototype.BLOCK_KYTKIN1)
                             yOffset = ajastin1_y / 2;
                         
-                        if (block.code === EBlockProtoCode.BLOCK_KYTKIN2_YLOS)
+                        if (block.code === EBlockPrototype.BLOCK_KYTKIN2_YLOS)
                             yOffset = -ajastin2_y / 2;
                         
-                        if (block.code === EBlockProtoCode.BLOCK_KYTKIN2_ALAS)
+                        if (block.code === EBlockPrototype.BLOCK_KYTKIN2_ALAS)
                             yOffset = ajastin2_y / 2;
                         
-                        if (block.code === EBlockProtoCode.BLOCK_KYTKIN2)
+                        if (block.code === EBlockPrototype.BLOCK_KYTKIN2)
                             yOffset = ajastin2_y / 2;
                         
-                        if (block.code === EBlockProtoCode.BLOCK_KYTKIN3_OIKEALLE)
+                        if (block.code === EBlockPrototype.BLOCK_KYTKIN3_OIKEALLE)
                             xOffset = ajastin3_x / 2;
                         
-                        if (block.code === EBlockProtoCode.BLOCK_KYTKIN3_VASEMMALLE)
+                        if (block.code === EBlockPrototype.BLOCK_KYTKIN3_VASEMMALLE)
                             xOffset = -ajastin3_x / 2;
                         
-                        if (block.code === EBlockProtoCode.BLOCK_KYTKIN3)
+                        if (block.code === EBlockPrototype.BLOCK_KYTKIN3)
                             yOffset = ajastin3_x / 2;
                     }
                     

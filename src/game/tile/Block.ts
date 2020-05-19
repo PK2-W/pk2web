@@ -1,7 +1,8 @@
 import { BlockCollider } from '@game/tile/BlockCollider';
-import { BLOCK_SIZE, EBlockProtoCode } from '@game/tile/BlockConstants';
+import { BLOCK_SIZE} from '@game/tile/BlockConstants';
 import { BlockContext } from '@game/tile/BlockContext';
 import { BlockPrototype, TBlockProtoCode } from '@game/tile/BlockPrototype';
+import { EBlockPrototype } from '@game/enum/EBlockPrototype';
 import { IDrawable } from '@ng/drawable/IDrawable';
 import { Log } from '@ng/support/log/LoggerImpl';
 import { PkImageTextureImpl } from '@ng/types/pixi/PkImageTextureImpl';

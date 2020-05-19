@@ -1,9 +1,10 @@
 import { PK2Context } from '@game/PK2Context';
 import { TSpriteProtoCode } from '@game/sprite/SpritePrototype';
 import { TBlockProtoCode } from '@game/tile/BlockPrototype';
-import { PkBinary } from '@ng/types/PkBinary';
+import { EBlockPrototype } from '@game/enum/EBlockPrototype';
 import { str2num, pathJoin } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
+import { PkBinary } from '@ng/types/PkBinary';
 import { RESOURCES_PATH } from '../../support/constants';
 import { str, int, CBYTE, uint, CVect, cvect, bool, DWORD, rand } from '../../support/types';
 
@@ -270,7 +271,7 @@ export class PK2Map extends PK2MapInfo {
         let alku: int = 0;
         
         for (let x = 0; x < PK2KARTTA_KARTTA_KOKO; x++)
-            if (this._seinat[x] === BLOCK_ALOITUS)
+            if (this._seinat[x] === EBlockPrototype.BLOCK_ALOITUS)
                 alkujen_maara++;
         
         if (alkujen_maara > 0) {
@@ -279,7 +280,7 @@ export class PK2Map extends PK2MapInfo {
             
             for (let x = 0; x < PK2KARTTA_KARTTA_LEVEYS; x++) {
                 for (let y = 0; y < PK2KARTTA_KARTTA_KORKEUS; y++) {
-                    if (this._seinat[x + y * PK2KARTTA_KARTTA_LEVEYS] === BLOCK_ALOITUS) {
+                    if (this._seinat[x + y * PK2KARTTA_KARTTA_LEVEYS] === EBlockPrototype.BLOCK_ALOITUS) {
                         if (alkujen_maara === alku) {
                             posX = x * 32;
                             posY = y * 32;
@@ -370,31 +371,6 @@ export const PK2KARTTA_TAUSTAKUVA_EI: CBYTE = 0;
 export const PK2KARTTA_EXTRA_EI: CBYTE = 0;
 
 export const PK2KARTTA_KARTTA_MAX_PROTOTYYPPEJA: uint = 100;
-
-export const BLOCK_ESTO_ALAS: CBYTE = 40;
-export const BLOCK_HISSI_HORI: CBYTE = 41;
-export const BLOCK_HISSI_VERT: CBYTE = 42;
-export const BLOCK_KYTKIN2_YLOS: CBYTE = 43;
-export const BLOCK_KYTKIN2_ALAS: CBYTE = 45;
-export const BLOCK_KYTKIN3_OIKEALLE: CBYTE = 44;
-export const BLOCK_KYTKIN3_VASEMMALLE: CBYTE = 46;
-export const BLOCK_LUKKO: CBYTE = 47;
-export const BLOCK_KALLOSEINA: CBYTE = 48;
-export const BLOCK_KALLOTAUSTA: CBYTE = 49;
-export const BLOCK_ANIM1: CBYTE = 60;
-export const BLOCK_ANIM2: CBYTE = 65;
-export const BLOCK_ANIM3: CBYTE = 70;
-export const BLOCK_ANIM4: CBYTE = 75;
-export const BLOCK_VIRTA_VASEMMALLE: CBYTE = 140;
-export const BLOCK_VIRTA_OIKEALLE: CBYTE = 141;
-export const BLOCK_VIRTA_YLOS: CBYTE = 142;
-export const BLOCK_PIILO: CBYTE = 143;
-export const BLOCK_TULI: CBYTE = 144;
-export const BLOCK_KYTKIN1: CBYTE = 145;
-export const BLOCK_KYTKIN2: CBYTE = 146;
-export const BLOCK_KYTKIN3: CBYTE = 147;
-export const BLOCK_ALOITUS: CBYTE = 148;
-export const BLOCK_LOPETUS: CBYTE = 149;
 
 export const KYTKIN_ALOITUSARVO: int = 2000;
 

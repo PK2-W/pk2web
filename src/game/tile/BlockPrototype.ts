@@ -1,8 +1,8 @@
 import { TEXTURE_ID_BLOCKS } from '@game/game/PK2Game';
-import { BLOCK_ESTO_ALAS, BLOCK_KYTKIN1, BLOCK_KYTKIN3 } from '@game/map/PK2Map';
-import { EBlockProtoCode, BLOCK_RAW_SIZE, BLOCK_SIZE } from '@game/tile/BlockConstants';
-import { BlockContext } from '@game/tile/BlockContext';
 import { EBlocks } from '@game/tile/Block';
+import { BLOCK_RAW_SIZE, BLOCK_SIZE } from '@game/tile/BlockConstants';
+import { BlockContext } from '@game/tile/BlockContext';
+import { EBlockPrototype } from '@game/enum/EBlockPrototype';
 import { PkRectangleImpl } from '@ng/types/pixi/PkRectangleImpl';
 import { PkImageTexture } from '@ng/types/PkImageTexture';
 import { PkRectangle } from '@ng/types/PkRectangle';
@@ -85,7 +85,7 @@ export class BlockPrototype {
                 
                 // L�pik�velt�v� lattia
                 
-                if (i === BLOCK_ESTO_ALAS) {
+                if (i === EBlockPrototype.BLOCK_ESTO_ALAS) {
                     proto._rightIsBarrier = false;
                     proto._topIsBarrier = false;
                     proto.bottomIsBarrier = true;
@@ -105,7 +105,7 @@ export class BlockPrototype {
                 
                 // Kytkimet
                 
-                if (i >= BLOCK_KYTKIN1 && i <= BLOCK_KYTKIN3) {
+                if (i >= EBlockPrototype.BLOCK_KYTKIN1 && i <= EBlockPrototype.BLOCK_KYTKIN3) {
                     proto._rightIsBarrier = true;
                     proto._topIsBarrier = true;
                     proto.bottomIsBarrier = true;
@@ -200,4 +200,4 @@ export class BlockPrototype {
     public get bottomMask(): number[] { return this._bottomMask; }
 }
 
-export type TBlockProtoCode = EBlockProtoCode | CBYTE;
+export type TBlockProtoCode = EBlockPrototype | CBYTE;
