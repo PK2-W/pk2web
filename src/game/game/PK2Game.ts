@@ -7,12 +7,12 @@ import { EDestructionType } from '@game/enum/EDestructionType';
 import { ESpriteType } from '@game/enum/ESpriteType';
 import { GameContext } from '@game/game/GameContext';
 import { GiftManager } from '@game/gift/GiftManager';
+import { EBgImageMovement } from '@game/enum/EBgImageMovement';
 import {
     PK2KARTTA_KARTTA_LEVEYS,
     PK2KARTTA_KARTTA_KORKEUS,
     PK2Map,
     KYTKIN_ALOITUSARVO,
-    EBgMovement,
     ILMA_SADE,
     ILMA_SADEMETSA,
     ILMA_LUMISADE
@@ -2781,19 +2781,19 @@ export class PK2Game extends GameContext {
         let pallary: int = (this.cameraY % (480 * 3)) / 3;
         
         switch (this.map.bgMovement) {
-            case EBgMovement.TAUSTA_STAATTINEN:
+            case EBgImageMovement.TAUSTA_STAATTINEN:
                 this._bgImage.x = 0;
                 this._bgImage.y = 0;
                 break;
-            case EBgMovement.TAUSTA_PALLARX_HORI:
+            case EBgImageMovement.TAUSTA_PALLARX_HORI:
                 this._bgImage.x = -pallarx;
                 this._bgImage.y = 0;
                 break;
-            case EBgMovement.TAUSTA_PALLARX_VERT:
+            case EBgImageMovement.TAUSTA_PALLARX_VERT:
                 this._bgImage.x = 0;
                 this._bgImage.y = -pallary;
                 break;
-            case EBgMovement.TAUSTA_PALLARX_VERT_JA_HORI:
+            case EBgImageMovement.TAUSTA_PALLARX_VERT_JA_HORI:
                 this._bgImage.x = -pallarx;
                 this._bgImage.y = -pallary;
                 break;

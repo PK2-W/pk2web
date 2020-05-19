@@ -1,7 +1,8 @@
+import { EBlockPrototype } from '@game/enum/EBlockPrototype';
+import { EBgImageMovement } from '@game/enum/EBgImageMovement';
 import { PK2Context } from '@game/PK2Context';
 import { TSpriteProtoCode } from '@game/sprite/SpritePrototype';
 import { TBlockProtoCode } from '@game/tile/BlockPrototype';
-import { EBlockPrototype } from '@game/enum/EBlockPrototype';
 import { str2num, pathJoin } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { PkBinary } from '@ng/types/PkBinary';
@@ -35,7 +36,7 @@ export class PK2Map extends PK2MapInfo {
     public _ilma: int;				// map climate
     public _aika: int;				// map time
     public _extra: CBYTE;				// extra config - not used
-    public _tausta: EBgMovement;				// bg movemant type
+    public _tausta: EBgImageMovement;				// bg movemant type
     public _kytkin1_aika: uint;		// button 1 time - not used
     public _kytkin2_aika: uint;		// button 2 time - not used
     public _kytkin3_aika: uint;		// button 3 time - not used
@@ -314,7 +315,7 @@ export class PK2Map extends PK2MapInfo {
         return this._taustakuva;
     }
     
-    public get bgMovement(): EBgMovement {
+    public get bgMovement(): EBgImageMovement {
         return this._tausta;
     }
     
@@ -380,9 +381,3 @@ export const ILMA_METSA: CBYTE = 2;
 export const ILMA_SADEMETSA: CBYTE = 3;
 export const ILMA_LUMISADE: CBYTE = 4;
 
-export enum EBgMovement {
-    TAUSTA_STAATTINEN,
-    TAUSTA_PALLARX_VERT,
-    TAUSTA_PALLARX_HORI,
-    TAUSTA_PALLARX_VERT_JA_HORI
-}
