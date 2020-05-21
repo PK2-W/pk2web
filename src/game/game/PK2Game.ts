@@ -24,6 +24,7 @@ import { SpriteFuture } from '@game/sprite/SpriteFuture';
 import { SpriteManager, EAi } from '@game/sprite/SpriteManager';
 import { TX } from '@game/texts';
 import { BlockCollider } from '@game/tile/BlockCollider';
+import { BLOCK_SIZE } from '@game/tile/BlockConstants';
 import { BlockManager } from '@game/tile/BlockManager';
 import { EBlockPrototype } from '@game/enum/EBlockPrototype';
 import { ResourceNotFoundError } from '@ng/error/ResourceNotFoundError';
@@ -48,6 +49,11 @@ export class PK2Game extends GameContext {
     private _sprites: SpriteManager;
     private _gifts: GiftManager;
     private _blocks: BlockManager;
+    
+    /**
+     * Number of keys left.<br>
+     * SRC: avaimia. */
+    private _keys: int;
     
     // PK2Kartta* current_map;
     // char map_path[PE_PATH_SIZE];
@@ -2389,11 +2395,11 @@ export class PK2Game extends GameContext {
                     if (tuhoutuminen >= EDestructionType.TUHOUTUMINEN_ANIMAATIO) {
                         tuhoutuminen -= EDestructionType.TUHOUTUMINEN_ANIMAATIO;
                     } else {
-                        if (sprite.proto._avain) {
-                            avaimia--;
+                        if (sprite.proto.isKey()) {
+                            this._keys--;
                             
-                            // if (avaimia < 1)
-                            // 	kartta->Open_Locks();
+                            if (this._keys < 1)
+                                this._blocks.openLocks();
                         }
                         
                         sprite.discard();
@@ -2561,18 +2567,22 @@ export class PK2Game extends GameContext {
             /* Examine if it is a key and touches lock wall                       */
             /**********************************************************************/
             if (block.code === EBlockPrototype.BLOCK_LUKKO && sprite.proto.isKey()) {
-                //	kartta->seinat[block.vasen/32+(block.yla/32)*PK2KARTTA_KARTTA_LEVEYS] = 255;
-                //	kartta->Calculate_Edges();
+                this._blocks.removeFg(block.i, block.j);
+                this._blocks.calculateEdges();
                 
                 sprite.discard();
                 
                 if (sprite.proto.isDestructible()) {
-                    avaimia--;
-                    // if (avaimia < 1)
-                    // 	kartta->Open_Locks();
+                    this._keys--;
+                    
+                    if (this._keys < 1)
+                        this._blocks.openLocks();
                 }
                 
-                //Effect::Explosion(block.vasen+16, block.yla+10, 0);
+                Effects.explosion(this,
+                    block.left + (BLOCK_SIZE / 2), // (32 -> 16)
+                    block.top + Math.floor(BLOCK_SIZE / 3.2),// (32 -> 10)
+                    0);
                 //PK_Play_Sound(avaa_lukko_aani,100, (int)future.x, (int)sprite_y, SOUND_SAMPLERATE, false);
             }
             

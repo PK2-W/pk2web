@@ -42,6 +42,10 @@ export class GameComposition extends Drawable {
         //  Log.d('Block added to the composition (fg).');
     }
     
+    public removeFgBlock(dw: IDrawable): void {
+        this._lyBlocks.removeChild(dw.getDrawable());
+    }
+    
     public addBgSprite(dw: IDrawable) {
         this._lyBgSprites.addChild(dw.getDrawable());
         // Log.d('Sprite added to the composition (bg).');
@@ -75,6 +79,4 @@ export class GameComposition extends Drawable {
     public getDrawable(): PIXI.DisplayObject {
         return super.getDrawable();
     }
-    
-    
 }

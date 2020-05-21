@@ -9,6 +9,7 @@ export enum EBlockPrototype {
     BLOCK_KYTKIN2_ALAS = 45,
     BLOCK_KYTKIN3_OIKEALLE = 44,
     BLOCK_KYTKIN3_VASEMMALLE = 46,
+    /** Lock. */
     BLOCK_LUKKO = 47,
     BLOCK_KALLOSEINA = 48,
     BLOCK_KALLOTAUSTA = 49,

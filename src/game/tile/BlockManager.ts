@@ -1,12 +1,13 @@
+import { Effects } from '@game/effects/Effects';
+import { EBlockPrototype } from '@game/enum/EBlockPrototype';
 import { GameContext } from '@game/game/GameContext';
 import { TEXTURE_ID_BLOCKS } from '@game/game/PK2Game';
 import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, KYTKIN_ALOITUSARVO } from '@game/map/PK2Map';
 import { Block } from '@game/tile/Block';
 import { BlockCollider } from '@game/tile/BlockCollider';
-import { BLOCK_SIZE} from '@game/tile/BlockConstants';
+import { BLOCK_SIZE } from '@game/tile/BlockConstants';
 import { BlockContext } from '@game/tile/BlockContext';
 import { BlockPrototype, TBlockProtoCode } from '@game/tile/BlockPrototype';
-import { EBlockPrototype } from '@game/enum/EBlockPrototype';
 import { ResourceNotFoundError } from '@ng/error/ResourceNotFoundError';
 import { Log } from '@ng/support/log/LoggerImpl';
 import { pathJoin } from '@ng/support/utils';
@@ -57,7 +58,7 @@ export class BlockManager {
                 // Get prototype from map
                 const code = this._context.map.getBgBlockCode(i, j);
                 
-                if (code !== 255) {
+                if (code < 255) {
                     const proto = this.getProto(code);
                     
                     // Create the block at the correct position
@@ -81,7 +82,7 @@ export class BlockManager {
                 // Get prototype from map
                 const code = this._context.map.getFgBlockCode(i, j);
                 
-                if (code !== 255) {
+                if (code < 255) {
                     const proto = this.getProto(code);
                     
                     // Create the block at the correct position
@@ -534,6 +535,23 @@ export class BlockManager {
         this.ctx.composition.addFgBlock(block);
     }
     
+    public removeFg(i: number, j: number): void {
+        const block = this.getFgBlock(i, j);
+        
+        if (block != null) {
+            // Remove
+            this._fgBlocks[BlockManager.get1DIdx(i, j)] = null;
+            
+            // Remove from animated
+            if (this.isAnimated(block)) {
+                this._animatedBlocks.add(block);
+            }
+            
+            // Remove from draw
+            this.ctx.composition.removeFgBlock(block);
+        }
+    }
+    
     private setEdge(i: number, j: number, edge: boolean = true): void {
         this._edges[BlockManager.get1DIdx(i, j)] = (edge === true);
     }
@@ -711,6 +729,30 @@ export class BlockManager {
         } else {
         
         }
+    }
+    
+    public openLocks(): void {
+        let code: number;
+        
+        for (let i = 0; i < PK2KARTTA_KARTTA_LEVEYS; i++) {
+            for (let j = 0; j < PK2KARTTA_KARTTA_KORKEUS; j++) {
+                code = this.getFgBlockCode(i, j);
+                
+                if (code === EBlockPrototype.BLOCK_LUKKO) {
+                    this.removeFg(i, j);
+                    Effects.smokeClouds(this._context,
+                        i * BLOCK_SIZE + Math.floor(BLOCK_SIZE * 6 / 32),
+                        j * BLOCK_SIZE + Math.floor(BLOCK_SIZE * 6 / 32));
+                }
+            }
+        }
+        
+        // Game::vibration = 90;//60
+        // PisteInput_Vibrate();
+        
+        // PK_Start_Info(tekstit->Hae_Teksti(PK_txt.game_locksopen));
+        
+        this.calculateEdges();
     }
     
     public palikat(editor: boolean = false) {

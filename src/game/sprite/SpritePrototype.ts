@@ -83,7 +83,7 @@ export class SpritePrototype {
     private _korkeus: int;										// spriten korkeus
     private _weight: number;											// sprite paino (vaikuttaa hyppyyn ja kytkimiin)
     
-    private _vihollinen: boolean;										// onko sprite vihollinen
+    private _isEnemy: boolean;										// onko sprite vihollinen
     private _energia: int;										// monta iskua kest��
     private _causedDamage: int;										// paljon vahinkoa tekee jos osuu
     private _causedDamageType: CBYTE;									// mink� tyyppist� vahinkoa tekee (1.1)
@@ -101,7 +101,8 @@ export class SpritePrototype {
      * SRC: este. */
     private _obstacle: boolean;
     private _tuhoutuminen: int;									// miten sprite tuhoutuu
-    private _avain: boolean;											// Voiko sprite avata lukkoja
+    /** This sprite is a key or similar; it's one of the sprites needed to open the level locks. */
+    private _isKey: boolean;
     /** If the sprite must shake occasionally. */
     private _shakes: boolean;
     /** Number of bonus sprite that it can leave. */
@@ -172,7 +173,7 @@ export class SpritePrototype {
         this.ammo1Proto = null;
         this.ammo2Proto = null;
         this._animaatioita = 0;
-        this._avain = false;
+        this._isKey = false;
         this.bonusProto = null;
         this._bonusten_lkm = 1;
         this._energia = 0;
@@ -208,7 +209,7 @@ export class SpritePrototype {
         this._causedDamage = 0;
         this._causedDamageType = EDamageType.VAHINKO_ISKU;
         this._vari = EColor.VARI_NORMAALI;
-        this._vihollinen = false;
+        this._isEnemy = false;
         
         this._lapinakyvyys = 0; //false;
         this._hehkuu = false;
@@ -256,7 +257,7 @@ export class SpritePrototype {
         this.ammo1Proto = null;
         this.ammo2Proto = null;
         this._animaatioita = 0;
-        this._avain = false;
+        this._isKey = false;
         this.bonusProto = null;
         this._bonusten_lkm = 1;
         this._energia = 0;
@@ -292,7 +293,7 @@ export class SpritePrototype {
         this._causedDamage = 0;
         this._causedDamageType = EDamageType.VAHINKO_ISKU;
         this._vari = EColor.VARI_NORMAALI;
-        this._vihollinen = false;
+        this._isEnemy = false;
         
         this._lapinakyvyys = false;
         this._hehkuu = 0;   //false;
@@ -510,7 +511,7 @@ export class SpritePrototype {
         this._leveys = stream.streamReadInt(4);
         this._korkeus = stream.streamReadInt(4);
         this._weight = stream.streamReadDouble(8);
-        this._vihollinen = stream.streamReadBool();
+        this._isEnemy = stream.streamReadBool();
         
         stream.streamOffset += 3;                                 // <- 3 bytes padding for struct alignment
         this._energia = stream.streamReadInt(4);
@@ -530,7 +531,7 @@ export class SpritePrototype {
         this._obstacle = stream.streamReadBool();
         stream.streamOffset += 2;                                 // <- 2 bytes padding for struct alignment
         this._tuhoutuminen = stream.streamReadInt(4);
-        this._avain = stream.streamReadBool();
+        this._isKey = stream.streamReadBool();
         this._shakes = stream.streamReadBool();
         this._bonusten_lkm = stream.streamReadUint(1);
         stream.streamOffset++;                                    // <- 1 byte padding for struct alignment
@@ -775,9 +776,11 @@ export class SpritePrototype {
         return this._hyokkays2_aika;
     }
     
-    public isEnemy() {
-        return this._vihollinen;
-    }
+    public isEnemy() { return this._isEnemy == true; }
+    /** @deprecated */ public get vihollinen(): boolean { throw new Error('DEPRECATED'); }
+    
+    public isKey() { return this._isKey == true; }
+    /** @deprecated */ public get avain(): boolean { throw new Error('DEPRECATED'); }
     
     /** @deprecated use maxJump */
     public get max_hyppy(): CBYTE {
@@ -800,10 +803,6 @@ export class SpritePrototype {
     
     public isBackground(): boolean {
         return this.type === ESpriteType.TYYPPI_TAUSTA;
-    }
-    
-    public isKey(): boolean {
-        return this._avain === true;
     }
     
     public get tuhoutuminen() { return this._tuhoutuminen; }
