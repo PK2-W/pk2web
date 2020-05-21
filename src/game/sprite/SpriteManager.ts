@@ -1,6 +1,6 @@
+import { ESpriteType } from '@game/enum/ESpriteType';
 import { GameContext } from '@game/game/GameContext';
 import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, PK2Map } from '@game/map/PK2Map';
-import { ESpriteType } from '@game/enum/ESpriteType';
 import { Sprite } from '@game/sprite/Sprite';
 import { SpritePrototype, TSpriteProtoCode } from '@game/sprite/SpritePrototype';
 import { Log } from '@ng/support/log/LoggerImpl';
@@ -361,75 +361,84 @@ export class SpriteManager extends EventEmitter {
         }
     }
     
-    private addAmmo(proto: SpritePrototype, isPlayer: int, x: number, y: number, emo: int) {
-        let lisatty: boolean = false;
+    /**
+     * SDL: SpriteSystem::add_ammo.
+     *
+     * @param proto
+     * @param isPlayer
+     * @param x
+     * @param y
+     * @param parent
+     */
+    public addAmmo(proto: SpritePrototype, isPlayer: boolean, x: number, y: number, parent: Sprite) {
+        let result: boolean = false;
         let i = 0;
         
-        while (!lisatty && i < MAX_SPRITES) {
+        while (!result && i < MAX_SPRITES) {
             let sprite = this._sprites[i];
             
             if (sprite.isDiscarded()) {
-                sprite = Sprite(proto, isPlayer, false, x/*-proto.leveys/2*/, y);   // TODO: Ojo! los reusa sin destruirlo porque es un pool
+                sprite.reuseWith(proto, isPlayer, false, x/*-proto.leveys/2*/, y);
                 
-                //sprite.x += sprite.proto.leveys;
-                //sprite.y += sprite.proto.korkeus/2;
+                // Source:
+                // sprite.x += sprite.proto.leveys;
+                // sprite.y += sprite.proto.korkeus/2;
                 
-                //         if (hasBehavior(AI_HEITTOASE)){
-                //             if ((int)spritet[emo].a == 0){
-                //                 // Jos "ampuja" on pelaaja tai ammuksen nopeus on nolla
-                //                 if (spritet[emo].pelaaja == 1 || sprite.tyyppi->maxSpeed == 0){
-                //                     if (!spritet[emo].flip_x)
-                //                         sprite.a = sprite.tyyppi->maxSpeed;
-                //                 else
-                //                     sprite.a = -sprite.tyyppi->maxSpeed;
-                //                 }
-                //             else{ // tai jos kyseess� on vihollinen
-                //                     if (!spritet[emo].flip_x)
-                //                         sprite.a = 1 + rand()%(int)sprite.tyyppi->maxSpeed;
-                //                 else
-                //                     sprite.a = -1 - rand()%-(int)sprite.tyyppi->maxSpeed;
-                //                 }
-                //             }
-                //         else{
-                //                 if (!spritet[emo].flip_x)
-                //                     sprite.a = sprite.tyyppi->maxSpeed + spritet[emo].a;
-                //             else
-                //                 sprite.a = -sprite.tyyppi->maxSpeed + spritet[emo].a;
-                //
-                //                 //sprite.a = spritet[emo].a * 1.5;
-                //
-                //             }
-                //
-                //             sprite.hyppy_ajastin = 1;
-                //         }
-                //         else
-                //         if (hasBehavior(AI_MUNA)){
-                //             sprite.y = spritet[emo].y+10;
-                //             sprite.a = spritet[emo].a / 1.5;
-                //         }
-                //         else{
-                //             if (!spritet[emo].flip_x)
-                //                 sprite.a = sprite.tyyppi->maxSpeed;
-                //         else
-                //             sprite.a = -sprite.tyyppi->maxSpeed;
-                //         }
-                //
-                //         if (emo != MAX_SPRITEJA){
-                //             sprite.emosprite = emo;
-                //             sprite.vihollinen = spritet[emo].vihollinen;
-                //         }
-                //         else{
-                //             sprite.emosprite = i;
-                //         }
-                //
-                //         if (proto.tyyppi == TYYPPI_TAUSTA)
-                //             add_bg(i);
-                //
-                //         lisatty = true;
+                if (proto.hasBehavior(EAi.AI_HEITTOASE)) {
+                    if (Math.floor(parent.a) == 0) {
+                        // Jos "ampuja" on pelaaja tai ammuksen nopeus on nolla
+                        if (parent.isPlayer() || proto.maxSpeed == 0) {
+                            sprite.a = !parent.flipX
+                                ? +proto.maxSpeed
+                                : -proto.maxSpeed;
+                        } else { // tai jos kyseess� on vihollinen
+                            sprite.a = !parent.flipX
+                                ? +1 + rand() % Math.floor(proto.maxSpeed)
+                                : -1 - rand() % -Math.floor(proto.maxSpeed);
+                        }
+                    } else {
+                        sprite.a = !parent.flipX
+                            ? +proto.maxSpeed + parent.a
+                            : -proto.maxSpeed + parent.a;
+                        
+                        // Source / sprite.a = spritet[emo].a * 1.5;
+                    }
+                    
+                    sprite.jumpTimer = 1;
+                } else if (proto.hasBehavior(EAi.AI_MUNA)) {
+                    sprite.y = parent.y + 10;
+                    sprite.a = parent.a / 1.5;
+                } else {
+                    sprite.a = !parent.flipX
+                        ? +proto.maxSpeed
+                        : -proto.maxSpeed;
+                }
+                
+                if (parent != null) {
+                    sprite.parent = parent;
+                    sprite.setEnemy(parent.isEnemy());
+                } else {
+                    sprite.parent = sprite;
+                }
+                
+                if (proto.type === ESpriteType.TYYPPI_TAUSTA) {
+                    this._addBg(i);
+                }
+    
+                // Add to the scene
+                if (proto.type === ESpriteType.TYYPPI_TAUSTA) {
+                    this.ctx.composition.addBgSprite(sprite);
+                } else {
+                    this.ctx.composition.addFgSprite(sprite);
+                }
+                
+                result = true;
             } else {
                 i++;
             }
         }
+        
+        return result;
     }
     
     private sortBg(): void {

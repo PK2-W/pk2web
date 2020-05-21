@@ -212,6 +212,7 @@ export class Sprite extends Drawable {
             this._sprite = new PIXI.Sprite();
             this._sprite.x = -this.proto.width / 2;
             this._sprite.y = -this.proto.height / 2;
+            this._drawable.removeChildren();
             this._drawable.addChild(this._sprite);
         }
     }
@@ -1403,6 +1404,12 @@ export class Sprite extends Drawable {
     public get proto() {
         return this._proto;
     }
+    public morph() {
+        this._proto = this.proto.morphProto;
+        this._ammo1Proto = this.proto.ammo1Proto;
+        this._ammo2Proto = this.proto.ammo2Proto;
+        this._initialWeight = this.proto.weight;
+    }
     
     public get x(): number {
         return this._x;
@@ -1507,10 +1514,13 @@ export class Sprite extends Drawable {
         this._energy = v;
     }
     
+    /** @deprecated */ public vihollinen(): boolean { return this.isEnemy(); }
     public isEnemy(): boolean {
         return this._enemy;
     }
-    /** @deprecated */ public vihollinen(): boolean { return this.isEnemy(); }
+    public setEnemy(v: boolean) {
+        return this._enemy = (v === true);
+    }
     
     /**
      * @deprecated Use {@link discard} and {@link isDiscarded}.
@@ -1618,10 +1628,16 @@ export class Sprite extends Drawable {
     public get ammo1Proto(): SpritePrototype { return this._ammo1Proto; }
     /** @deprecated Use {@link ammo1Proto}, that uses {@link SpritePrototype} instead an index. */
     public get ammus1(): SpritePrototype { throw new Error('DEPRECATED'); }
+    public set ammo1Proto(proto: SpritePrototype) {
+        this._ammo1Proto = proto;
+    }
     /** @see _ammo2Proto */
     public get ammo2Proto(): SpritePrototype { return this._ammo2Proto; }
     /** @deprecated Use {@link ammo1Proto}, that uses {@link SpritePrototype} instead an index. */
     public get ammus2(): SpritePrototype { throw new Error('DEPRECATED'); }
+    public set ammo2Proto(proto: SpritePrototype) {
+        this._ammo2Proto = proto;
+    }
     
     /** @deprecated use weight */
     public get paino(): number {

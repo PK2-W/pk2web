@@ -1972,44 +1972,43 @@ export class PK2Game extends GameContext {
                 sprite.lataus = sprite.proto.latausaika;
                 if (sprite.lataus == 0) sprite.lataus = 5;
                 // jos spritelle ei ole m��ritelty omaa latausaikaa ...
-                // 			if (sprite.ammus1 > -1 && sprite.tyyppi->latausaika == 0)
-                // ... ja ammukseen on, otetaan latausaika ammuksesta
-                // 				if (Game::Sprites->protot[sprite.ammus1].tulitauko > 0)
-                // 					sprite.lataus = Game::Sprites->protot[sprite.ammus1].tulitauko;
-                //
-                // 			// soitetaan hy�kk�ys��ni
-                // 			PK_Play_Sound(sprite.tyyppi->aanet[AANI_HYOKKAYS1],100, (int)sprite_x, (int)sprite_y,
-                // 						  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
-                //
-                // 			if (sprite.ammus1 > -1) {
-                // 				Game::Sprites->add_ammo(sprite.ammus1,0,sprite_x, sprite_y, i);
-                //
-                // 		//		if (Game::Sprites->protot[sprite.ammus1].aanet[AANI_HYOKKAYS1] > -1)
-                // 		//			PK_Play_Sound(Game::Sprites->protot[sprite.ammus1].aanet[AANI_HYOKKAYS1],100, (int)sprite_x, (int)sprite_y,
-                // 		//						  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
-                // 			}
+                if (sprite.ammo1Proto != null && sprite.proto.latausaika == 0)
+                    // ... ja ammukseen on, otetaan latausaika ammuksesta
+                    if (sprite.ammo1Proto._tulitauko > 0)
+                        sprite.lataus = sprite.ammo1Proto._tulitauko;
+                
+                // soitetaan hy�kk�ys��ni
+                this.playSpriteSound(sprite, ESound.AANI_HYOKKAYS1, 100);
+                
+                if (sprite.ammo1Proto != null) {
+                    this._sprites.addAmmo(sprite.ammo1Proto, false, future.x, future.y, sprite);// Game::Sprites->add_ammo(sprite.ammus1,0,sprite_x, sprite_y, i);
+                    
+                    // Source:
+                    //		if (Game::Sprites->protot[sprite.ammus1].aanet[AANI_HYOKKAYS1] > -1)
+                    //			PK_Play_Sound(Game::Sprites->protot[sprite.ammus1].aanet[AANI_HYOKKAYS1],100, (int)sprite_x, (int)sprite_y,
+                    //						  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
+                }
             }
             
-            // 		// Sama kuin hy�kk�ys 1:ss�
-            // 		if (sprite.hyokkays2 == sprite.tyyppi->hyokkays2_aika) {
-            // 			sprite.lataus = sprite.tyyppi->latausaika;
-            // 			if(sprite.lataus == 0) sprite.lataus = 5;
-            // 			if (sprite.ammus2 > -1  && sprite.tyyppi->latausaika == 0)
-            // 				if (Game::Sprites->protot[sprite.ammus2].tulitauko > 0)
-            // 					sprite.lataus = Game::Sprites->protot[sprite.ammus2].tulitauko;
-            //
-            // 			PK_Play_Sound(sprite.tyyppi->aanet[AANI_HYOKKAYS2],100,(int)sprite_x, (int)sprite_y,
-            // 						  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
-            //
-            // 			if (sprite.ammus2 > -1) {
-            // 				Game::Sprites->add_ammo(sprite.ammus2,0,sprite_x, sprite_y, i);
-            //
-            // 		//		if (Game::Sprites->protot[sprite.ammus2].aanet[AANI_HYOKKAYS1] > -1)
-            // 		//			PK_Play_Sound(Game::Sprites->protot[sprite.ammus2].aanet[AANI_HYOKKAYS1],100, (int)sprite_x, (int)sprite_y,
-            // 		//						  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
-            //
-            // 			}
-            // 		}
+            // Sama kuin hy�kk�ys 1:ss�
+            if (sprite.attack2Remaining == sprite.proto.attack2Duration) {
+                sprite.lataus = sprite.proto.latausaika;
+                if (sprite.lataus == 0) sprite.lataus = 5;
+                if (sprite.ammo2Proto != null && sprite.proto.latausaika == 0)
+                    if (sprite.ammo2Proto._tulitauko > 0)
+                        sprite.lataus = sprite.ammo2Proto._tulitauko;
+                
+                this.playSpriteSound(sprite, ESound.AANI_HYOKKAYS2, 100);
+                
+                if (sprite.ammo2Proto != null) {
+                    this._sprites.addAmmo(sprite.ammo2Proto, false, future.x, future.y, sprite);// Game::Sprites->add_ammo(sprite.ammus1,0,sprite_x, sprite_y, i);
+                    
+                    // Source:
+                    //		if (Game::Sprites->protot[sprite.ammus2].aanet[AANI_HYOKKAYS1] > -1)
+                    //			PK_Play_Sound(Game::Sprites->protot[sprite.ammus2].aanet[AANI_HYOKKAYS1],100, (int)sprite_x, (int)sprite_y,
+                    //						  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
+                }
+            }
         }
         
         // Random sounds
@@ -2416,22 +2415,19 @@ export class PK2Game extends GameContext {
                     
                     if (sprite.proto.morphProto != null) {
                         if (sprite.proto.morphProto.getBehavior(0) != EAi.AI_BONUS) {
-                            this._sprites.player._tyyppi = sprite.proto.morphProto;
-                            this._sprites.player._ammo1Proto = this._sprites.player.proto.ammo1Proto;
-                            this._sprites.player._ammo2Proto = this._sprites.player.proto.ammo2Proto;
-                            this._sprites.player._initialWeight = this._sprites.player.proto.weight;
+                            this._sprites.player.morph();
                             this._sprites.player.y -= this._sprites.player.proto.height / 2;
                             // Janne / PK_Start_Info("pekka has been transformed!");
                         }
                     }
                     
                     if (sprite.proto.ammo1Proto != null) {
-                        this._sprites.player._ammo1Proto = sprite.proto.ammo1Proto;
+                        this._sprites.player.ammo1Proto = sprite.proto.ammo1Proto;
                         //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.game_newegg));
                     }
                     
                     if (sprite.proto.ammo2Proto != null) {
-                        this._sprites.player._ammo2Proto = sprite.proto.ammo2Proto;
+                        this._sprites.player.ammo2Proto = sprite.proto.ammo2Proto;
                         //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.game_newdoodle));
                     }
                     
@@ -2767,7 +2763,7 @@ export class PK2Game extends GameContext {
      */
     private addBackground(): void {
         const texture = this.textureCache.getTexture(TEXTURE_ID_BGIMAGE);
-        this._bgImage = new PIXI.TilingSprite((texture as PkImageTextureImpl).getPixiTexture(), this.screenWidth, this.screenHeight);
+        this._bgImage = new PIXI.TilingSprite((texture as PkImageTextureImpl).getPixiTexture(), this.screenWidth * 4, this.screenHeight * 4);
         this.composition.addBgImage(this._bgImage);
         
         this.updateBackground();
