@@ -24,6 +24,7 @@ export enum EBlockPrototype {
     BLOCK_VIRTA_VASEMMALLE = 140,
     BLOCK_VIRTA_OIKEALLE = 141,
     BLOCK_VIRTA_YLOS = 142,
+    /** Hideout. */
     BLOCK_PIILO = 143,
     BLOCK_TULI = 144,
     BLOCK_KYTKIN1 = 145,

@@ -18,13 +18,22 @@ import { int, CBYTE, rand } from '../../support/types';
 export class Sprite extends Drawable {
     public static readonly EV_SPRITE_DISCARDED = 'discarded.sprite.ev';
     
-    private _aktiivinen: boolean;			// true / false
+    /**
+     * If a sprite is hidden, it can't be seen by other characters.<br>
+     * A sprite is hidden when it's out of camera or over the hideout block ({@link EBlockPrototype.BLOCK_PIILO}). */
+    private _hidden: boolean;
+    /**
+     * When a sprite is not active, its position is not updated.<br>
+     * A sprite is active when it's in the camera range or near it. */
+    private _active: boolean;
+    /**
+     * When a sprite is dicarded it will never be drawn again until it is reused ({@link reuse}). */
+    private _discarded: boolean;
+    
     /** Indicates that this sprite is a player. */
     private _isPlayer: int;
     /** Prototype. */
     private _proto: SpritePrototype;
-    /** When a sprite is dicarded it won't be drawn anymore and it will be reused when needed. */
-    private _discarded: boolean;
     private _alku_x: number;				// spriten alkuper�inen x sijainti
     private _alku_y: number;				// spriten alkuper�inen y sijainti
     private _x: number;					// x-kordinaatti pelikent�ll�
@@ -63,7 +72,7 @@ export class Sprite extends Drawable {
     private _attack2Remaining: int;			// ajastin joka laskee hy�kk�ys 2:n j�lkeen
     /** Indicates that this sprite is in the water. */
     private _inWater: boolean;
-    private _piilossa: boolean;			// onko sprite piilossa
+    
     /** Sprite weight. */
     private _weight: number;
     /**
@@ -156,7 +165,7 @@ export class Sprite extends Drawable {
         this._attack1Remaining = 0;
         this._attack2Remaining = 0;
         this._inWater = false;
-        this._piilossa = false;
+        this._hidden = false;
         this._receivedDamage = 0;
         this._enemy = false;
         this._ammo1Proto = null;
@@ -1105,7 +1114,7 @@ export class Sprite extends Drawable {
     }
     
     public AI_Piiloutuu(): void {
-        if (this._energy > 0 && this._piilossa) {
+        if (this._energy > 0 && this._hidden) {
             this._a /= 1.02;
             this._crouched = true;
         }
@@ -1522,10 +1531,16 @@ export class Sprite extends Drawable {
         return this._enemy = (v === true);
     }
     
-    /**
-     * @deprecated Use {@link discard} and {@link isDiscarded}.
-     */
-    public get piilota(): boolean { return this._discarded; }
+    ///  ( culling and optimization )  ///
+    
+    /** See {@link _hidden}. */
+    public get hidden(): boolean { return this._hidden; }
+    public set hidden(v: boolean) { this._hidden = v; }
+    /** @deprecated */ public get piilossa(): boolean { return this.hidden; }
+    
+    public get active(): boolean { return this._active; }
+    public set active(v: boolean) { this._active = v; }
+    /** @deprecated */ public get aktiivinen(): boolean { return this._active; }
     
     /**
      * Marks the item for deletion.<br>
@@ -1535,6 +1550,7 @@ export class Sprite extends Drawable {
      */
     public discard(): void {
         this._discarded = true;
+        this._active = false;
         
         /**
          * dummy description
@@ -1544,7 +1560,6 @@ export class Sprite extends Drawable {
          */
         this.emit(Sprite.EV_SPRITE_DISCARDED, this);
     }
-    
     /**
      * Returns TRUE if sprite is discarded, FALSE otherwise.<br>
      * More information: {@link discard}.
@@ -1552,6 +1567,7 @@ export class Sprite extends Drawable {
     public isDiscarded(): boolean {
         return this._discarded == true;
     }
+    /** @deprecated */ public get piilota(): boolean { return this._discarded; }
     
     /**
      * Returns isPlayer (boolean) as an int.<br>
@@ -1693,19 +1709,8 @@ export class Sprite extends Drawable {
     public set parent(v: Sprite) {
         this._parent = v;
     }
-    /** @deprecated */
-    public get emosprite(): Sprite {
+    /** @deprecated */ public get emosprite(): Sprite {
         return this._parent;
-    }
-    
-    /**
-     * Escondido, en un espcondite
-     */
-    public get piilossa(): boolean {
-        return this._piilossa;
-    }
-    public set piilossa(v: boolean) {
-        this._piilossa = v;
     }
     
     /** @deprecated Use initialWeight */
@@ -1724,13 +1729,6 @@ export class Sprite extends Drawable {
     }
     public set kytkinpaino(v: number) {
         this._kytkinpaino = v;
-    }
-    
-    public get aktiivinen(): boolean {
-        return this._aktiivinen;
-    }
-    public set aktiivinen(v: boolean) {
-        this._aktiivinen = v;
     }
     
     /** @deprecated use recivedDamage */

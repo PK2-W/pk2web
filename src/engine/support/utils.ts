@@ -19,6 +19,10 @@ export function mod(n: number, m: number): number {
     return ((n % m) + m) % m;
 }
 
+export function floor(v: number) {
+    return Math.floor(v);
+}
+
 export function minmax(n: number, min: number, max: number): number {
     if (n < min) return min;
     if (n > max) return max;

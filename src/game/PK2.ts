@@ -22,7 +22,7 @@
 import { PK2Game } from '@game/game/PK2Game';
 import { PK2Map } from '@game/map/PK2Map';
 import { ITickable } from '@ng/ITickable';
-import { Renderer, FADE } from '@ng/render/Renderer';
+import { PkRenderer, FADE } from '@ng/render/PkRenderer';
 import { PkEngine } from '@ng/PkEngine';
 import { PkLanguage } from '@ng/PkLanguage';
 import { PkScreen } from '@ng/screen/PkScreen';
@@ -339,7 +339,7 @@ export class PK2 extends PK2Context implements ITickable {
     private settings: PK2Settings;
     
     /*tmp*/
-    private renderer: Renderer;
+    private renderer: PkRenderer;
     
     public constructor() {
         super();
@@ -3531,7 +3531,7 @@ export class PK2 extends PK2Context implements ITickable {
         
         this.settings = await PK2Settings.loadFromClient();
         
-        this._engine = new PkEngine(this.screen_width, this.screen_height);
+        this._engine = new PkEngine();
         this._engine.setDebug(this.dev_mode);
         this.renderer = this._engine.getRenderer();
         
@@ -3578,7 +3578,7 @@ export class PK2 extends PK2Context implements ITickable {
         // Open the requested map
         const tmpEpisodeName = 'rooster island 1';
         
-        const map = await PK2Map.loadFromFile(this, /*seuraava_kartta*/ pathJoin('episodes', tmpEpisodeName), 'level010.map');
+        const map = await PK2Map.loadFromFile(this, /*seuraava_kartta*/ pathJoin('episodes', tmpEpisodeName), 'level002.map');
         // TODO try catch
         // 		printf("PK2    - Error loading map '%s' at '%s'\n", this.seuraava_kartta, polku);
         // 		return 1;

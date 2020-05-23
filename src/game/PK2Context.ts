@@ -1,5 +1,6 @@
 import { Entropy } from '@game/Entropy';
 import { PK2wSound } from '@ng/PK2wSound';
+import { PkDevice } from '@ng/PkDevice';
 import { PkEngine } from '@ng/PkEngine';
 import { PkFont } from '@ng/PkFont';
 import { PkInput } from '@ng/PkInput';
@@ -10,6 +11,7 @@ import { i18nSchema } from '../support/i18nSchema';
 import { int, FONTID } from '../support/types';
 
 export abstract class PK2Context {
+   
     // Fonts
     protected _fontti1: FONTID;
     protected _fontti2: FONTID;
@@ -37,6 +39,11 @@ export abstract class PK2Context {
         this._entropy = new Entropy();
     }
     
+    protected get ng(): PkEngine {
+        return this._engine;
+    }
+    public get device(): PkDevice { return this.ng.device; };
+    
     public get fontti1(): FONTID {
         return this._fontti1;
     }
@@ -53,21 +60,8 @@ export abstract class PK2Context {
         return this._fontti5;
     }
     
-    protected get ng(): PkEngine {
-        return this._engine;
-    }
-    
     public get resources(): PkResources {
         return this._engine.resources;
-    }
-    
-    /** @deprecated tengo que buscar algo mejor */
-    public get screenWidth(): int {
-        return 640;
-    }
-    /** @deprecated tengo que buscar algo mejor */
-    public get screenHeight(): int {
-        return 480;
     }
     
     public get tx(): PkLanguage {

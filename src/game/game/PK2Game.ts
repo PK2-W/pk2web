@@ -2,12 +2,13 @@
 import { Effects } from '@game/effects/Effects';
 import { ESound } from '@game/enum';
 import { EAnimation } from '@game/enum/EAnimation';
+import { EBgImageMovement } from '@game/enum/EBgImageMovement';
+import { EBlockPrototype } from '@game/enum/EBlockPrototype';
 import { EDamageType } from '@game/enum/EDamageType';
 import { EDestructionType } from '@game/enum/EDestructionType';
 import { ESpriteType } from '@game/enum/ESpriteType';
 import { GameContext } from '@game/game/GameContext';
 import { GiftManager } from '@game/gift/GiftManager';
-import { EBgImageMovement } from '@game/enum/EBgImageMovement';
 import {
     PK2KARTTA_KARTTA_LEVEYS,
     PK2KARTTA_KARTTA_KORKEUS,
@@ -26,17 +27,16 @@ import { TX } from '@game/texts';
 import { BlockCollider } from '@game/tile/BlockCollider';
 import { BLOCK_SIZE } from '@game/tile/BlockConstants';
 import { BlockManager } from '@game/tile/BlockManager';
-import { EBlockPrototype } from '@game/enum/EBlockPrototype';
 import { ResourceNotFoundError } from '@ng/error/ResourceNotFoundError';
 import { Log } from '@ng/support/log/LoggerImpl';
-import { pathJoin } from '@ng/support/utils';
+import { pathJoin, floor } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { PkImageTextureImpl } from '@ng/types/pixi/PkImageTextureImpl';
 import { PkImage } from '@ng/types/PkImage';
 import { PkSound } from '@ng/types/PkSound';
 import * as PIXI from 'pixi.js';
 import { MAX_SPRITES, RESOURCES_PATH, InputAction, SPRITE_MAX_AI, VAHINKO_AIKA } from '../../support/constants';
-import { int, rand, bool, uint, DWORD } from '../../support/types';
+import { int, rand, uint, DWORD } from '../../support/types';
 
 export class PK2Game extends GameContext {
     private _episodeName: string;
@@ -77,7 +77,7 @@ export class PK2Game extends GameContext {
     
     /** @deprecated Use gameOver instead. */
     private _peli_ohi;
-    private _gameOver: bool = false;
+    private _gameOver: boolean = false;
     private _paused: boolean;
     
     
@@ -514,9 +514,9 @@ export class PK2Game extends GameContext {
                     alku_y = sprite.initialY;
                     
                     if (sprite.proto.pallarx_kerroin != 0) {
-                        xl = alku_x - this.cameraX - this.screenWidth / 2 - sprite.proto.leveys / 2;
+                        xl = alku_x - this.cameraX - this.device.screenWidth / 2 - sprite.proto.leveys / 2;
                         xl /= sprite.proto.pallarx_kerroin;
-                        yl = alku_y - this.cameraY - this.screenHeight / 2 - sprite.proto.korkeus / 2;
+                        yl = alku_y - this.cameraY - this.device.screenHeight / 2 - sprite.proto.korkeus / 2;
                         yk = sprite.proto.pallarx_kerroin;///1.5;
                         if (yk != 0) {
                             yl /= yk;
@@ -526,17 +526,18 @@ export class PK2Game extends GameContext {
                     
                     switch (sprite.proto.getBehavior(0)) {
                         case EAi.AI_TAUSTA_KUU               :
-                            yl += this.screenHeight / 3 + 50;
+                            yl += this.device.screenHeight / 3 + 50;
                             break;
-                        /*case AI_TAUSTA_LIIKKUU_VASEMMALLE	:	if (sprite.a == 0)
-                                                         sprite.a = rand()%3;
-                                                      sprite.alku_x -= sprite.a;
-                                                      if (sprite.piilossa && sprite.alku_x < Game::camera_x)
-                                                      {
-                                                             sprite.alku_x = Game::camera_x+screen_width+sprite.proto.leveys*2;
-                                                           sprite.a = rand()%3;
-                                                      }
-                                                      break;*/
+                        // Janne:
+                        // case AI_TAUSTA_LIIKKUU_VASEMMALLE	:	if (sprite.a == 0)
+                        //    sprite.a = rand()%3;
+                        //    sprite.alku_x -= sprite.a;
+                        //    if (sprite.hidden && sprite.alku_x < Game::camera_x)
+                        //    {
+                        //           sprite.alku_x = Game::camera_x+screen_width+sprite.proto.leveys*2;
+                        //         sprite.a = rand()%3;
+                        //    }
+                        //    break;
                         case EAi.AI_LIIKKUU_X_COS:
                             sprite.AI_MovesX(this.entropy.cos(this.entropy.degree % 360));
                             alku_x = sprite.x;
@@ -571,7 +572,7 @@ export class PK2Game extends GameContext {
                     // sprite.y + sprite.proto.korkeus/2 > this.cameraY)
                     // {
                     sprite.Piirra(this.cameraX, this.cameraY);
-                    sprite.piilossa = false;
+                    sprite.hidden = false;
                     
                     //   debug_drawn_sprites++;
                     // } else {
@@ -603,9 +604,9 @@ export class PK2Game extends GameContext {
             
             if (!sprite.isDiscarded() && sprite.proto.type != ESpriteType.TYYPPI_TAUSTA) {
                 //Check whether or not sprite is on the screen
-                if (sprite.x - sprite.proto.width / 2 < this.cameraX + this.screenWidth &&
+                if (sprite.x - sprite.proto.width / 2 < this.cameraX + this.device.screenWidth &&
                     sprite.x + sprite.proto.width / 2 > this.cameraX &&
-                    sprite.y - sprite.proto.height / 2 < this.cameraY + this.screenHeight &&
+                    sprite.y - sprite.proto.height / 2 < this.cameraY + this.device.screenHeight &&
                     sprite.y + sprite.proto.height / 2 > this.cameraY) {
                     
                     if (sprite.isku > 0 && sprite.proto.type != ESpriteType.TYYPPI_BONUS && sprite.energy < 1) {
@@ -708,8 +709,8 @@ export class PK2Game extends GameContext {
      * SDL: PK_Update_Camera.
      */
     private updateCamera(): void {
-        this._camera.x = Math.floor(this._sprites.player.x - this.screenWidth / 2);
-        this._camera.y = Math.floor(this._sprites.player.y - this.screenHeight / 2);
+        this._camera.x = Math.floor(this._sprites.player.x - this.device.screenWidth / 2);
+        this._camera.y = Math.floor(this._sprites.player.y - this.device.screenHeight / 2);
         
         // Source comment:
         // if (!PisteInput_Hiiri_Vasen()) {
@@ -764,11 +765,11 @@ export class PK2Game extends GameContext {
         if (this.cameraY < 0)
             this._camera.y = 0;
         
-        if (this.cameraX > Math.floor(PK2KARTTA_KARTTA_LEVEYS - this.screenWidth / 32) * 32)
-            this._camera.x = Math.floor(PK2KARTTA_KARTTA_LEVEYS - this.screenWidth / 32) * 32;
+        if (this.cameraX > Math.floor(PK2KARTTA_KARTTA_LEVEYS - this.device.screenWidth / 32) * 32)
+            this._camera.x = Math.floor(PK2KARTTA_KARTTA_LEVEYS - this.device.screenWidth / 32) * 32;
         
-        if (this.cameraY > Math.floor(PK2KARTTA_KARTTA_KORKEUS - this.screenHeight / 32) * 32)
-            this._camera.y = Math.floor(PK2KARTTA_KARTTA_KORKEUS - this.screenHeight / 32) * 32;
+        if (this.cameraY > Math.floor(PK2KARTTA_KARTTA_KORKEUS - this.device.screenHeight / 32) * 32)
+            this._camera.y = Math.floor(PK2KARTTA_KARTTA_KORKEUS - this.device.screenHeight / 32) * 32;
         
         // Apply
         this.composition.getDrawable().x = -this.cameraX;
@@ -787,25 +788,24 @@ export class PK2Game extends GameContext {
         
         for (let i = 0; i < MAX_SPRITES; i++) { //Activate sprite if it is on screen
             sprite = this._sprites.get(i);
-            // (Culling sprites update)
-            if (sprite.x < this.cameraX + 640 + 320 && //screen_width+screen_width/2 &&
-                sprite.x > this.cameraX - 320 && //screen_width/2 &&
-                sprite.y < this.cameraY + 480 + 240 && //screen_height+screen_height/2 &&
-                sprite.y > this.cameraY - 240) {//screen_height/2)
-                sprite.aktiivinen = true;
-            } else {
-                sprite.aktiivinen = false;
-            }
             
-            if (sprite.isDiscarded()) {
-                sprite.aktiivinen = false;
+            if (!sprite.isDiscarded()) {
+                // (Culling sprites update)
+                if (sprite.x < this.cameraX + floor(this.device.screenWidth * 1.5) &&
+                    sprite.x > this.cameraX - floor(this.device.screenWidth * 0.5) &&
+                    sprite.y < this.cameraY + floor(this.device.screenHeight * 1.5) &&
+                    sprite.y > this.cameraY - floor(this.device.screenHeight * 0.5)) {
+                    sprite.active = true;
+                } else {
+                    sprite.active = false;
+                }
             }
         }
         
         for (let i = 0; i < MAX_SPRITES; i++) {
             sprite = this._sprites.get(i);
             
-            if (sprite.aktiivinen && sprite.proto.type !== ESpriteType.TYYPPI_TAUSTA) {
+            if (sprite.active && sprite.proto.type !== ESpriteType.TYYPPI_TAUSTA) {
                 if (sprite.proto.type === ESpriteType.TYYPPI_BONUS) {
                     this.updateBonusSpriteMovement(sprite);
                 } else {
@@ -1071,7 +1071,7 @@ export class PK2Game extends GameContext {
         /*****************************************************************************************/
         
         sprite.inWater = false;
-        sprite.piilossa = false;
+        sprite.hidden = false;
         
         /*****************************************************************************************/
         /* Speed limits                                                                          */
@@ -1186,7 +1186,7 @@ export class PK2Game extends GameContext {
         for (let sprite_index = 0; sprite_index < MAX_SPRITES; sprite_index++) {
             sprite2 = this._sprites.get(sprite_index);
             
-            if (sprite2 != sprite && /*!sprite2->piilota*/sprite2.aktiivinen) {
+            if (sprite2 != sprite && /*!sprite2->piilota*/sprite2.active) {
                 if (sprite2.isCrouched()) {
                     sprite2_yla = sprite2.proto.height / 3;//1.5;
                 } else {
@@ -1727,8 +1727,8 @@ export class PK2Game extends GameContext {
                             if (this.teleport(sprite, this._sprites.player)) {
                                 this._camera.x = Math.floor(this._sprites.player.x);
                                 this._camera.y = Math.floor(this._sprites.player.y);
-                                this._dcameraX = this._camera.x - this.screenWidth / 2;
-                                this._dcameraY = this._camera.y - this.screenHeight / 2;
+                                this._dcameraX = this._camera.x - this.device.screenWidth / 2;
+                                this._dcameraY = this._camera.y - this.device.screenHeight / 2;
                                 // TODO: PisteDraw2_FadeIn(PD_FADE_NORMAL);
                                 
                                 if (sprite.proto.getSound(ESound.AANI_HYOKKAYS2) != null) {
@@ -2506,10 +2506,10 @@ export class PK2Game extends GameContext {
             }
             
             /**********************************************************************/
-            /* Examine if bloc is hideway                                         */
+            /* Examine if bloc is hideout                                         */
             /**********************************************************************/
             if (block.code === EBlockPrototype.BLOCK_PIILO)
-                sprite.piilossa = true;
+                sprite.hidden = true;
             
             /**********************************************************************/
             /* Examine if block is the exit                                       */
@@ -2773,7 +2773,7 @@ export class PK2Game extends GameContext {
      */
     private addBackground(): void {
         const texture = this.textureCache.getTexture(TEXTURE_ID_BGIMAGE);
-        this._bgImage = new PIXI.TilingSprite((texture as PkImageTextureImpl).getPixiTexture(), this.screenWidth * 4, this.screenHeight * 4);
+        this._bgImage = new PIXI.TilingSprite((texture as PkImageTextureImpl).getPixiTexture(), this.device.screenWidth * 4, this.device.screenHeight * 4);
         this.composition.addBgImage(this._bgImage);
         
         this.updateBackground();

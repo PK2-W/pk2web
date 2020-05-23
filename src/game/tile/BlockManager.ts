@@ -646,8 +646,8 @@ export class BlockManager {
     public get animaatio(): number { return this._blockAnimTicker;}
     
     public isInCamera(block: Block): boolean {
-        return block.x < this.ctx.cameraX + this.ctx.screenWidth
-            && block.y < this.ctx.cameraY + this.ctx.screenHeight
+        return block.x < this.ctx.cameraX + this.ctx.device.screenWidth
+            && block.y < this.ctx.cameraY + this.ctx.device.screenHeight
             && block.x + BLOCK_SIZE > this.ctx.cameraX
             && block.y + BLOCK_SIZE > this.ctx.cameraY;
     }
@@ -666,8 +666,8 @@ export class BlockManager {
         if (this._prevCulling == null ||
             this.ctx.cameraX < this._prevCulling.ax ||
             this.ctx.cameraY < this._prevCulling.ay ||
-            this.ctx.cameraX + this.ctx.screenWidth > this._prevCulling.bx ||
-            this.ctx.cameraY + this.ctx.screenHeight > this._prevCulling.by) {
+            this.ctx.cameraX + this.ctx.device.screenWidth > this._prevCulling.bx ||
+            this.ctx.cameraY + this.ctx.device.screenHeight > this._prevCulling.by) {
             
             Log.v('[BlockManager] Updating blocks culling...');
             
@@ -702,8 +702,8 @@ export class BlockManager {
             
             this._prevCulling.ax = this.ctx.cameraX - 3 * BLOCK_SIZE;
             this._prevCulling.ay = this.ctx.cameraY - 3 * BLOCK_SIZE;
-            this._prevCulling.bx = this.ctx.cameraX + this.ctx.screenWidth + 3 * BLOCK_SIZE;
-            this._prevCulling.by = this.ctx.cameraY + this.ctx.screenHeight + 3 * BLOCK_SIZE;
+            this._prevCulling.bx = this.ctx.cameraX + this.ctx.device.screenWidth + 3 * BLOCK_SIZE;
+            this._prevCulling.by = this.ctx.cameraY + this.ctx.device.screenHeight + 3 * BLOCK_SIZE;
             
             // Blocks showing
             ai = Math.floor(this._prevCulling.ax / BLOCK_SIZE);
@@ -727,7 +727,7 @@ export class BlockManager {
             show.forEach(b => b.getDrawable().renderable = true);
             [...hide].filter(b => !show.has(b)).forEach(b => b.getDrawable().renderable = false);
         } else {
-        
+            //TODO
         }
     }
     

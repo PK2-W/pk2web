@@ -3,17 +3,21 @@
 //by Janne Kivilahti from Piste Gamez
 //#########################
 
+import { PK2Context } from '@game/PK2Context';
+import { PkDevice } from '@ng/PkDevice';
 import { PkInput } from '@ng/PkInput';
 import { PkResource, PkResources } from '@ng/PkResources';
 import { RESOURCES_PATH } from '../support/constants';
 import { GameTimer } from '../support/GameTimer';
 import { PkScreen } from './screen/PkScreen';
 import { int, bool, SCREENID } from '../support/types';
-import { Renderer } from './render/Renderer';
+import { PkRenderer } from './render/PkRenderer';
 import { PK2wSound } from './PK2wSound';
 import { PkLanguage } from './PkLanguage';
 
 export class PkEngine {
+    private _device: PkDevice;
+    
     private _screens: Map<int, PkScreen>;
     private _tmpScreen: PkScreen;
     
@@ -35,14 +39,15 @@ export class PkEngine {
     private readonly _gameTimer: GameTimer;
     private readonly _language: PkLanguage;
     private readonly _resources: PkResources;
-    private readonly _rendr: Renderer;
+    private readonly _rendr: PkRenderer;
     private readonly _input: PkInput;
     private readonly _audio: PK2wSound;
     
     
     // TODO bx: throw custom error -> printf("PK2    - Failed to init PisteEngine.\n");
-    public constructor(width: int, height: int) {
-        
+    public constructor() {
+        this._device = new PkDevice();
+    
         // 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
         // 		printf("Unable to init SDL: %s\n", SDL_GetError());
         // 		return;
@@ -51,7 +56,7 @@ export class PkEngine {
         this._gameTimer = new GameTimer(60);
         this._language = new PkLanguage();
         this._resources = new PkResources(RESOURCES_PATH);
-        this._rendr = new Renderer(width, height);
+        this._rendr = new PkRenderer(this);
         this._input = new PkInput(this);
         this._audio = new PK2wSound(this);
         
@@ -154,7 +159,9 @@ export class PkEngine {
         return this.avrg_fps;
     }
     
-    public get rendr(): Renderer {
+    public get device(): PkDevice { return this._device; };
+    
+    public get rendr(): PkRenderer {
         return this._rendr;
     }
     
@@ -170,7 +177,7 @@ export class PkEngine {
         return this._resources;
     }
     
-    public getRenderer(): Renderer {
+    public getRenderer(): PkRenderer {
         return this._rendr;
     }
     

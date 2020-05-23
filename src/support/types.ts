@@ -25,6 +25,7 @@ export function rand(): int {
     return Math.round(Math.random() * RAND_MAX);
 }
 
+
 export type CVect<T> = T[] & {
     sizeof: int
 };

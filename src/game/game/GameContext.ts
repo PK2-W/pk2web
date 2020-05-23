@@ -4,9 +4,9 @@ import { TextureCache } from '@game/game/TextureCache';
 import { PK2Map } from '@game/map/PK2Map';
 import { ParticleSystem } from '@game/particle/ParticleSystem';
 import { PK2Context } from '@game/PK2Context';
+import { PkDevice } from '@ng/PkDevice';
 import { PKSound } from '@ng/PKSound';
 import { PkImage } from '@ng/types/PkImage';
-import { int } from '../../support/types';
 
 /**
  * The game environment is shared with all game related elements.
@@ -53,12 +53,7 @@ export abstract class GameContext {
         return this._camera.y;
     }
     
-    public get screenWidth(): number {
-        return this.context.screenWidth;
-    }
-    public get screenHeight(): number {
-        return this.context.screenHeight;
-    }
+    public get device(): PkDevice { return this.context.device; };
     
     public get stuff(): PkImage {
         return this._stuff;

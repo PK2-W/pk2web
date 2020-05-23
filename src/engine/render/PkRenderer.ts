@@ -3,12 +3,9 @@
 //by Janne Kivilahti from Piste Gamez
 //#########################
 
-import { DisplayGroup } from '@ng/display/DisplayGroup';
-import { RenderContext } from '@ng/render/RenderContext';
+import { PkEngine } from '@ng/PkEngine';
 import * as PIXI from 'pixi.js';
 import { WEB_CANVAS_QS } from '../../support/constants';
-// #pragma once
-//
 import { uint, int, bool, FONTID } from '../../support/types';
 import { PkFont } from '../PkFont';
 import { PkScreen } from '../screen/PkScreen';
@@ -41,8 +38,8 @@ const MAX_IMAGES: int = 2000;
 //
 
 
-export class Renderer extends RenderContext {
-    private static instance: Renderer;
+export class PkRenderer {
+    private static instance: PkRenderer;
     
     private readonly _canvas: HTMLCanvasElement;
     private readonly _renderer: PIXI.Renderer;
@@ -70,9 +67,7 @@ export class Renderer extends RenderContext {
     
     private XOffset = 0;
     
-    public constructor(width: int, height: int) {
-        super();
-        
+    public constructor(ng: PkEngine) {
         //     if (game_palette == NULL) {
         //         game_palette = SDL_AllocPalette(256);
         //         for(int i = 0; i < 256; i++) game_palette->colors[i] = {(Uint8)i,(Uint8)i,(Uint8)i,(Uint8)i};
@@ -89,8 +84,8 @@ export class Renderer extends RenderContext {
         this._renderer = PIXI.autoDetectRenderer({
             view: this._canvas,
             antialias: true,
-            width: 640,
-            height: 480
+            width: ng.device.screenWidth,
+            height: ng.device.screenHeight
         });
         
         //  x  frameBuffer8 = SDL_CreateRGBSurface(0, width, height, 8, 0, 0, 0, 0);
@@ -103,22 +98,20 @@ export class Renderer extends RenderContext {
         
         this._stage = new PIXI.Container();
         
-        this.screenWidth = width;
-        this.screenHeight = height;
         this.adjustScreen();
     }
     
     /** @deprecated now screens are autonomous */
-    public PisteDraw2_IsFading() { Renderer.deprecated(); }
+    public PisteDraw2_IsFading() { PkRenderer.deprecated(); }
     
     /** @deprecated now screens are autonomous */
-    public PisteDraw2_FadeOut() { Renderer.deprecated(); }
+    public PisteDraw2_FadeOut() { PkRenderer.deprecated(); }
     
     /** @deprecated now screens are autonomous */
-    public fadeOut() { Renderer.deprecated(); }
+    public fadeOut() { PkRenderer.deprecated(); }
     
     /** @deprecated now screens are autonomous */
-    public fadeIn() { Renderer.deprecated(); }
+    public fadeIn() { PkRenderer.deprecated(); }
     
     private static deprecated(): void { throw new Error('DEPRECATED'); }
     
@@ -133,32 +126,32 @@ export class Renderer extends RenderContext {
     
     
     /** @deprecated */
-    public PisteDraw2_Image_New(/*int w, int h*/) { Renderer.deprecated(); }
+    public PisteDraw2_Image_New(/*int w, int h*/) { PkRenderer.deprecated(); }
     /** @deprecated */
-    public PisteDraw2_Image_Load(/*filename: string/*, bool getPalette*/) { Renderer.deprecated(); }
+    public PisteDraw2_Image_Load(/*filename: string/*, bool getPalette*/) { PkRenderer.deprecated(); }
     /** @deprecated */
-    public PisteDraw2_Image_Copy(/*int src_i, int dst_i*/) { Renderer.deprecated(); }
+    public PisteDraw2_Image_Copy(/*int src_i, int dst_i*/) { PkRenderer.deprecated(); }
     /** @deprecated */
-    public PisteDraw2_Image_Cut(/*int ImgIndex, int x, int y, int w, int h*/) { Renderer.deprecated(); }
+    public PisteDraw2_Image_Cut(/*int ImgIndex, int x, int y, int w, int h*/) { PkRenderer.deprecated(); }
     //public PisteDraw2_Image_Cut(/*int ImgIndex, PD_RECT area*/) { PK2wRenderer.deprecated(); }
     /** @deprecated */
-    public PisteDraw2_Image_Clip(/*int index, int x, int y*/) { Renderer.deprecated(); }
+    public PisteDraw2_Image_Clip(/*int index, int x, int y*/) { PkRenderer.deprecated(); }
     /** @deprecated */
-    public PisteDraw2_Image_ClipTransparent(/*int index, int x, int y, int alpha*/) { Renderer.deprecated(); }
+    public PisteDraw2_Image_ClipTransparent(/*int index, int x, int y, int alpha*/) { PkRenderer.deprecated(); }
     /** @deprecated */
-    public PisteDraw2_Image_CutClip(/*int index, int dstx, int dsty, int srcx, int srcy, int oikea, int ala*/) { Renderer.deprecated(); }
+    public PisteDraw2_Image_CutClip(/*int index, int dstx, int dsty, int srcx, int srcy, int oikea, int ala*/) { PkRenderer.deprecated(); }
     //public PisteDraw2_Image_CutClip(/*int index, PD_RECT srcrect, PD_RECT dstrect*/) { PK2wRenderer.deprecated(); }
     /** @deprecated */
-    public PisteDraw2_Image_CutClipTransparent(/*int index, PD_RECT srcrect, PD_RECT dstrect, int alpha*/) { Renderer.deprecated(); }
+    public PisteDraw2_Image_CutClipTransparent(/*int index, PD_RECT srcrect, PD_RECT dstrect, int alpha*/) { PkRenderer.deprecated(); }
     //public PisteDraw2_Image_CutClipTransparent(/*int index, PD_RECT srcrect, PD_RECT dstrect, int alpha, int colorsum*/) { PK2wRenderer.deprecated(); }
     /** @deprecated */
-    public PisteDraw2_Image_GetSize(/*int index, int& w, int& h*/) { Renderer.deprecated(); }
+    public PisteDraw2_Image_GetSize(/*int index, int& w, int& h*/) { PkRenderer.deprecated(); }
     /** @deprecated */
-    public PisteDraw2_Image_FlipHori(/*int index*/) { Renderer.deprecated(); }
+    public PisteDraw2_Image_FlipHori(/*int index*/) { PkRenderer.deprecated(); }
     /** @deprecated */
-    public PisteDraw2_Image_Snapshot(/*int index*/) { Renderer.deprecated(); }
+    public PisteDraw2_Image_Snapshot(/*int index*/) { PkRenderer.deprecated(); }
     /** @deprecated */
-    public PisteDraw2_Image_Delete(/*int& index*/) { Renderer.deprecated(); }
+    public PisteDraw2_Image_Delete(/*int& index*/) { PkRenderer.deprecated(); }
     
     // int PisteDraw2_ImageFill(int index, BYTE color) { PK2wRenderer.deprecated(); }
     // int PisteDraw2_ImageFill(int index, int posx, int posy, int oikea, int ala, BYTE color) { PK2wRenderer.deprecated(); }
