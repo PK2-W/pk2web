@@ -1516,12 +1516,10 @@ export class Sprite extends Drawable {
     /**
      * When is < 1 the character dies.
      */
-    public get energy(): int {
-        return this._energy;
-    }
-    public set energy(v: int) {
-        this._energy = v;
-    }
+    public get energy(): int { return this._energy; }
+    public set energy(v: int) { this._energy = v; }
+    public isAlive(): boolean { return this._energy > 0; }
+    public kill(): void { this._energy = 0; }
     
     /** @deprecated */ public vihollinen(): boolean { return this.isEnemy(); }
     public isEnemy(): boolean {

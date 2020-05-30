@@ -1,0 +1,15 @@
+export enum EInputAction {
+    INPUT_LEFT,
+    INPUT_RIGHT,
+    INPUT_JUMP,
+    INPUT_DOWN,
+    INPUT_WALK_SLOW,
+    INPUT_ATTACK1,
+    INPUT_ATTACK2,
+    
+    INPUT_SUICIDE,
+    INPUT_PAUSE,
+    
+    INPUT_GIFT_NEXT,
+    INPUT_GIFT_USE
+}

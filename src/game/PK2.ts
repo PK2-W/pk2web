@@ -3578,7 +3578,7 @@ export class PK2 extends PK2Context implements ITickable {
         // Open the requested map
         const tmpEpisodeName = 'rooster island 1';
         
-        const map = await PK2Map.loadFromFile(this, /*seuraava_kartta*/ pathJoin('episodes', tmpEpisodeName), 'level002.map');
+        const map = await PK2Map.loadFromFile(this, /*seuraava_kartta*/ pathJoin('episodes', tmpEpisodeName), 'level001.map');
         // TODO try catch
         // 		printf("PK2    - Error loading map '%s' at '%s'\n", this.seuraava_kartta, polku);
         // 		return 1;

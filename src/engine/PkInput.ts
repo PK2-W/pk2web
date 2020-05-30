@@ -1,9 +1,7 @@
+import { EInputAction } from '@game/enum/EInputAction';
 import { PkEngine } from '@ng/PkEngine';
 import { Log } from '@ng/support/log/LoggerImpl';
-import hotkeys from 'hotkeys-js';
 import { Key } from 'ts-key-enum';
-import { InputAction } from '../support/constants';
-import { str } from '../support/types';
 
 export { Key } from 'ts-key-enum';
 
@@ -12,11 +10,13 @@ export class PkInput {
     
     private pressedKeys: Set<string>;
     private actionToInput;
+    public keyCooldown: number;
     
     public constructor(engine: PkEngine) {
         this._engine = engine;
         
         this.pressedKeys = new Set;
+        this.keyCooldown = 0;
         
         document.addEventListener('keydown', this.onKeyDown.bind(this));
         document.addEventListener('keyup', this.onKeyUp.bind(this));
@@ -39,26 +39,32 @@ export class PkInput {
     }
     
     public isActing(action: number | string): boolean {
-        if (action === InputAction.INPUT_LEFT)
+        if (action === EInputAction.INPUT_LEFT)
             return this.pressedKeys.has(Key.ArrowLeft);
-        
-        if (action === InputAction.INPUT_RIGHT)
+        if (action === EInputAction.INPUT_RIGHT)
             return this.pressedKeys.has(Key.ArrowRight);
-        
-        if (action === InputAction.INPUT_JUMP)
+        if (action === EInputAction.INPUT_JUMP)
             return this.pressedKeys.has(Key.ArrowUp);
-        
-        if (action === InputAction.INPUT_DOWN)
+        if (action === EInputAction.INPUT_DOWN)
             return this.pressedKeys.has(Key.ArrowDown);
         
-        if (action === InputAction.INPUT_WALK_SLOW)
+        if (action === EInputAction.INPUT_WALK_SLOW)
             return this.pressedKeys.has(Key.AltGraph);
         
-        if (action === InputAction.INPUT_ATTACK1)
+        if (action === EInputAction.INPUT_ATTACK1)
             return this.pressedKeys.has(Key.Control);
-        
-        if (action === InputAction.INPUT_ATTACK2)
+        if (action === EInputAction.INPUT_ATTACK2)
             return this.pressedKeys.has(Key.Alt);
+        
+        if (action === EInputAction.INPUT_SUICIDE)
+            return this.pressedKeys.has(Key.Delete);
+        if (action === EInputAction.INPUT_PAUSE)
+            return this.pressedKeys.has('P');
+        
+        if (action === EInputAction.INPUT_GIFT_NEXT)
+            return this.pressedKeys.has(Key.Tab);
+        if (action === EInputAction.INPUT_GIFT_USE)
+            return this.pressedKeys.has(' ');
         
         return false;
     }
@@ -67,13 +73,21 @@ export class PkInput {
     ///  Events  ///
     
     private onKeyDown(ev: KeyboardEvent): void {
+        if (ev.key == Key.Tab) {
+            ev.preventDefault();
+        }
+        
         this.pressedKeys.add(ev.key);
-        Log.v('[~Input] Key down: ' + ev.key);
+        Log.v('[~Input] Key down: "', ev.key, '", cooldown is ', this.keyCooldown);
     }
     
     private onKeyUp(ev: KeyboardEvent): void {
+        if (ev.key == Key.Tab) {
+            ev.preventDefault();
+        }
+        
         this.pressedKeys.delete(ev.key);
-        Log.v('[~Input] Key up:   ' + ev.key);
+        Log.v('[~Input] Key up: "', ev.key, '", cooldown is ', this.keyCooldown);
     }
     
     private onVisibilityChange(): void {

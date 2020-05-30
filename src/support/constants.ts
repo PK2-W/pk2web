@@ -30,12 +30,5 @@ export const VAHINKO_AIKA = 50; //Damage time?
 // Game loop of the original game in ticks per second
 export const PK2GAMELOOP = 60;
 
-export enum InputAction {
-    INPUT_LEFT,
-    INPUT_RIGHT,
-    INPUT_JUMP,
-    INPUT_DOWN,
-    INPUT_WALK_SLOW,
-    INPUT_ATTACK1,
-    INPUT_ATTACK2
-}
+/** Max. number of items in the gifts inventory. */
+export const MAX_GIFTS = 4;

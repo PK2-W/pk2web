@@ -35,14 +35,12 @@ import { PkImageTextureImpl } from '@ng/types/pixi/PkImageTextureImpl';
 import { PkImage } from '@ng/types/PkImage';
 import { PkSound } from '@ng/types/PkSound';
 import * as PIXI from 'pixi.js';
-import { MAX_SPRITES, RESOURCES_PATH, InputAction, SPRITE_MAX_AI, VAHINKO_AIKA } from '../../support/constants';
+import { MAX_SPRITES, RESOURCES_PATH, SPRITE_MAX_AI, VAHINKO_AIKA } from '../../support/constants';
+import { EInputAction } from '../enum/EInputAction';
 import { int, rand, uint, DWORD } from '../../support/types';
 
 export class PK2Game extends GameContext {
     private _episodeName: string;
-    
-    /** Level completed */
-    private _jakso_lapaisty: boolean = false;
     
     private _bgImage: PIXI.Container;
     // PK2BLOCKMASKI palikkamaskit[BLOCK_MAX_MASKEJA];
@@ -76,10 +74,13 @@ export class PK2Game extends GameContext {
     /// >  Game current status
     
     /** @deprecated Use gameOver instead. */
+    private _jakso_lapaisty;
+    private _levelCompleted: boolean = false;
+    
+    /** @deprecated Use gameOver instead. */
     private _peli_ohi;
     private _gameOver: boolean = false;
     private _paused: boolean;
-    
     
     private _kytkin_tarina: int = 0; // "shaking switch", here for now
     private _nakymattomyys: int = 0;
@@ -125,7 +126,7 @@ export class PK2Game extends GameContext {
         // PND     uusinta = false;
         
         if (!false/*episode_started*/) {
-            this._jakso_lapaisty = false;
+            this._levelCompleted = false;
             
             /////  Source: PK_Map_Open --------
             
@@ -226,7 +227,7 @@ export class PK2Game extends GameContext {
         
         if (!this._paused) {
             // ---IF level is not passed AND (level is with timeout AND timeout is not dued)
-            // if (!this._jakso_lapaisty && (!aikaraja || timeout > 0))
+            // if (!this._levelCompleted && (!aikaraja || timeout > 0))
             this.updateSprites(coef);
             // PK_Fadetext_Update();
         }
@@ -259,7 +260,7 @@ export class PK2Game extends GameContext {
             
             // REPL: THIS IS THE LOGIC IN CHARGE OF COUNT SECONDS
             //       THIS HAS TO BE REPLACED
-            //  if (this._aikaraja && !this._jakso_lapaisty) {
+            //  if (this._aikaraja && !this._levelCompleted) {
             //   			if (sekunti > 0)
             //   				sekunti --;
             //   			else{
@@ -275,15 +276,18 @@ export class PK2Game extends GameContext {
             // 			nakymattomyys--;
         }
         
-        if (this._sprites.player.energy < 1 && !this._gameOver) {
+        // Terminate the game if player is dead
+        if (!this._sprites.player.isAlive() && !this._gameOver) {
             this._gameOver = true;
-            // 		key_delay = 50;
+            this.context.input.keyCooldown = 50;
         }
         
-        // 	if (key_delay > 0)
-        // 		key_delay--;
+        // Decrease input cooldown
+        if (this.context.input.keyCooldown > 0) {
+            this.context.input.keyCooldown--;
+        }
         
-        if (this._jakso_lapaisty || this._gameOver) {
+        if (this._levelCompleted || this._gameOver) {
             // 		if (lopetusajastin > 1)
             // 			lopetusajastin--;
             //
@@ -303,37 +307,39 @@ export class PK2Game extends GameContext {
         // 	if (lopetusajastin == 1 && !PisteDraw2_IsFading()){
         // 		if(test_level) PK_Fade_Quit();
         // 		else {
-        // 			if (this._jakso_lapaisty) game_next_screen = SCREEN_SCORING;
+        // 			if (this._levelCompleted) game_next_screen = SCREEN_SCORING;
         // 			else game_next_screen = SCREEN_MAP;
         // 		}
         // 	}
         
-        // REPL
-        // 	if (key_delay == 0){
-        // 		if (PisteInput_Keydown(settings.control_open_gift) && PkEngine::Sprites->player->energy > 0){
-        // 			PkEngine::Gifts->use();
-        // 			key_delay = 10;
-        // 		}
-        // 		if (PisteInput_Keydown(PI_P) && !this._jakso_lapaisty){
-        // 			paused = !paused;
-        // 			key_delay = 20;
-        // 		}
-        // 		if (PisteInput_Keydown(PI_DELETE))
-        // 			PkEngine::Sprites->player->energy = 0;
-        // 		if (PisteInput_Keydown(PI_TAB)){
-        // 			PkEngine::Gifts->change_order();
-        // 			key_delay = 10;
-        // 		}
-        // 		if (!dev_mode)
-        // 			if (PisteInput_Keydown(PI_I)) {
-        // 				show_fps = !show_fps;
-        // 				key_delay = 20;
-        // 			}
-        // 		if (PisteInput_Keydown(PI_F)) {
-        // 			show_fps = !show_fps;
-        // 			key_delay = 20;
-        // 		}
-        // 	}
+        if (this.context.input.keyCooldown == 0) {
+            if (this.context.input.isActing(EInputAction.INPUT_GIFT_USE) && this._sprites.player.isAlive()) {
+                this.useGift();
+                // TODO: Review! Key repeats too quickly
+                this.context.input.keyCooldown = 10;
+            }
+            if (this.context.input.isActing(EInputAction.INPUT_PAUSE) && !this._levelCompleted) {
+                this._paused = !this._paused;
+                this.context.input.keyCooldown = 20;
+            }
+            if (this.context.input.isActing(EInputAction.INPUT_SUICIDE)) {
+                this._sprites.player.kill();
+            }
+            if (this.context.input.isActing(EInputAction.INPUT_GIFT_NEXT)) {
+                this._gifts.changeOrder();
+                // TODO: Review! Key repeats too quickly
+                this.context.input.keyCooldown = 10;
+            }
+            // 		if (!dev_mode)
+            // 			if (PisteInput_Keydown(PI_I)) {
+            // 				show_fps = !show_fps;
+            // 				key_delay = 20;
+            // 			}
+            // 		if (PisteInput_Keydown(PI_F)) {
+            // 			show_fps = !show_fps;
+            // 			key_delay = 20;
+            // 		}
+        }
         
         // REPL
         // 	if (dev_mode){ //Debug
@@ -387,7 +393,7 @@ export class PK2Game extends GameContext {
         // 					PK2_error = true;
         // 					PK2_error_msg = "Can't find hiscore.xm";
         // 				}
-        // 				this._jakso_lapaisty = true;
+        // 				this._levelCompleted = true;
         // 				jaksot[jakso_indeksi_nyt].lapaisty = true;
         // 				if (jaksot[jakso_indeksi_nyt].jarjestys == jakso)
         // 					jakso++;
@@ -872,24 +878,24 @@ export class PK2Game extends GameContext {
         // 	PisteInput_Lue_Eventti();
         if (sprite.pelaaja !== 0 && sprite.energy > 0) {
             // SLOW WALK
-            if (this.context.input.isActing(InputAction.INPUT_WALK_SLOW)) {
+            if (this.context.input.isActing(EInputAction.INPUT_WALK_SLOW)) {
                 lisavauhti = false;
             }
             
             /* ATTACK 1 */
-            if (this.context.input.isActing(InputAction.INPUT_ATTACK1) && sprite.lataus == 0 && sprite.ammo1Proto != null) {
+            if (this.context.input.isActing(EInputAction.INPUT_ATTACK1) && sprite.lataus == 0 && sprite.ammo1Proto != null) {
                 sprite.attack1Remaining = sprite.proto.attack1Duration;
                 Log.d('[Game] Attack 1 for ', sprite.attack1Remaining, ' ticks.');
             } else
                 /* ATTACK 2 */
-            if (this.context.input.isActing(InputAction.INPUT_ATTACK2) && sprite.lataus == 0 && sprite.ammo2Proto != null) {
+            if (this.context.input.isActing(EInputAction.INPUT_ATTACK2) && sprite.lataus == 0 && sprite.ammo2Proto != null) {
                 sprite.attack2Remaining = sprite.proto.attack2Duration;
                 Log.d('[Game] Attack 2 for ', sprite.attack2Remaining, ' ticks.');
             }
             
             /* CROUCH */
             sprite.kyykky = false;
-            if (this.context.input.isActing(InputAction.INPUT_DOWN) && !sprite.bottomIsBarrier) {
+            if (this.context.input.isActing(EInputAction.INPUT_DOWN) && !sprite.bottomIsBarrier) {
                 sprite.kyykky = true;
                 future.top += future.height / 1.5;
             }
@@ -897,7 +903,7 @@ export class PK2Game extends GameContext {
             let a_lisays: number = 0;
             
             /* NAVIGATING TO RIGHT */
-            if (this.context.input.isActing(InputAction.INPUT_RIGHT)) {
+            if (this.context.input.isActing(EInputAction.INPUT_RIGHT)) {
                 a_lisays = 0.04;//0.08;
                 
                 if (lisavauhti) {
@@ -915,7 +921,7 @@ export class PK2Game extends GameContext {
             }
             
             /* NAVIGATING TO LEFT */
-            if (this.context.input.isActing(InputAction.INPUT_LEFT)) {
+            if (this.context.input.isActing(EInputAction.INPUT_LEFT)) {
                 a_lisays = -0.04;
                 
                 if (lisavauhti) {
@@ -939,7 +945,7 @@ export class PK2Game extends GameContext {
             
             /* JUMPING */
             if (sprite.proto.weight > 0) {
-                if (this.context.input.isActing(InputAction.INPUT_JUMP)) {
+                if (this.context.input.isActing(EInputAction.INPUT_JUMP)) {
                     if (!sprite.isCrouched()) {
                         //if (sprite.jumpTimer == 0)
                         // 						PK_Play_Sound(hyppy_aani, 100, (int)future.x, (int)sprite_y,
@@ -954,17 +960,17 @@ export class PK2Game extends GameContext {
                 }
                 
                 /* tippuminen hiljaa alasp�in */
-                if (this.context.input.isActing(InputAction.INPUT_JUMP) && sprite.jumpTimer >= 150/*90+20*/ && sprite.proto.canFly()) {
+                if (this.context.input.isActing(EInputAction.INPUT_JUMP) && sprite.jumpTimer >= 150/*90+20*/ && sprite.proto.canFly()) {
                     hidastus = true;
                 }
             }
             /* MOVING UP AND DOWN */
             else { // if the player sprite-weight is 0 - like birds
                 
-                if (this.context.input.isActing(InputAction.INPUT_JUMP))
+                if (this.context.input.isActing(EInputAction.INPUT_JUMP))
                     future.b -= 0.15;
                 
-                if (this.context.input.isActing(InputAction.INPUT_DOWN))
+                if (this.context.input.isActing(EInputAction.INPUT_DOWN))
                     future.b += 0.15;
                 
                 sprite.jumpTimer = 0;
@@ -1010,7 +1016,7 @@ export class PK2Game extends GameContext {
             
             /* It is not acceptable that a player is anything other than the game character */ //TODO Este no es el lugar para esto...
             if (sprite.proto.type !== ESpriteType.TYYPPI_PELIHAHMO) {
-                sprite.energy = 0;
+                sprite.kill();
             }
         }
         
@@ -1952,7 +1958,7 @@ export class PK2Game extends GameContext {
         if (sprite.y > PK2KARTTA_KARTTA_KORKEUS * 32 + future.height) {
             
             sprite.y = PK2KARTTA_KARTTA_KORKEUS * 32 + future.height;
-            sprite.energy = 0;
+            sprite.kill();
             sprite.discard();
             
             // if (sprite.kytkinpaino >= 1)
@@ -2416,8 +2422,9 @@ export class PK2Game extends GameContext {
                                 0.1, 32);
                     }
                     
-                    // 				if (sprite.tyyppi->bonus  != -1)
-                    // 					PkEngine::Gifts->add(sprite.tyyppi->bonus);
+                    if (sprite.proto.bonusProto != null) {
+                        this._gifts.add(sprite.proto.bonusProto);
+                    }
                     
                     if (sprite.proto.morphProto != null) {
                         if (sprite.proto.morphProto.getBehavior(0) != EAi.AI_BONUS) {
@@ -2474,7 +2481,7 @@ export class PK2Game extends GameContext {
         
         // The energy doesn't matter that the player is a bonus item
         if (sprite.pelaaja != 0) {
-            sprite.energy = 0;
+            sprite.kill();
         }
     }
     
@@ -2866,6 +2873,20 @@ export class PK2Game extends GameContext {
         dst.lataus = 0;
         
         return true;
+    }
+    
+    private useGift(): void {
+        if (this._gifts.count == 0) {
+            Log.d('[Game] There is no gifts to use.');
+            return;
+        }
+        
+        const giftProto = this._gifts.take();
+        this._sprites.addSprite(giftProto, false,
+            this._sprites.player.x - giftProto.width, this._sprites.player.y,
+            null, false);
+        
+        Log.d('[Game] Gift used: ', giftProto.name, '.');
     }
     
     ///  Accessors  ///
