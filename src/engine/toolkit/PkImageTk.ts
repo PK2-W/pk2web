@@ -19,16 +19,10 @@ export class PkImageTk {
         return cvx.getImageData(0, 0, w, h);
     }
     
-    public static imageRemoveTransparentPixel(image: HTMLImageElement, color?: PkColor): HTMLImageElement {
+    public static imageRemoveTransparentPixel(image: HTMLImageElement, color: PkColor): HTMLImageElement {
         // Move image to auxiliar canvas
         const cvx = this.getAuxCanvas(image.width, image.height);
         cvx.drawImage(image, 0, 0);
-        
-        // Choose default transparent color
-        if (color == null) {
-            color = PkColor.rgb(155, 232, 224);
-            color = PkColor.rgb(148, 209, 222);
-        }
         
         // Iterate and remove the transparent pixel
         const dt = cvx.getImageData(0, 0, image.width, image.height);
@@ -41,7 +35,7 @@ export class PkImageTk {
         
         // Move modified image to Image element
         const outImage = new Image();
-        outImage.src = cvx.canvas.toDataURL();
+        outImage.src = cvx.canvas.toDataURL('image/bmp');
         
         return outImage;
     }

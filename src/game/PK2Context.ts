@@ -1,23 +1,35 @@
 import { Entropy } from '@game/Entropy';
-import { PK2wSound } from '@ng/PK2wSound';
-import { PkDevice } from '@ng/PkDevice';
-import { PkEngine } from '@ng/PkEngine';
-import { PkFont } from '@ng/PkFont';
-import { PkInput } from '@ng/PkInput';
+import { FONT } from '@game/PK2';
+import { PK2wSound } from '@ng/core/PK2wSound';
+import { PkDevice } from '@ng/core/PkDevice';
+import { PkEngine } from '@ng/core/PkEngine';
+import { PkFontAsset } from '@ng/types/font/PkFontAsset';
+import { PkInput } from '@ng/core/PkInput';
 import { PkLanguage } from '@ng/PkLanguage';
 import { PkResources } from '@ng/PkResources';
-import { GameTimer } from '../support/GameTimer';
+import { ifnul } from '@ng/support/utils';
+import { PkFont } from '@ng/types/font/PkFont';
+import { PkFontHolder } from '@ng/types/font/PkFontHolder';
+import { PkParameters } from '@ng/types/PkParameters';
+import { GameTimer } from '@ng/core/GameTimer';
+import { PkUIContext } from '@ng/ui/PkUIContext';
 import { i18nSchema } from '../support/i18nSchema';
-import { int, FONTID } from '../support/types';
+import { FONTID } from './support/types';
 
-export abstract class PK2Context {
-   
+export abstract class PK2Context implements PkUIContext {
+    // Game engine
+    protected _engine: PkEngine;
+    
+    // Translated texts
+    protected _tx = i18nSchema;
+    protected _language: PkParameters;
+    
     // Fonts
-    protected _fontti1: FONTID;
-    protected _fontti2: FONTID;
-    protected _fontti3: FONTID;
-    protected _fontti4: FONTID;
-    protected _fontti5: FONTID;
+    protected readonly _font1: PkFontHolder;
+    protected readonly _font2: PkFontHolder;
+    protected readonly _font3: PkFontHolder;
+    protected readonly _font4: PkFontHolder;
+    protected readonly _font5: PkFontHolder;
     
     
     ///  Entropy & trigonometry  ///
@@ -28,15 +40,14 @@ export abstract class PK2Context {
     }
     
     
-    ///  Translated texts  ///
-    
-    protected _tx = i18nSchema;
-    
-    // (Piste) _engine
-    protected _engine: PkEngine;
-    
     protected constructor() {
         this._entropy = new Entropy();
+        
+        this._font1 = new PkFontHolder('1');
+        this._font2 = new PkFontHolder('2');
+        this._font3 = new PkFontHolder('3');
+        this._font4 = new PkFontHolder('4');
+        this._font5 = new PkFontHolder('5');
     }
     
     protected get ng(): PkEngine {
@@ -44,29 +55,16 @@ export abstract class PK2Context {
     }
     public get device(): PkDevice { return this.ng.device; };
     
-    public get fontti1(): FONTID {
-        return this._fontti1;
-    }
-    public get fontti2(): FONTID {
-        return this._fontti2;
-    }
-    public get fontti3(): FONTID {
-        return this._fontti3;
-    }
-    public get fontti4(): FONTID {
-        return this._fontti4;
-    }
-    public get fontti5(): FONTID {
-        return this._fontti5;
-    }
+    public get font1(): PkFont { return this._font1; }
+    public get font2(): PkFont { return this._font2; }
+    public get font3(): PkFont { return this._font3; }
+    public get font4(): PkFont { return this._font4; }
+    public get font5(): PkFont { return this._font5; }
     
-    public get resources(): PkResources {
-        return this._engine.resources;
+    public get tx(): PkParameters {
+        return this._language;
     }
-    
-    public get tx(): PkLanguage {
-        return this._engine.tx;
-    }
+    /** @deprecated */
     public get time(): GameTimer {
         return this._engine.gt;
     }
@@ -77,7 +75,7 @@ export abstract class PK2Context {
         return this._engine.audio;
     }
     
-    public getFont(fontId: FONTID): PkFont {
-        return this._engine.rendr.getFont(fontId);
+    public getFont(_fontId: FONTID): PkFontAsset {
+        return undefined;
     }
 }

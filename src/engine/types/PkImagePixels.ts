@@ -1,11 +1,10 @@
 import { PkImageTk } from '@ng/toolkit/PkImageTk';
 import { PkColor } from '@ng/types/PkColor';
-import { int } from '../../support/types';
 
 export class PkImagePixels {
     private _dt: ImageData;
-    private readonly _width: int;
-    private readonly _height: int;
+    private readonly _width: number;
+    private readonly _height: number;
     
     public static fromImage(image: HTMLImageElement): PkImagePixels {
         const obj = new PkImagePixels(image.width, image.height);
@@ -19,7 +18,7 @@ export class PkImagePixels {
         return obj;
     }
     
-    public constructor(width: int, height: int) {
+    public constructor(width: number, height: number) {
         this._width = width;
         this._height = height;
     }
@@ -40,18 +39,18 @@ export class PkImagePixels {
         this._dt.data[i] = color.r;
         this._dt.data[i + 1] = color.g;
         this._dt.data[i + 2] = color.b;
-        this._dt.data[i + 3] = color.a;
+        this._dt.data[i + 3] = color.a255;
         return this;
     }
     
     
     ///  Accessors  ///
     
-    public get width(): int {
+    public get width(): number {
         return this._width;
     }
     
-    public get height(): int {
+    public get height(): number {
         return this._height;
     }
     

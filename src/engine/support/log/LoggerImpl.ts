@@ -9,7 +9,7 @@ class LoggerImpl implements Logger {
     // Instancia
     public static readonly instance: Logger = new LoggerImpl();
     
-    public static DEBUG = true;
+    public static DEBUG = false;
     public static VERBOSE = false;
     public static VVERBOSE = false;
     
@@ -147,7 +147,7 @@ class LoggerImpl implements Logger {
     
     /** @inheritDoc */
     public ev(...args): void {
-        if (!LoggerImpl.VERBOSE)
+        if (!LoggerImpl.VERBOSE && !LoggerImpl.VVERBOSE)
             return;
         
         LoggerImpl.log(args, 'ev');
@@ -155,7 +155,7 @@ class LoggerImpl implements Logger {
     
     /** @inheritDoc */
     public v(...args): void {
-        if (!LoggerImpl.VERBOSE || !!LoggerImpl.VVERBOSE)
+        if (!LoggerImpl.VERBOSE && !LoggerImpl.VVERBOSE)
             return;
         
         LoggerImpl.log(args, 'v');
@@ -168,6 +168,9 @@ class LoggerImpl implements Logger {
     
     /** @inheritDoc */
     public d(...args): void {
+        if (!LoggerImpl.DEBUG && !LoggerImpl.VERBOSE && !LoggerImpl.VVERBOSE)
+            return;
+        
         LoggerImpl.log(args, 'd');
     }
     

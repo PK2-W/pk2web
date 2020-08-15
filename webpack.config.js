@@ -1,6 +1,7 @@
 const path = require('path');
 const WebpackNotifierPlugin = require('webpack-notifier');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
+const {exec, spawn} = require('child_process');
 
 const to = p => path.resolve(__dirname, 'src', p);
 
@@ -31,7 +32,7 @@ module.exports = {
             //     '@c:app': to('./app'),
             //     '@c:be': to('./backend'),
             //     '@c:fe': to('./frontend'),
-            //     '@c:sp': to('./support'),
+            '@sp': to('./support'),
             //
             '@vendor': to('./vendor')
         },
@@ -39,17 +40,37 @@ module.exports = {
     },
     module: {
         rules: [
-            { test: /\.tsx?$/, loader: 'ts-loader', options: { transpileOnly: true } }
+            {
+                test: /\.tsx?$/, use: {
+                    loader: 'ts-loader',
+                    options: {
+                        transpileOnly: true,
+                        //silent: true,
+                        experimentalFileCaching: true
+                    }
+                }
+            }
             //{test: /\.(vert|frag)$/, loader: 'glslx-loader'}
         ]
     },
     plugins: [
-        new WebpackNotifierPlugin({
-            title: 'Pekka Kana 2 Web',
-            alwaysNotify: true,
-            sound: 'Pop'
-        }),
-        new ForkTsCheckerWebpackPlugin({ tsconfig: to('tsconfig.json') })
+        {
+            apply: (compiler) => {
+                compiler.hooks.done.tap('CustomPlugin', (stats) => {
+                    if (stats.compilation.errors.length > 0) {
+                        exec('C:/Directos/ffmpeg/bin/ffplay.exe -loglevel quiet -hide_banner -nodisp -autoexit "C:/Users/Juande Martos/Music/failed.mp3"');
+                    } else {
+                        exec('C:/Directos/ffmpeg/bin/ffplay.exe -loglevel quiet -hide_banner -nodisp -autoexit "C:/Users/Juande Martos/Music/success.mp3"');
+                    }
+                });
+            }
+        }
+        // new WebpackNotifierPlugin({
+        //     title: 'Pekka Kana 2 Web',
+        //     alwaysNotify: true,
+        //     sound: 'Pop'
+        // })
+        //new ForkTsCheckerWebpackPlugin({ tsconfig: to('tsconfig.json') })
     ],
     externals: {
         'pixi.js': 'PIXI'

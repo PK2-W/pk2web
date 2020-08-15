@@ -3,39 +3,40 @@
 //by Janne Kivilahti from Piste Gamez
 //#########################
 
-import { int, TEXTID } from '../support/types';
-import { PkParamLoader } from './support/PkParamLoader';
+import { TTextId } from '@game/support/types';
+import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
+import { PkParameters } from '@ng/types/PkParameters';
 
 
-const LUE_SKIP: int = 0;
-const LUE_OTSIKKO: int = 1;
-const LUE_TEKSTI: int = 2;
+const LUE_SKIP: number = 0;
+const LUE_OTSIKKO: number = 1;
+const LUE_TEKSTI: number = 2;
 
 const MARKER_1 = '*';
 const MARKER_2 = ':';
 
-const MAX_TEXTS: int = 200;
-const MAX_TEXT_LENGTH: int = 80;
-const MAX_HEAD_LENGTH: int = 50;
+const MAX_TEXTS: number = 200;
+const MAX_TEXT_LENGTH: number = 80;
+const MAX_HEAD_LENGTH: number = 50;
 
 
 export class PkLanguage {
-    private _loader: PkParamLoader;
+    private _loader: PkParameters;
     
     
     public constructor() {
-        this._loader = new PkParamLoader();
+        //this._loader = new PkParameters();
     }
     
     
     public async load(uri: string): Promise<void> {
-        await this._loader.load(uri);
+        this._loader = await PkAssetTk.getParamFile(uri);
     }
     
     public destroy() {
     }
     
-    public get(textId: TEXTID): string {
+    public get(textId: TTextId): string {
         return this._loader.get(textId);
     }
     
@@ -46,7 +47,7 @@ export class PkLanguage {
     /** @deprecated */
     public Hae_Teksti() {}
     
-    // void PisteLanguage::Korvaa_Teksti(int index, char *teksti){
+    // void PisteLanguage::Korvaa_Teksti(number index, char *teksti){
     // 	if (index >= 0 && index < MAX_TEXTS)
     // 		strcpy(tekstit[index],teksti);
     // }

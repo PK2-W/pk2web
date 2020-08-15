@@ -4,19 +4,24 @@ import { SpriteAnimation } from '@game/sprite/SpriteAnimation';
 import { SpriteFuture } from '@game/sprite/SpriteFuture';
 import { EAi } from '@game/sprite/SpriteManager';
 import { SpritePrototype } from '@game/sprite/SpritePrototype';
+import { int, CBYTE, rand } from '@game/support/types';
 import { BlockCollider } from '@game/tile/BlockCollider';
 import { BLOCK_SIZE } from '@game/tile/BlockConstants';
-import { Drawable } from '@ng/drawable/Drawable';
-import { PkImageTextureImpl } from '@ng/types/pixi/PkImageTextureImpl';
-import * as PIXI from 'pixi.js';
-import { VAHINKO_AIKA } from '../../support/constants';
-import { int, CBYTE, rand } from '../../support/types';
+import { DwHelper } from '@ng/drawable/DwHelper';
+import { DwObjectBase } from '@ng/drawable/object/DwObjectBase';
+import { DwContainer } from '@ng/drawable/skeleton/DwContainer';
+import { DwFactory } from '@ng/drawable/skeleton/DwFactory';
+import { DwSprite } from '@ng/drawable/skeleton/DwSprite';
+import { VAHINKO_AIKA } from '@sp/constants';
 
 /**
  * @fires Sprite#EV_SPRITE_DISCARDED.
  */
-export class Sprite extends Drawable {
+export class Sprite extends DwObjectBase<DwSprite> {
+    private static IDD = 0;
     public static readonly EV_SPRITE_DISCARDED = 'discarded.sprite.ev';
+    
+    public readonly iid: number;
     
     /**
      * If a sprite is hidden, it can't be seen by other characters.<br>
@@ -108,7 +113,7 @@ export class Sprite extends Drawable {
     private _frame_aika: CBYTE;
     private _muutos_ajastin: int;		// sprite muuttuu muutosspriteksi kun t�m� nollautuu
     
-    private _sprite: PIXI.Sprite;
+    private _sprite: DwSprite;
     
     
     public constructor() ;
@@ -122,12 +127,18 @@ export class Sprite extends Drawable {
      */
     public constructor(proto: SpritePrototype, isPlayer: boolean, discarded: boolean, x: number, y: number);
     public constructor(proto?: SpritePrototype, isPlayer?: boolean, discarded?: boolean, x?: number, y?: number) {
-        super(new PIXI.Container());
+        super(DwFactory.new.sprite());
+        
+        this.iid = Sprite.IDD++;
         
         // Sprite borns discarded
         this._discarded = true;
         
         this.reuseWith(proto, isPlayer, discarded, x, y);
+        
+        // this.dw.on(DwHelper.EV_POINTERTAP, () => {
+        //     console.log(this);
+        // });
     }
     
     public reuse() {
@@ -218,11 +229,12 @@ export class Sprite extends Drawable {
             // } else {
             //     const tile = new PIXI.Sprite((frame as PkImageTextureImpl).getPixiTexture());
             // }
-            this._sprite = new PIXI.Sprite();
-            this._sprite.x = -this.proto.width / 2;
-            this._sprite.y = -this.proto.height / 2;
-            this._drawable.removeChildren();
-            this._drawable.addChild(this._sprite);
+            //this._drawable = DwFactory.new.sprite();
+            //this._drawable.x = -this.proto.width / 2;
+            //this._drawable.y = -this.proto.height / 2;
+            //this._drawable.clear();
+            //this._drawable.add(this._drawable);
+            this._drawable.setAnchor({ x: 0.5, y: 0.5 });
         }
     }
     
@@ -242,9 +254,9 @@ export class Sprite extends Drawable {
         const texture = this.proto.getFrame(frame);
         // if (texture == null) {
         //     console.debug(`Current frame texture for sprite ${ this.__iid__ } is empty.`);
-        const tx = (texture as PkImageTextureImpl).getPixiTexture();
-        if (this._sprite.texture !== tx)
-            this._sprite.texture = tx;
+        if (this._drawable.texture !== texture) {
+            this._drawable.texture = texture;
+        }
         
         if (this.proto.shakes) {
             x += rand() % 2 - rand() % 2;
@@ -252,16 +264,16 @@ export class Sprite extends Drawable {
         }
         
         if (this.flipX) {
-            this._sprite.scale.x = -1;
-            this._sprite.anchor.x = 1;
+            this._drawable.scale.x = -1;
+            //this._drawable.anchor.x = 1;
             if (!this._flip_y) {
                 // PisteDraw2_Image_Clip(tyyppi->framet_peilikuva[frame], x - l - 1, y - h);
             } else {
                 // PisteDraw2_Image_Clip(tyyppi->framet_peilikuva[frame], x - l - 1, y - h, false, true);
             }
         } else {
-            this._sprite.scale.x = 1;
-            this._sprite.anchor.x = 0;
+            this._drawable.scale.x = 1;
+            //this._drawable.anchor.x = 0;
             if (!this._flip_y) {
                 // PisteDraw2_Image_Clip(tyyppi->framet[frame], x - l - 1, y - h);
             } else {
@@ -559,7 +571,7 @@ export class Sprite extends Drawable {
         }
         
         if (this._energy < 1) {
-            this._discarded = true;
+            this.discard();
         }
     }
     
@@ -1148,7 +1160,6 @@ export class Sprite extends Drawable {
     /**
      * SDL: PK2Sprite::AI_Kaantyy_Jos_Osuttu
      */
-    // TODO Review coef
     public AI_TurnsIfHitted(): void {
         const dam: int = (VAHINKO_AIKA > 0 && this._energy > 0) ? 1 : 0; //Damage
         
@@ -1169,13 +1180,11 @@ export class Sprite extends Drawable {
         }
     }
     
-    // TODO Review coef
     public AI_MovesX(movement: number): void {
         if (this._energy > 0)
             this._x = this._alku_x + movement;
     }
     
-    // TODO Review coef
     public AI_MovesY(movement: number): void {
         if (this._energy > 0)
             this._y = this._alku_y + movement;
@@ -1186,7 +1195,6 @@ export class Sprite extends Drawable {
      *
      * @param kytkin
      */
-    // TODO Review coef
     public AI_DripsWhenSwitchPressed(kytkin: int): void {
         if (kytkin > 0) {
             this._initialWeight = 1.5;
@@ -1200,7 +1208,6 @@ export class Sprite extends Drawable {
      * @param ak
      * @param bk
      */
-    // TODO Review coef
     public AI_MovesWhenSwitchPressed(kytkin: int, ak: int, bk: int): void {
         if (kytkin > 0) {
             if (this.a == 0 && ak != 0) {
@@ -1397,11 +1404,11 @@ export class Sprite extends Drawable {
         // //a /= 1.01;
         
         if (this.energy === 0 && this.lataus === 0) {
-            this.lataus = this.proto.latausaika;
+            this._lataus = this.proto.latausaika;
         }
         
         if (this.lataus === 1) {
-            this.discord();
+            this.discard();
         }
     }
     
@@ -1413,8 +1420,8 @@ export class Sprite extends Drawable {
     public get proto() {
         return this._proto;
     }
-    public morph() {
-        this._proto = this.proto.morphProto;
+    public morph(newProto: SpritePrototype): void {
+        this._proto = newProto;
         this._ammo1Proto = this.proto.ammo1Proto;
         this._ammo2Proto = this.proto.ammo2Proto;
         this._initialWeight = this.proto.weight;
@@ -1519,6 +1526,7 @@ export class Sprite extends Drawable {
     public get energy(): int { return this._energy; }
     public set energy(v: int) { this._energy = v; }
     public isAlive(): boolean { return this._energy > 0; }
+    public isDead(): boolean { return !this.isAlive(); }
     public kill(): void { this._energy = 0; }
     
     /** @deprecated */ public vihollinen(): boolean { return this.isEnemy(); }
@@ -1536,6 +1544,7 @@ export class Sprite extends Drawable {
     public set hidden(v: boolean) { this._hidden = v; }
     /** @deprecated */ public get piilossa(): boolean { return this.hidden; }
     
+    /** See {@link _active}. */
     public get active(): boolean { return this._active; }
     public set active(v: boolean) { this._active = v; }
     /** @deprecated */ public get aktiivinen(): boolean { return this._active; }
@@ -1562,9 +1571,8 @@ export class Sprite extends Drawable {
      * Returns TRUE if sprite is discarded, FALSE otherwise.<br>
      * More information: {@link discard}.
      */
-    public isDiscarded(): boolean {
-        return this._discarded == true;
-    }
+    public get discarded(): boolean { return this._discarded == true; }
+    public isDiscarded(): boolean { return this._discarded == true; }
     /** @deprecated */ public get piilota(): boolean { return this._discarded; }
     
     /**
@@ -1607,7 +1615,7 @@ export class Sprite extends Drawable {
         this._attack2Remaining = v;
     }
     
-    /** Cooldown time. */
+    /** Cooldown timer (time between shots). */
     public get lataus(): int {
         return this._lataus;
     }
@@ -1665,12 +1673,13 @@ export class Sprite extends Drawable {
     }
     
     /** Crouched. */
+    public get crouched(): boolean { return this._crouched; }
+    public set crouched(v: boolean) {
+        this._crouched = v;
+    }
+    /** @deprecated */
     public get kyykky(): boolean {
         return this._crouched;
-    }
-    /** Crouched. */
-    public set kyykky(v: boolean) {
-        this._crouched = v;
     }
     public isCrouched(): boolean {
         return this._crouched;
@@ -1811,7 +1820,7 @@ export class Sprite extends Drawable {
         
         // Indicates if it's background tile
         dst.tausta = false;
-        dst.edge = this.proto.este;
+        dst.edge = this.proto.isObstacle();
         dst.water = false;
         
         return dst as BlockCollider;

@@ -2,7 +2,7 @@ import { GameContext } from '@game/game/GameContext';
 import { SpritePrototype } from '@game/sprite/SpritePrototype';
 import { Log } from '@ng/support/log/LoggerImpl';
 import { MAX_GIFTS } from '../../support/constants';
-import { int } from '../../support/types';
+import { int } from '../support/types';
 
 export class GiftManager {
     private _context: GameContext;

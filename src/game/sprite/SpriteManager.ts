@@ -3,16 +3,16 @@ import { GameContext } from '@game/game/GameContext';
 import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, PK2Map } from '@game/map/PK2Map';
 import { Sprite } from '@game/sprite/Sprite';
 import { SpritePrototype, TSpriteProtoCode } from '@game/sprite/SpritePrototype';
+import { int, CVect, cvect, rand } from '@game/support/types';
 import { Log } from '@ng/support/log/LoggerImpl';
-import { pathJoin, ifnul } from '@ng/support/utils';
+import { pathJoin, ifnul, floor } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
+import { MAX_SPRITES, MAX_SPRITE_TYPES, MAX_AANIA, RESOURCES_PATH } from '@sp/constants';
+import { OutOfBoundsError } from '@sp/error/OutOfBoundsError';
 import { EventEmitter } from '@vendor/eventemitter3';
-import { MAX_SPRITES, MAX_SPRITE_TYPES, MAX_AANIA, RESOURCES_PATH } from '../../support/constants';
-import { OutOfBoundsError } from '../../support/error/OutOfBoundsError';
-import { int, CVect, cvect, rand } from '../../support/types';
 
 export class SpriteManager extends EventEmitter {
-    private readonly _ctx: GameContext;
+    private readonly _context: GameContext;
     
     /**
      * List of prototypes.<br>
@@ -31,18 +31,28 @@ export class SpriteManager extends EventEmitter {
     public constructor(ctx: GameContext) {
         super();
         
-        this._ctx = ctx;
+        this._context = ctx;
         
         this._protot = [];
         
         this.clear();
     }
     
-    
-    public get(i: int) {
-        return ifnul(this._sprites[i]);
+    /**
+     * Returns the sprite at the specified index.
+     *
+     * @param i - Index of the sprite to recover.
+     */
+    public get(i: number) {
+        return this._sprites[i];
     }
     
+    /**
+     * Returns the sprite prototype with the specified name.<br>
+     + If not found, NULL is returned.
+     *
+     * @param name - Name of the sprite prototype to recover.
+     */
     public getPrototype(name: string) {
         for (let proto of this._protot) {
             if (proto.name === name) {
@@ -53,6 +63,11 @@ export class SpriteManager extends EventEmitter {
         return null;
     }
     
+    /**
+     * Returns the sprite prototype at the specified index.
+     *
+     * @param i - Index of the sprite prototype to recover.
+     */
     public getPrototypeAt(i: int) {
         return ifnul(this._protot[i]);
     }
@@ -78,6 +93,7 @@ export class SpriteManager extends EventEmitter {
      * SDL: PK2::SpriteSystem::protot_get_all()
      *
      * @param map
+     * @param tmpEpidoseName
      */
     public async loadPrototypes(map: PK2Map, tmpEpidoseName: string) {
         //     char polku[PE_PATH_SIZE];
@@ -140,7 +156,7 @@ export class SpriteManager extends EventEmitter {
             throw new OutOfBoundsError('');
         
         // Check if it can be loaded, else error is elevated
-        proto = await SpritePrototype.loadFromFile(this._ctx, fpath, fname);
+        proto = await SpritePrototype.loadFromFile(this._context, fpath, fname);
         
         //Load sounds
         for (let i = 0; i < MAX_AANIA; i++) {
@@ -189,7 +205,7 @@ export class SpriteManager extends EventEmitter {
             // If the sprite hasn't been loaded yet,
             if (proto.morphProto == null) {
                 // Load from file and assign
-                proto.morphProto = await SpritePrototype.loadFromFile(this._ctx, proto.path, proto.morphProtoName);
+                proto.morphProto = await SpritePrototype.loadFromFile(this._context, proto.path, proto.morphProtoName);
                 // Save it
                 this._protot.push(proto.morphProto);
             }
@@ -211,7 +227,7 @@ export class SpriteManager extends EventEmitter {
             if (proto.bonusProto == null) {
                 // Load from file and assign
                 try {
-                    proto.bonusProto = await SpritePrototype.loadFromFile(this._ctx, proto.path, proto.bonusProtoName);
+                    proto.bonusProto = await SpritePrototype.loadFromFile(this._context, proto.path, proto.bonusProtoName);
                 } catch (err) {
                     debugger
                     console.log('');
@@ -235,7 +251,7 @@ export class SpriteManager extends EventEmitter {
             // If the sprite hasn't been loaded yet,
             if (proto.ammo1Proto == null) {
                 // Load from file and assign
-                proto.ammo1Proto = await SpritePrototype.loadFromFile(this._ctx, proto.path, proto.ammo1ProtoName);
+                proto.ammo1Proto = await SpritePrototype.loadFromFile(this._context, proto.path, proto.ammo1ProtoName);
                 // Save it
                 this._protot.push(proto.ammo1Proto);
             }
@@ -256,13 +272,34 @@ export class SpriteManager extends EventEmitter {
             // If the sprite hasn't been loaded yet,
             if (proto.ammo2Proto == null) {
                 // Load from file and assign
-                proto.ammo2Proto = await SpritePrototype.loadFromFile(this._ctx, proto.path, proto.ammo2ProtoName);
+                proto.ammo2Proto = await SpritePrototype.loadFromFile(this._context, proto.path, proto.ammo2ProtoName);
                 // Save it
                 this._protot.push(proto.ammo2Proto);
             }
         }
     }
     
+    /**
+     * Check each non-discarded sprite to mark it as active or not active, so that it's not updated or drawn
+     * if it is not near the player's view.<br>
+     * See {@link Sprite#discarded} and {@link Sprite#active} for more details.<br>
+     * SDL: ~PK_Update_Sprites
+     */
+    public updateCulling(): void {
+        let sprite: Sprite;
+        
+        for (let i = 0; i < MAX_SPRITES; i++) {
+            sprite = this.get(i);
+            
+            if (sprite != null && !sprite.isDiscarded()) {
+                sprite.active =
+                    sprite.x < this.ctx.cameraX + floor(this.ctx.device.screenWidth * 1.5) &&
+                    sprite.x > this.ctx.cameraX - floor(this.ctx.device.screenWidth * 0.5) &&
+                    sprite.y < this.ctx.cameraY + floor(this.ctx.device.screenHeight * 1.5) &&
+                    sprite.y > this.ctx.cameraY - floor(this.ctx.device.screenHeight * 0.5);
+            }
+        }
+    }
     
     // 	void protot_clear_all();
     
@@ -424,13 +461,16 @@ export class SpriteManager extends EventEmitter {
                 if (proto.type === ESpriteType.TYYPPI_TAUSTA) {
                     this._addBg(i);
                 }
-    
+                
                 // Add to the scene
                 if (proto.type === ESpriteType.TYYPPI_TAUSTA) {
                     this.ctx.composition.addBgSprite(sprite);
                 } else {
                     this.ctx.composition.addFgSprite(sprite);
                 }
+                
+                // Listen for disposal
+                sprite.once(Sprite.EV_SPRITE_DISCARDED, this.onSpriteDiscarded.bind(this));
                 
                 result = true;
             } else {
@@ -531,7 +571,7 @@ export class SpriteManager extends EventEmitter {
     ///  Accessors  ///
     
     private get ctx(): GameContext {
-        return this._ctx;
+        return this._context;
     }
     
     /**

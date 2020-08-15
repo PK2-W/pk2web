@@ -23,8 +23,8 @@
 //      "@c:app/*": ["./app/*"],
 //      "@c:be/*": ["./backend/*"],
 //      "@c:fe/*": ["./frontend/*"],
-//      "@c:sp/*": ["./support/*"],
-
+      
+      "@sp/*": ["./support/*"],
       "@vendor/*": ["./vendor/*"]
     }
   },

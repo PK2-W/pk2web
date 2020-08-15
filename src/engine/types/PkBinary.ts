@@ -1,5 +1,4 @@
-import { ab2str } from '@ng/support/utils';
-import { int, uint, uint8 } from '../../support/types';
+import { int, uint8 } from '@game/support/types';
 
 export class PkBinary {
     private readonly _ab: ArrayBuffer;

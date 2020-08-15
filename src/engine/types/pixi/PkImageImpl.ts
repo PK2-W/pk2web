@@ -1,11 +1,11 @@
 import { PkImageTk } from '@ng/toolkit/PkImageTk';
 import { PkImageTextureImpl } from '@ng/types/pixi/PkImageTextureImpl';
 import { PkColor } from '@ng/types/PkColor';
+import { PkImage } from '@ng/types/PkImage';
+import { PkImagePixels } from '@ng/types/PkImagePixels';
 import { PkImageTexture } from '@ng/types/PkImageTexture';
 import { PkRectangle } from '@ng/types/PkRectangle';
 import * as PIXI from 'pixi.js';
-import { PkImage } from '../PkImage';
-import { PkImagePixels } from '../PkImagePixels';
 
 export class PkImageImpl implements PkImage {
     private _image: HTMLImageElement;
@@ -26,6 +26,7 @@ export class PkImageImpl implements PkImage {
     
     ///
     
+    /** @inheritDoc */
     public getImage(): HTMLImageElement {
         return this._image;
     }
@@ -39,6 +40,7 @@ export class PkImageImpl implements PkImage {
         return this;
     }
     
+    /** @inheritDoc */
     public getTexture(frame?: PkRectangle): PkImageTexture {
         return new PkImageTextureImpl(this, frame);
     }
@@ -71,5 +73,12 @@ export class PkImageImpl implements PkImage {
             this._pixi = PIXI.BaseTexture.from(this._image);
         }
         return this._pixi;
+    }
+    
+    public static getImplNative(genImpl: PkImage): PIXI.BaseTexture {
+        if (!(genImpl instanceof PkImageImpl)) {
+            throw new Error(`Conversion from ${genImpl.constructor.name} to ${this.constructor.name} not implemented.`);
+        }
+        return (genImpl as PkImageImpl).getPixiBaseTexture();
     }
 }

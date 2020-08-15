@@ -1,4 +1,3 @@
-import { PkColor } from '../types/PkColor';
 import * as PIXI from 'pixi.js';
 
 export class PkTextureTk {

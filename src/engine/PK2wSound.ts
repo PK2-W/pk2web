@@ -3,8 +3,6 @@
 //by Janne Kivilahti from Piste Gamez
 //#########################
 
-import { RESOURCES_PATH } from '../support/constants';
-import { PkEngine } from './PkEngine';
 
 // #define AUDIO_FREQ 44100
 
@@ -13,6 +11,9 @@ import { PkEngine } from './PkEngine';
 // int def_freq = 22050;
 // int mus_volume = 100;
 // int sfx_volume = 100;
+
+import type { PkEngine } from '@ng/core/PkEngine';
+import { RESOURCES_PATH } from '@sp/constants';
 
 export class PK2wSound {
     private readonly _engine: PkEngine;

@@ -1,4 +1,4 @@
-import { CBYTE, int } from '../../support/types';
+import { CBYTE, int } from '../support/types';
 
 export interface SpriteFuture {
     /** X coordinate. */

@@ -1,4 +1,4 @@
-import { TEXTURE_ID_BLOCKS } from '@game/game/PK2Game';
+import { TEXTURE_ID_BLOCKS } from '@game/game/Game';
 import { EBlocks } from '@game/tile/Block';
 import { BLOCK_RAW_SIZE, BLOCK_SIZE } from '@game/tile/BlockConstants';
 import { BlockContext } from '@game/tile/BlockContext';
@@ -6,7 +6,7 @@ import { EBlockPrototype } from '@game/enum/EBlockPrototype';
 import { PkRectangleImpl } from '@ng/types/pixi/PkRectangleImpl';
 import { PkImageTexture } from '@ng/types/PkImageTexture';
 import { PkRectangle } from '@ng/types/PkRectangle';
-import { CBYTE, bool, int } from '../../support/types';
+import { CBYTE, bool, int } from '../support/types';
 
 export class BlockPrototype {
     private _blockContext: BlockContext;
@@ -105,7 +105,7 @@ export class BlockPrototype {
                 
                 // Kytkimet
                 
-                if (i >= EBlockPrototype.BLOCK_KYTKIN1 && i <= EBlockPrototype.BLOCK_KYTKIN3) {
+                if (i >= EBlockPrototype.BLOCK_SWITCH1 && i <= EBlockPrototype.BLOCK_SWITCH3) {
                     proto._rightIsBarrier = true;
                     proto._topIsBarrier = true;
                     proto.bottomIsBarrier = true;
@@ -149,7 +149,7 @@ export class BlockPrototype {
         
         for (x = 0; x < BLOCK_SIZE; x++) {
             y = 0;
-            while (y < BLOCK_SIZE - 1 && px.get(x, y).a === 0)  //(color = buffer[x + (mask % 10) * 32 + (y + (mask / 10) * 32) * leveys]) == 255)
+            while (y < BLOCK_SIZE - 1 && px.get(x, y).a255 === 0)  //(color = buffer[x + (mask % 10) * 32 + (y + (mask / 10) * 32) * leveys]) == 255)
                 y++;
             
             this._bottomMask[x] = y;
@@ -157,7 +157,7 @@ export class BlockPrototype {
         
         for (x = 0; x < BLOCK_SIZE; x++) {
             y = BLOCK_SIZE - 1;
-            while (y >= 0 && px.get(x, y).a === 0) //(color = buffer[x + (mask % 10) * 32 + (y + (mask / 10) * 32) * leveys]) == 255)
+            while (y >= 0 && px.get(x, y).a255 === 0) //(color = buffer[x + (mask % 10) * 32 + (y + (mask / 10) * 32) * leveys]) == 255)
                 y--;
             
             this._topMask[x] = BLOCK_SIZE - 1 - y;

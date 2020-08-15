@@ -1,5 +1,11 @@
 export const TX = {
     
+    FONT_PATH: 'font path',
+    FONT_SMALL_FONT: 'font small font',
+    FONT_BIG_FONT_NORMAL: 'font big font normal',
+    FONT_BIG_FONT_HILITE: 'font big font hilite',
+    FONT_BIG_FONT_SHADOW: 'font big font shadow',
+    
     SETUP_OPTIONS: 'setup options',
     SETUP_VIDEOMODES: 'setup video modes',
     SETUP_MUSIC_AND_SOUNDS: 'setup music & sounds',

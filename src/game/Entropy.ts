@@ -1,5 +1,5 @@
 import { PK2GAMELOOP } from '../support/constants';
-import { int, CVect, cvect, uint } from '../support/types';
+import { int, CVect, cvect, uint } from './support/types';
 
 export class Entropy {
     private readonly _cosTable: CVect<number>;

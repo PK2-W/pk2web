@@ -1,73 +1,140 @@
 import { ResourceFetchError } from '@ng/error/ResourceFetchError';
 import { ResourceNotFoundError } from '@ng/error/ResourceNotFoundError';
 import { Log } from '@ng/support/log/LoggerImpl';
+import { PkFontAsset } from '@ng/types/font/PkFontAsset';
 import { PkBitmapImpl } from '@ng/types/pixi/PkBitmapImpl';
 import { PkImageImpl } from '@ng/types/pixi/PkImageImpl';
 import { PkBinary } from '@ng/types/PkBinary';
 import { PkBitmap } from '@ng/types/PkBitmap';
 import { PkImage } from '@ng/types/PkImage';
+import { PkParameters } from '@ng/types/PkParameters';
 import { PkSound } from '@ng/types/PkSound';
 
 export class PkAssetTk {
     private constructor() {
     }
     
-    // public getPlainText(uri: string): Promise<string> {
-    //
-    // }
-    
-    // public fileExists(uri: string): Promise<boolean> {
-    //     return (await this._xhrHead(uri)) === 200;
-    // }
-    
-    // public static getParamFile(uri: string): Promise<any> {
-    //
-    // }
-    
-    public static async getArrayBuffer(uri: string): Promise<ArrayBuffer> {
-        return await PkAssetTk.xhrGet(uri, XHR_FMT.BINARY);
+    /**
+     * Obtains the specified plain text file from the Internet.
+     *
+     * @param url - Full URL of the resource.
+     */
+    public static async getPlainText(url: string): Promise<string> {
+        return await PkAssetTk._xhrGet(url, XHR_FMT.TEXT);
     }
     
-    public static async getBinary(uri: string): Promise<PkBinary> {
-        return new PkBinary(await this.getArrayBuffer(uri));
+    /**
+     * Obtains the specified JSON file from the Internet.
+     *
+     * @param url - Full URL of the resource.
+     */
+    private static async getJSON(url: string): Promise<string> {
+        return JSON.parse(await this.getPlainText(url));
     }
     
-    public static async getImage(uri: string): Promise<PkImage> {
+    // public fileExists(url: string): Promise<boolean> {
+    //     return (await this._xhrHead(url)) === 200;
+    // }
+    
+    /**
+     * Obtains the specified parametrers file from the Internet.
+     *
+     * @param url - Full URL of the resource.
+     */
+    public static async getParamFile(url: string): Promise<any> {
+        return new PkParameters(await this.getPlainText(url));
+    }
+    
+    /**
+     * Obtains the specified binary file, as a native ArrayBuffer, from the Internet.
+     *
+     * @param url - Full URL of the resource.
+     */
+    public static async getArrayBuffer(url: string): Promise<ArrayBuffer> {
+        return await PkAssetTk._xhrGet(url, XHR_FMT.BINARY);
+    }
+    
+    /**
+     * Obtains the specified binary file, as a native Blob, from the Internet.
+     *
+     * @param url - Full URL of the resource.
+     */
+    private static async getBlob(url: string): Promise<Blob> {
+        return await PkAssetTk._xhrGet(url, XHR_FMT.BLOB);
+    }
+    
+    /**
+     * Obtains the specified binary resource from the Internet.
+     *
+     * @param url - Full URL of the resource.
+     */
+    public static async getBinary(url: string): Promise<PkBinary> {
+        return new PkBinary(await this.getArrayBuffer(url));
+    }
+    
+    /**
+     * Obtains the specified image resource from the Internet.
+     *
+     * @param url - Full URL of the resource.
+     */
+    public static async getImage(url: string): Promise<PkImage> {
         return new Promise(async (resolve, reject) => {
             try {
-                const blob = await this.getBlob(uri);
+                const blob = await this.getBlob(url);
                 
-                const url = URL.createObjectURL(blob);
+                const bUrl = URL.createObjectURL(blob);
                 const image = new Image();
                 image.onload = () => {
-                    Log.v('[~AssetTk] Loaded image: ' + uri);
+                    Log.v('[~AssetTk] Loaded image: ' + url);
                     resolve(PkImageImpl.from(image)); //TODO Generalizar
                 };
-                image.src = url;
+                image.src = bUrl;
             } catch (err) {
                 reject(err);
             }
         });
     }
     
-    public static async getBitmap(uri: string): Promise<PkBitmap> {
+    /**
+     * Obtains the specified bitmap resource from the Internet.
+     *
+     * @param url - Full URL of the resource.
+     */
+    public static async getBitmap(url: string): Promise<PkBitmap> {
         return PkBitmapImpl.fromBinary(
-            await this.getBinary(uri));
+            await this.getBinary(url));
     }
     
-    public static async getSound(uri: string): Promise<PkSound> {
-        Log.d('[PkAssetTk] Getting sound at "', uri, '"...');
-        const raw = await this.getArrayBuffer(uri);
+    /**
+     * Obtains the specified sound resource from the Internet.
+     *
+     * @param url - Full URL of the resource.
+     */
+    public static async getSound(url: string): Promise<PkSound> {
+        Log.d('[PkAssetTk] Getting sound at "', url, '"...');
+        const raw = await this.getArrayBuffer(url);
         return await PkSound.fromArrayBuffer(raw);
+    }
+    
+    /**
+     * Obtains the specified font resource from the Internet.
+     *
+     * @param url - Full URL of the resource.
+     */
+    public static async getFont(url: string): Promise<PkFontAsset> {
+        Log.d(`Loading font from "${ url }"`);
+        
+        try {
+            return await PkFontAsset.from(url);
+        } catch (err) {
+            console.warn(`PD     - Font couldn't be loaded from "${ url }"`);
+            throw err;
+        }
     }
     
     // public static async getSprite(uri: string): Promise<any> {
     //
     // }
-    
-    private static async getBlob(uri: string): Promise<Blob> {
-        return await PkAssetTk.xhrGet(uri, XHR_FMT.BLOB);
-    }
     
     // public async scanDir(uri: string, ignoreCached: boolean = false): Promise<VFsDirMapping> {
     //     if (!ignoreCached) {
@@ -95,15 +162,10 @@ export class PkAssetTk {
     //     return cloneStruct(nodes);
     // }
     
-    private static async getJSON(uri: string): Promise<string> {
-        const raw = await PkAssetTk.xhrGet(uri);
-        return JSON.parse(raw);
-    }
-    
-    private static xhrGet(uri: string, format?: XHR_FMT.TEXT): Promise<string>;
-    private static xhrGet(uri: string, format: XHR_FMT.BINARY): Promise<ArrayBuffer>;
-    private static xhrGet(uri: string, format: XHR_FMT.BLOB): Promise<Blob>;
-    private static xhrGet(uri: string, format: XHR_FMT = XHR_FMT.TEXT): Promise<string | ArrayBuffer | Blob> {
+    private static _xhrGet(uri: string, format?: XHR_FMT.TEXT): Promise<string>;
+    private static _xhrGet(uri: string, format: XHR_FMT.BINARY): Promise<ArrayBuffer>;
+    private static _xhrGet(uri: string, format: XHR_FMT.BLOB): Promise<Blob>;
+    private static _xhrGet(uri: string, format: XHR_FMT = XHR_FMT.TEXT): Promise<string | ArrayBuffer | Blob> {
         return new Promise((resolve, reject) => {
             const req = new XMLHttpRequest();
             req.open('GET', uri, true);

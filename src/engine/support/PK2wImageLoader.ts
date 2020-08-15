@@ -1,6 +1,6 @@
 import { Log } from '@ng/support/log/LoggerImpl';
-import { RESOURCES_PATH } from '../../support/constants';
 import * as PIXI from 'pixi.js';
+import { RESOURCES_PATH } from '../../support/constants';
 import { PK2wLoader } from './PK2wLoader';
 
 export class PK2wImageLoader extends PK2wLoader {

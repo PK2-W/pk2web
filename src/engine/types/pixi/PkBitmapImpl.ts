@@ -7,14 +7,16 @@ import { PkColor } from '@ng/types/PkColor';
 import { PkImagePixels } from '@ng/types/PkImagePixels';
 import { PkImageTexture } from '@ng/types/PkImageTexture';
 import { PkRectangle } from '@ng/types/PkRectangle';
-import { uint } from '../../../support/types';
+import * as PIXI from 'pixi.js';
 
 export class PkBitmapImpl implements PkBitmap {
     private _palette: PkColor[];
-    private _numBits: uint;
-    private _numColors: uint;
-    private _compression: uint;
+    private _numBits: number;
+    private _numColors: number;
+    private _compression: number;
     private _image: PkImageImpl;
+    // --- Cached ---
+    private _pixi: PIXI.BaseTexture;
     
     
     ///  Factory  ///
@@ -67,6 +69,7 @@ export class PkBitmapImpl implements PkBitmap {
         
         // Get image
         bmp.setImage(await PkImageTk.binaryToImage(bin));
+        bmp.removeTransparentPixel();
         
         return bmp;
     }
@@ -81,6 +84,11 @@ export class PkBitmapImpl implements PkBitmap {
     }
     private setImage(image: HTMLImageElement): this {
         this._image = PkImageImpl.from(image);
+        
+        if (this._pixi != null)
+            this._pixi.destroy();
+        this._pixi = null;
+        
         return this;
     }
     
@@ -89,23 +97,20 @@ export class PkBitmapImpl implements PkBitmap {
     }
     
     public getPixels(): PkImagePixels {
-        return PkImagePixels.fromImage(this._image.getImage());
+        return PkImagePixels.fromImage(this.getImage());
     }
     
     public removeTransparentPixel(color?: PkColor): this {
-        //debugger;
-        if (color == null) {
-            color = this.getLastColor();
-            if (color != null) {
-                this.setImage(PkImageTk.imageRemoveTransparentPixel(this._image.getImage(), this.getLastColor()));
-            }
-        } else {
-            this.setImage(PkImageTk.imageRemoveTransparentPixel(this._image.getImage(), color));
+        // If no color provided, use the last palette color if any
+        color = color ?? this.getLastColor();
+        
+        if (color != null) {
+            this.setImage(PkImageTk.imageRemoveTransparentPixel(this.getImage(), color));
         }
         return this;
     }
     
-    public getColor(index: uint): PkColor {
+    public getColor(index: number): PkColor {
         return ifnul(this._palette[index]);
     }
     
@@ -116,19 +121,36 @@ export class PkBitmapImpl implements PkBitmap {
     
     ///  Accessors  ///
     
-    public get width(): uint {
+    public get width(): number {
         return this._image.width;
     }
     
-    public get height(): uint {
+    public get height(): number {
         return this._image.height;
     }
     
-    public get bits(): uint {
+    public get bits(): number {
         return this._numBits;
     }
     
-    public get paletteSize(): uint {
+    public get paletteSize(): number {
         return this._palette.length;
+    }
+    
+    
+    ///  PIXI Impl  ///
+    
+    public getPixiBaseTexture(): PIXI.BaseTexture {
+        if (this._pixi == null) {
+            this._pixi = PIXI.BaseTexture.from(this._image.getImage());
+        }
+        return this._pixi;
+    }
+    
+    public static getImplNative(genImpl: PkBitmap): PIXI.BaseTexture {
+        if (!(genImpl instanceof PkBitmapImpl))
+            throw new Error(`Conversion from ${ genImpl.constructor.name } to ${ this.constructor.name } not implemented.`);
+        
+        return genImpl.getPixiBaseTexture();
     }
 }

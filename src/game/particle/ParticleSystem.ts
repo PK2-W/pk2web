@@ -1,9 +1,9 @@
 import { GameContext } from '@game/game/GameContext';
-import { Particle, EParticle } from '@game/particle/Particle';
+import { Particle } from '@game/particle/Particle';
 import { ParticleContext } from '@game/particle/ParticleContext';
 import { Log } from '@ng/support/log/LoggerImpl';
 import { PkImage } from '@ng/types/PkImage';
-import { int, rand } from '../../support/types';
+import { int, rand } from '../support/types';
 
 /**
  * SDL: PK2::Particle_System.
@@ -41,7 +41,7 @@ export class ParticleSystem implements ParticleContext {
             
             if (particle.time_over()) {
                 this.Particles.splice(i--, 1);
-                particle._drawable.renderable = false;
+                particle.getDrawable().renderable = false;
             }
         }
         
@@ -54,7 +54,7 @@ export class ParticleSystem implements ParticleContext {
             
             if (particle.time_over()) {
                 this.BGParticles.splice(i--, 1);
-                particle._drawable.renderable = false;
+                particle.getDrawable().renderable = false;
             }
         }
         
@@ -79,7 +79,7 @@ export class ParticleSystem implements ParticleContext {
         }
         
         this.Particles.push(particle);
-        this._context.composition.addFgParticle(particle._drawable);
+        this._context.composition.addFgParticle(particle);
     }
     
     public draw_front_particles(): void {

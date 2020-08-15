@@ -8,7 +8,7 @@ import { str2num, pathJoin } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { PkBinary } from '@ng/types/PkBinary';
 import { RESOURCES_PATH } from '../../support/constants';
-import { str, int, CBYTE, uint, CVect, cvect, bool, DWORD, rand } from '../../support/types';
+import { str, int, CBYTE, uint, CVect, cvect, bool, DWORD, rand } from '../support/types';
 
 export abstract class PK2MapInfo {
 

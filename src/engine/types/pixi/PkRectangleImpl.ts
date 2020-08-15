@@ -1,7 +1,7 @@
 import { PkRectangle } from '@ng/types/PkRectangle';
 import * as PIXI from 'pixi.js';
 
-export class PkRectangleImpl implements PkRectangle {
+export class PkRectangleImpl extends PkRectangle {
     private readonly _rect: PIXI.Rectangle;
     
     public static $(x: number, y: number, width: number, height: number): PkRectangleImpl {
@@ -29,6 +29,8 @@ export class PkRectangleImpl implements PkRectangle {
     }
     
     public constructor(x: number, y: number, width: number, height: number) {
+        super();
+        
         if (!PkRectangleImpl.checkInput(x) || !PkRectangleImpl.checkInput(y) || !PkRectangleImpl.checkInput(width) || !PkRectangleImpl.checkInput(height)) {
             throw new TypeError('Trying to create a Rectangle wit a non numeric or null coordinate.');
         }
@@ -36,34 +38,37 @@ export class PkRectangleImpl implements PkRectangle {
         this._rect = new PIXI.Rectangle(x, y, width, height);
     }
     
-    public get x(): number {
-        return this._rect.x;
-    }
-    public get x1(): number {
-        return this.x;
-    }
-    
-    public get y(): number {
-        return this._rect.y;
-    }
-    public get y1(): number {
-        return this.y;
+    public get x(): number { return this._rect.x; }
+    public set x(x: number) {
+        this._rect.x = x;
+        this.emit(PkRectangle.EV_CHANGE, this);
     }
     
-    public get width(): number {
-        return this._rect.width;
+    public get y(): number { return this._rect.y; }
+    public set y(y: number) {
+        this._rect.y = y;
+        this.emit(PkRectangle.EV_CHANGE, this);
     }
     
-    public get height(): number {
-        return this._rect.height;
+    public get width(): number { return this._rect.width; }
+    public set width(width: number) {
+        this._rect.width = width;
+        this.emit(PkRectangle.EV_CHANGE, this);
     }
     
-    public get x2(): number {
-        return this.x1 + this.width;
+    public get height(): number { return this._rect.height; }
+    public set height(height: number) {
+        this._rect.height = height;
+        this.emit(PkRectangle.EV_CHANGE, this);
     }
     
-    public get y2(): number {
-        return this.y1 + this.height;
+    public change(x: number, y: number, width: number, height: number): void {
+        this._rect.x = x;
+        this._rect.y = y;
+        this._rect.width = width;
+        this._rect.height = height;
+        
+        this.emit(PkRectangle.EV_CHANGE, this);
     }
     
     // TODO: Cachear

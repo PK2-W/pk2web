@@ -1,5 +1,5 @@
 import { EDestructionType } from '@game/enum/EDestructionType';
-import { uint, rand, int } from '../../support/types';
+import { uint, rand, int } from '../support/types';
 import { GameContext } from '../game/GameContext';
 import { EParticle } from '../particle/Particle';
 

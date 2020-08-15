@@ -19,23 +19,30 @@
 //	Starts the level13.map on dev mode
 //#########################
 
-import { PK2Game } from '@game/game/PK2Game';
+import { Game } from '@game/game/Game';
+import { InputAction } from '@game/InputActions';
 import { PK2Map } from '@game/map/PK2Map';
-import { ITickable } from '@ng/ITickable';
-import { PkRenderer, FADE } from '@ng/render/PkRenderer';
-import { PkEngine } from '@ng/PkEngine';
+import { GameScreen } from '@game/ui/screen/game/GameScreen';
+import { MainMenuActions } from '@game/ui/screen/menu/MainMenuActions';
+import { kbAction } from '@ng/core/input/PkKeyboardAction';
+import { PkEngine } from '@ng/core/PkEngine';
 import { PkLanguage } from '@ng/PkLanguage';
-import { PkScreen } from '@ng/screen/PkScreen';
+import { PkRenderer, FADE } from '@ng/render/PkRenderer';
+import { Log } from '@ng/support/log/LoggerImpl';
+import { PkTickable } from '@ng/support/PkTickable';
 import { pathJoin } from '@ng/support/utils';
-import { PK2GAMELOOP, RESOURCES_PATH } from '../support/constants';
-import { PK2Settings } from '../support/PK2Settings';
-import { int, bool, CBYTE, uint, str, cvect, CVect } from '../support/types';
+import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
+import { PkScreen } from '@ng/ui/PkScreen';
+import { Key } from 'ts-key-enum';
+import { RESOURCES_PATH } from '../support/constants';
 import { RECT } from './Map_';
 import { PK2Context } from './PK2Context';
-import { IntroScreen } from './screen/intro/IntroScreen';
-import { MapScreen } from './screen/map/MapScreen';
-import { MenuScreen } from './screen/menu/MenuScreen';
+import { PK2Settings } from './settings/PK2Settings';
+import { int, bool, CBYTE, uint, str, cvect, CVect } from './support/types';
 import { TX } from './texts';
+import { IntroScreen } from './ui/screen/intro/IntroScreen';
+import { MapScreen } from './ui/screen/map/MapScreen';
+import { MenuScreen } from './ui/screen/menu/MenuScreen';
 
 PIXI.settings.ROUND_PIXELS = true;
 
@@ -110,6 +117,14 @@ enum MENU {
     MENU_LOAD,
     MENU_TALLENNA,
     MENU_LANGUAGE
+}
+
+export enum FONT {
+    F1 = 1,
+    F2,
+    F3,
+    F4,
+    F5,
 }
 
 //Sound
@@ -187,11 +202,8 @@ let pistelaskudelay: int = 0;
 
 //
 
-export class PK2 extends PK2Context implements ITickable {
+export class PK2 extends PK2Context implements PkTickable, MainMenuActions {
     //#### Global Variables
-    private screen_width: int = 640;
-    private screen_height: int = 480;
-    
     private test_level: bool = false;
     private dev_mode: bool = false;
     
@@ -228,10 +240,8 @@ export class PK2 extends PK2Context implements ITickable {
     
     // Time
     // const int TIME_FPS = 100;
-    // uint timeout = 0;                            ----> moved to game
     private increase_time: int = 0;
     private sekunti: int = 0;
-    // bool aikaraja = false;                       ----> moved to game
     //
     private kytkin_tarina: int = 0;
     //
@@ -255,8 +265,6 @@ export class PK2 extends PK2Context implements ITickable {
     private episode_started: bool = false;
     private going_to_game: bool = false;
     private siirry_pistelaskusta_karttaan: bool = false;
-    //
-    private closing_game: bool = false;
     
     //Fade Text
     private fadetekstit: CVect<PK2FADETEXT> = cvect(MAX_FADETEKSTEJA, () => new PK2FADETEXT());
@@ -291,7 +299,6 @@ export class PK2 extends PK2Context implements ITickable {
     
     // Player
     private pisteet: uint = 0;
-    private piste_lisays: uint = 0;
     private pelaajan_nimi: str<20> = ' ';
     
     private nimiedit: bool = false;
@@ -335,8 +342,7 @@ export class PK2 extends PK2Context implements ITickable {
     private langlistindex: int = 0;
     private totallangs: int = 0;
     
-    
-    private settings: PK2Settings;
+    private _settings: PK2Settings;
     
     /*tmp*/
     private renderer: PkRenderer;
@@ -346,6 +352,8 @@ export class PK2 extends PK2Context implements ITickable {
         
         this._screens = new Map();
     }
+    
+    private _game: Game;
     
     //==================================================
     //(#1) Filesystem
@@ -457,7 +465,10 @@ export class PK2 extends PK2Context implements ITickable {
         // 	delete (temp);
     }
     
-    private async PK_Load_Font(): Promise<void> {
+    /**
+     * SDL: PK_Load_Font
+     */
+    private async loadFonts(): Promise<void> {
         let ind_font: string;
         let ind_path: string = this.tx.get(TX.FONT_PATH);
         
@@ -465,11 +476,11 @@ export class PK2 extends PK2Context implements ITickable {
         
         ind_font = this.tx.get(TX.FONT_SMALL_FONT);
         if (ind_path == null || ind_font == null) {
-            this._fontti1 = await this.renderer.createFont(`language/fonts/ScandicSmall.txt`);
+            this._font1.update(await PkAssetTk.getFont(pathJoin(RESOURCES_PATH, 'language/fonts', 'ScandicSmall.txt')));
             // PK2_error = true;
             // PK2_error_msg = 'Can\'t create font 1 from ScandicSmall.txt';
         } else {
-            // this._fontti1 = this.renderer.createFont(tekstit->Hae_Teksti(ind_path), tekstit->Hae_Teksti(ind_font))
+            // this._fonts.set(FONT.F1, this.renderer.createFont(tekstit->Hae_Teksti(ind_path), tekstit->Hae_Teksti(ind_font)))
             //     PK2_error = true;
             //     PK2_error_msg = 'Can\'t create font 1';
             // }
@@ -477,11 +488,11 @@ export class PK2 extends PK2Context implements ITickable {
         
         ind_font = this.tx.get(TX.FONT_BIG_FONT_NORMAL);
         if (ind_path == null || ind_font == null) {
-            this._fontti2 = await this.renderer.createFont(`language/fonts/ScandicBig1.txt`);
+            this._font2.update(await PkAssetTk.getFont(pathJoin(RESOURCES_PATH, 'language/fonts', 'ScandicBig1.txt')));
             // PK2_error = true;
             // PK2_error_msg = 'Can\'t create font 1 from ScandicBig1.txt';
         } else {
-            // this._fontti2 = this.renderer.createFont(tekstit->Hae_Teksti(ind_path), tekstit->Hae_Teksti(ind_font))
+            // this._fonts.set(FONT.F2, this.renderer.createFont(tekstit->Hae_Teksti(ind_path), tekstit->Hae_Teksti(ind_font)))
             //     PK2_error = true;
             //     PK2_error_msg = 'Can\'t create font 2';
             // }
@@ -489,11 +500,11 @@ export class PK2 extends PK2Context implements ITickable {
         
         ind_font = this.tx.get(TX.FONT_BIG_FONT_HILITE);
         if (ind_path == null || ind_font == null) {
-            this._fontti3 = await this.renderer.createFont(`language/fonts/ScandicBig2.txt`);
+            this._font3.update(await PkAssetTk.getFont(pathJoin(RESOURCES_PATH, 'language/fonts', 'ScandicBig2.txt')));
             // PK2_error = true;
             // PK2_error_msg = 'Can\'t create font 3 from ScandicBig2.txt';
         } else {
-            // this._fontti3 = this.renderer.createFont(tekstit->Hae_Teksti(ind_path), tekstit->Hae_Teksti(ind_font))
+            // this._fonts.set(FONT.F3, this.renderer.createFont(tekstit->Hae_Teksti(ind_path), tekstit->Hae_Teksti(ind_font)))
             //     PK2_error = true;
             //     PK2_error_msg = 'Can\'t create font 3';
             // }
@@ -501,32 +512,15 @@ export class PK2 extends PK2Context implements ITickable {
         
         ind_font = this.tx.get(TX.FONT_BIG_FONT_SHADOW);
         if (ind_path == null || ind_font == null) {
-            this._fontti4 = await this.renderer.createFont(`language/fonts/ScandicBig3.txt`);
+            this._font4.update(await PkAssetTk.getFont(pathJoin(RESOURCES_PATH, 'language/fonts', 'ScandicBig3.txt')));
             // PK2_error = true;
             // PK2_error_msg = 'Can\'t create font 4 from ScandicBig3.txt';
         } else {
-            // this._fontti4 = this.renderer.createFont(tekstit->Hae_Teksti(ind_path), tekstit->Hae_Teksti(ind_font))
+            // this._fonts.set(FONT.F4, this.renderer.createFont(tekstit->Hae_Teksti(ind_path), tekstit->Hae_Teksti(ind_font)))
             //     PK2_error = true;
             //     PK2_error_msg = 'Can\'t create font 4';
             // }
         }
-        
-        /*
-        if ((fontti2 = PisteDraw2_Font_Create("language/fonts/","ScandicBig1.txt")) == -1){
-        PK2_error = true;
-        PK2_error_msg = "Can't create font 2 from ScandicBig1.txt";
-        }
- 
-        if ((fontti3 = PisteDraw2_Font_Create("language/fonts/","ScandicBig2.txt")) == -1){
-        PK2_error = true;
-        PK2_error_msg = "Can't create font 3 from ScandicBig2.txt";
-        }
- 
-        if ((fontti4 = PisteDraw2_Font_Create("language/fonts/","ScandicBig3.txt")) == -1){
-        PK2_error = true;
-        PK2_error_msg = "Can't create font 4 from ScandicBig3.txt";
-        }*/
-        
     }
     
     private async PK_Load_Language(): Promise<void> {
@@ -546,9 +540,10 @@ export class PK2 extends PK2Context implements ITickable {
         // 	if (!tekstit->Read_File(tiedosto))
         // 		return false;
         
-        await this.tx.load(`language/${ this.settings.kieli }.txt`);
+        //  await this.tx.load(`language/${ this._settings.kieli }.txt`);
+        this._language = await PkAssetTk.getParamFile(pathJoin(RESOURCES_PATH, 'language', `${ this._settings.kieli }.txt`));
         
-        await this.PK_Load_Font();
+        await this.loadFonts();
     }
     
     // void PK_Load_EpisodeDir(char *tiedosto){
@@ -961,58 +956,16 @@ export class PK2 extends PK2Context implements ITickable {
     //
     // 	}
     // }
-    //
+    
     // //==================================================
     // //(#4) Text
     // //==================================================
     //
-    // int PK_Wavetext_Draw(char *teksti, int fontti, int x, int y){
-    // 	int pituus = strlen(teksti);
-    // 	int vali = 0;
-    // 	char kirjain[3] = " \0";
-    // 	int ys, xs;
-    //
-    // 	if (pituus > 0){
-    // 		for (int i=0;i<pituus;i++){
-    // 			ys = (int)(sin_table[((i+_degree)*8)%360])/7;
-    // 			xs = (int)(cos_table[((i+_degree)*8)%360])/9;
-    // 			kirjain[0] = teksti[i];
-    // 			PisteDraw2_Font_Write(fontti4,kirjain,x+vali-xs+3,y+ys+3);
-    // 			vali += PisteDraw2_Font_Write(fontti,kirjain,x+vali-xs,y+ys);
-    // 		}
-    // 	}
-    // 	return vali;
-    // }
-    // int PK_WavetextSlow_Draw(char *teksti, int fontti, int x, int y){
-    // 	int pituus = strlen(teksti);
-    // 	int vali = 0;
-    // 	char kirjain[3] = " \0";
-    // 	int ys, xs;
-    //
-    // 	if (pituus > 0){
-    // 		for (int i=0;i<pituus;i++){
-    // 			ys = (int)(sin_table[((i+_degree)*4)%360])/9;
-    // 			xs = (int)(cos_table[((i+_degree)*4)%360])/11;
-    // 			kirjain[0] = teksti[i];
-    //
-    // 			if (settings.lapinakyvat_menutekstit)
-    // 				vali += PisteDraw2_Font_WriteAlpha(fontti,kirjain,x+vali-xs,y+ys,75);
-    // 			else{
-    // 				PisteDraw2_Font_Write(fontti4,kirjain,x+vali-xs+1,y+ys+1);
-    // 				vali += PisteDraw2_Font_Write(fontti,kirjain,x+vali-xs,y+ys);
-    // 			}
-    //
-    //
-    // 		}
-    // 	}
-    // 	return vali;
-    // }
-    
     private PK_Fadetext_Init(): void {
         for (let i = 0; i < MAX_FADETEKSTEJA; i++)
             this.fadetekstit[i].ajastin = 0;
     }
-    
+    //
     // void PK_Fadetext_New(int fontti, char *teksti, uint x, uint y, uint ajastin, bool ui){
     // 	fadetekstit[fadeteksti_index].fontti = fontti;
     // 	strcpy(fadetekstit[fadeteksti_index].teksti,teksti);
@@ -1061,140 +1014,6 @@ export class PK2 extends PK2Context implements ITickable {
     // 		}
     // }
     //
-    
-    
-    //
-    // //==================================================
-    // //(#7) Sprite Prototypes
-    // //==================================================
-    //
-    // void PK2::SpriteSystem::protot_clear_all() {
-    // 	for (int i=0; i<MAX_PROTOTYYPPEJA; i++){
-    // 		for (int j=0;j<MAX_AANIA;j++)
-    // 			if (protot[i].aanet[j] > -1)
-    // 				PisteSound_FreeSFX(protot[i].aanet[j]);
-    // 		protot[i].Uusi();
-    // 		strcpy(kartta->protot[i],"");
-    // 	}
-    //
-    // 	next_free_prototype = 0;
-    // }
-    //
-    // int  PK2::SpriteSystem::protot_get_sound(char *polku, char *tiedosto) {
-    // 	char aanitiedosto[255];
-    // 	if (strcmp(tiedosto,"")!=0){
-    // 		strcpy(aanitiedosto,polku);
-    // 		strcat(aanitiedosto,tiedosto);
-    // 		return PisteSound_LoadSFX(aanitiedosto);
-    // 	}
-    //
-    // 	return -1;
-    // }
-    //
-    
-    
-    //
-    // //==================================================
-    // //(#9) Map
-    // //==================================================
-    
-    
-    // //==================================================
-    // //(#11) Gifts
-    // //==================================================
-    //
-    //
-    //
-    // int PK2::GiftSystem::count() {
-    // 	return gift_count;
-    // }
-    //
-    // int PK2::GiftSystem::get(int i) {
-    // 	return list[i];
-    // }
-    //
-    // PK2Sprite_Prototyyppi* PK2::GiftSystem::get_protot(int i) {
-    // 	return &PkEngine::Sprites->protot[ list[i] ];
-    // }
-    //
-    // void PK2::GiftSystem::draw(int i, int x, int y) {
-    // 	PK2Sprite_Prototyyppi* prot = &PkEngine::Sprites->protot[ list[i] ];
-    // 	prot->Piirra(x - prot->leveys / 2, y - prot->korkeus / 2, 0);
-    // }
-    //
-    // PK2::GiftSystem::GiftSystem() {
-    // 	clean();
-    // }
-    //
-    // PK2::GiftSystem::~GiftSystem() {}
-    //
-    // void PK2::GiftSystem::clean() {
-    // 	for (int i=0;i<MAX_GIFTS;i++)
-    // 		list[i] = -1;
-    // 	gift_count = 0;
-    // }
-    //
-    // bool PK2::GiftSystem::add(int prototype_id) {
-    // 	int i=0;
-    // 	bool lisatty = false;
-    //
-    // 	char ilmo[80];
-    // 	strcpy(ilmo,tekstit->Hae_Teksti(PK_txt.game_newitem));  //"a new item: ";
-    //
-    // 	while (i<MAX_GIFTS && !lisatty)
-    // 	{
-    // 		if (list[i] == -1)
-    // 		{
-    // 			lisatty = true;
-    // 			list[i] = prototype_id;
-    //
-    // 			//strcat(ilmo,protot[prototype_id]->nimi);
-    // 			PK_Start_Info(ilmo);
-    // 			gift_count++;
-    // 		}
-    // 		i++;
-    // 	}
-    // 	return lisatty;
-    // }
-    //
-    // int  PK2::GiftSystem::use() {
-    // 	if (gift_count > 0) {
-    // 		PkEngine::Sprites->add(
-    // 			list[0], 0,
-    // 			PkEngine::Sprites->player->x - PkEngine::Sprites->protot[list[0]].leveys,
-    // 			PkEngine::Sprites->player->y,
-    // 			MAX_SPRITEJA, false);
-    //
-    // 		for (int i = 0; i < MAX_GIFTS - 1; i++)
-    // 			list[i] = list[i+1];
-    //
-    // 		list[MAX_GIFTS-1] = -1;
-    //
-    // 		gift_count--;
-    // 	}
-    //
-    // 	return 0;
-    // }
-    //
-    // int  PK2::GiftSystem::change_order() {
-    // 	if (list[0] == -1)
-    // 		return 0;
-    //
-    // 	int temp = list[0];
-    //
-    // 	for (int i=0;i<MAX_GIFTS-1;i++)
-    // 		list[i] = list[i+1];
-    //
-    // 	int count = 0;
-    //
-    // 	while(count < MAX_GIFTS-1 && list[count] != -1)
-    // 		count++;
-    //
-    // 	list[count] = temp;
-    //
-    // 	return 0;
-    // }
-    
     
     // int PK_Draw_Cursor(int x,int y){
     // 	return 0;
@@ -2636,6 +2455,9 @@ export class PK2 extends PK2Context implements ITickable {
         this._screens.set(SCREEN.SCREEN_MENU, await MenuScreen.create(this));
         // Map screen
         this._screens.set(SCREEN.SCREEN_MAP, await MapScreen.create(this));
+        // Game screen
+        this._screens.set(SCREEN.SCREEN_GAME, await GameScreen.create(this));
+        
     }
     
     private PK_MainScreen_Intro(): void {
@@ -3004,46 +2826,6 @@ export class PK2 extends PK2Context implements ITickable {
             // 		menu_valittu_id = 1;
         }
         
-        // Start game
-        if (this.game_next_screen === SCREEN.SCREEN_GAME) {
-            // 		PK_UI_Change(UI_GAME_BUTTONS);
-            // 		PisteDraw2_SetXOffset(0);
-            //
-            // 		if (jaksot[jakso_indeksi_nyt].lapaisty)
-            // 			uusinta = true;
-            // 		else
-            // 			uusinta = false;
-            //
-            // 		if (!episode_started)
-            // 		{
-            // 			jakso_lapaisty = false;
-            //
-            // 			PkEngine::Gifts->clean(); //Reset gifts
-            // 			PkEngine::Sprites->clear(); //Reset sprites
-            // 			PkEngine::Sprites->protot_clear_all(); //Reset prototypes
-            //
-            // 			if (PK_Map_Open(this.seuraava_kartta) == 1)
-            // 			{
-            // 				PK2_error = true;
-            // 				PK2_error_msg = "Can't load map";
-            // 			}
-            //
-            // 			PK_Calculate_Tiles();
-            //
-            // 			PK_Fadetext_Init(); //Reset fade text
-            //
-            // 			PkEngine::Gifts->clean();
-            // 			episode_started = true;
-            // 			music_volume = settings.music_max_volume;
-            // 			_degree = 0;
-            // 			item_paneeli_x = -215;
-            // 			piste_lisays = 0;
-            // 		}
-            // 		else
-            // 		{
-            // 			_degree = degree_temp;
-            // 		}
-        }
         
         // Start pontuation
         if (this.game_next_screen === SCREEN.SCREEN_SCORING) {
@@ -3337,14 +3119,14 @@ export class PK2 extends PK2Context implements ITickable {
             update = true;
         
         if (update) {
-            if (this.settings.music_max_volume > 64)
-                this.settings.music_max_volume = 64;
+            if (this._settings.music_max_volume > 64)
+                this._settings.music_max_volume = 64;
             
-            if (this.settings.music_max_volume < 0)
-                this.settings.music_max_volume = 0;
+            if (this._settings.music_max_volume < 0)
+                this._settings.music_max_volume = 0;
             
-            if (this.music_volume > this.settings.music_max_volume)
-                this.music_volume = this.settings.music_max_volume;
+            if (this.music_volume > this._settings.music_max_volume)
+                this.music_volume = this._settings.music_max_volume;
             
             if (this.music_volume_now < this.music_volume)
                 this.music_volume_now++;
@@ -3386,13 +3168,11 @@ export class PK2 extends PK2Context implements ITickable {
         
         // wasPressed = PisteInput_Keydown(PI_ESCAPE);
         
-        // if (this.closing_game && !this.renderer.PisteDraw2_IsFading() || PK2_error)
-        //     this._engine.stop();
     }
     
     private changeToIntro() {
         const screen = this._screens.get(SCREEN.SCREEN_INTRO);
-        screen.on(PkScreen.EVT_SUSPENDED, this.changeToMenu, this);
+        //  screen.on(PkScreen.EV_SUSPENDED, this.changeToMenu, this);
         //screen.on(PkScreen.EVT_SUSPENDED, this.changeToMap, this);
         (screen as IntroScreen).start();
         this.renderer.setActiveScreen(screen);
@@ -3400,14 +3180,23 @@ export class PK2 extends PK2Context implements ITickable {
     
     private changeToMenu() {
         const screen = this._screens.get(SCREEN.SCREEN_MENU);
-        screen.on(PkScreen.EVT_SUSPENDED, this.changeToMap, this);
-        (screen as MenuScreen).showEpisodesMenu(200);
+        // screen.on(PkScreen.EV_SUSPENDED, this.changeToMap, this);
+        (screen as MenuScreen).showMainMenu(500);
+        //(screen as MenuScreen).showEpisodesMenu(200);
         this.renderer.setActiveScreen(screen);
     }
     
     private changeToMap() {
         const screen = this._screens.get(SCREEN.SCREEN_MAP);
         (screen as MapScreen).resume(500);
+        this.renderer.setActiveScreen(screen);
+    }
+    
+    private changeToGame(game: Game) {
+        const screen = this._screens.get(SCREEN.SCREEN_GAME) as GameScreen;
+        screen.display(game);
+        screen.resume(500);
+        screen.setActive(true);
         this.renderer.setActiveScreen(screen);
     }
     
@@ -3437,33 +3226,13 @@ export class PK2 extends PK2Context implements ITickable {
     private async prepare(): Promise<void> {
     }
     
-    private PK_Unload(): void {
-        if (!this.unload) {
-            // PisteSound_StopMusic();
-            this.kartta.destroy();
-            // delete tekstit;
-            // delete PkEngine::Particles;
-            // delete PkEngine::Sprites;
-            // delete PkEngine::Gifts;
-            this.unload = true;
-        }
-    }
-    
-    private PK_Fade_Quit(): void {
-        if (!this.closing_game) this.renderer.fadeOut(FADE.FADE_FAST);
-        this.closing_game = true;
-        this.music_volume = 0;
-    }
-    
-    
     private openEpisode() {
     
     }
     
-    
     private async quit(ret: int): Promise<void> {
-        await this.settings.save();
-        this.PK_Unload();
+        await this._settings.save();
+        // REPL this.PK_Unload();
         this._engine.destroy();
         if (!ret) console.log('Exited correctely\n');
         // exit(ret);
@@ -3472,11 +3241,11 @@ export class PK2 extends PK2Context implements ITickable {
     public tick(delta: number, time: number): void {
         this._engine.gt.add(this.tick.bind(this));
         
-        const diff = delta / 10; //--> 1pt every 10ms
+        //const diff = delta / 16; //--> 1pt every 10ms
         
-        for (let i = 0; i < diff; i++) {
-            this._entropy.degree = 1 + this._entropy.degree % 360;
-        }
+        //for (let i = 0; i < diff; i++) {
+        this._entropy.degree = 1 + this._entropy.degree % 360;
+        // }
     }
     
     public async main(/*int argc, char *argv[]*/): Promise<void> {
@@ -3523,18 +3292,34 @@ export class PK2 extends PK2Context implements ITickable {
         //
         // 	}
         
-        console.log('PK2 Started!');
+        Log.l('PK2 Started!');
         
-        // 	if(!path_set)
-        // 		PisteUtils_Setcwd();
-        // 	strcpy(tyohakemisto,".");
-        
-        this.settings = await PK2Settings.loadFromClient();
+        this._settings = await PK2Settings.loadFromClient();
+        Log.dg(['Settings', ...Object.entries(this._settings)]);
         
         this._engine = new PkEngine();
         this._engine.setDebug(this.dev_mode);
         this.renderer = this._engine.getRenderer();
         
+        // setup input
+        this._engine.input.associateAction([kbAction(Key.ArrowLeft)], [InputAction.UI_LEFT]);
+        this._engine.input.associateAction([kbAction(Key.ArrowRight)], [InputAction.UI_RIGHT]);
+        this._engine.input.associateAction([kbAction(Key.ArrowUp)], [InputAction.UI_UP]);
+        this._engine.input.associateAction([kbAction(Key.ArrowDown)], [InputAction.UI_DOWN]);
+        this._engine.input.associateAction([kbAction(Key.Enter), kbAction(' ')], [InputAction.UI_OK]);
+        this._engine.input.associateAction([kbAction(Key.Escape)], [InputAction.ESCAPE]);
+    
+        this._engine.input.associateAction([kbAction(Key.ArrowLeft)], [InputAction.GAME_LEFT]);
+        this._engine.input.associateAction([kbAction(Key.ArrowRight)], [InputAction.GAME_RIGHT]);
+        this._engine.input.associateAction([kbAction(Key.ArrowUp)], [InputAction.GAME_JUMP]);
+        this._engine.input.associateAction([kbAction(Key.ArrowDown)], [InputAction.GAME_CROUCH]);
+        this._engine.input.associateAction([kbAction(Key.AltGraph)], [InputAction.GAME_WALK_SLOW]);
+        this._engine.input.associateAction([kbAction(Key.Control)], [InputAction.GAME_ATTACK1]);
+        this._engine.input.associateAction([kbAction(Key.Alt)], [InputAction.GAME_ATTACK2]);
+        this._engine.input.associateAction([kbAction(Key.Tab)], [InputAction.GAME_GIFT_NEXT]);
+        this._engine.input.associateAction([kbAction(' ')], [InputAction.GAME_GIFT_USE]);
+        this._engine.input.associateAction([kbAction(Key.Delete)], [InputAction.GAME_SUICIDE]);
+        this._engine.input.associateAction([kbAction('P')], [InputAction.GAME_PAUSE]);
         
         await this.PK_Load_Language();
         //if (!this.PK_Load_Language()) {
@@ -3547,7 +3332,7 @@ export class PK2 extends PK2Context implements ITickable {
         //}
         
         console.log('GAMEFLOW IS DISABLED');
-        // this._engine.gt.add(this.tick.bind(this));
+        this._engine.gt.add(this.tick.bind(this));
         
         //
         await this.createScreens();
@@ -3571,37 +3356,73 @@ export class PK2 extends PK2Context implements ITickable {
         // The game loop calls PK_MainScreen().
         this._engine.start(this.PK_MainScreen, this);
         
-        console.log('RENDER IS DISABLED');
+        //console.log('RENDER IS DISABLED');
         //this.changeToIntro();
+        //this.changeToMenu();
         
+        this.uiActionNewGame();
         
         // Open the requested map
-        const tmpEpisodeName = 'rooster island 1';
+        // const tmpEpisodeName = 'rooster island 1';
+        //
+        // const map = await PK2Map.loadFromFile(this, /*seuraava_kartta*/ pathJoin('episodes', tmpEpisodeName), 'level001.map');
+        // // TODO try catch
+        // // 		printf("PK2    - Error loading map '%s' at '%s'\n", this.seuraava_kartta, polku);
+        // // 		return 1;
+        // const game = new PK2Game(this, map);
+        // await game.xChangeToGame();
+        //
+        // const minifn = (delta, time) => {
+        //     this._engine.gt.add(minifn.bind(this));
+        //
+        //     const coef = delta / (1000 / PK2GAMELOOP);
+        //
+        //     game.gameLoop(1);
+        // };
+        //
         
-        const map = await PK2Map.loadFromFile(this, /*seuraava_kartta*/ pathJoin('episodes', tmpEpisodeName), 'level001.map');
-        // TODO try catch
-        // 		printf("PK2    - Error loading map '%s' at '%s'\n", this.seuraava_kartta, polku);
-        // 		return 1;
-        const game = new PK2Game(this, map);
-        await game.xChangeToGame();
         
-        const minifn = (delta, time) => {
-            this._engine.gt.add(minifn.bind(this));
-            
-            const coef = delta / (1000 / PK2GAMELOOP);
-            
-            game.gameLoop(1);
-        };
-        
-        //new Pk.Stage();
-        
-        this.renderer._stage.addChild(game.composition.getDrawable());
-        this._engine.gt.add(minifn.bind(this));
+        //this.renderer._stage.addChild(game.composition.getDrawable());
+        // this._engine.gt.add(minifn.bind(this));
         
         // 	if(PK2_error){
         // 		printf("PK2    - Error!\n");
         // 		PisteUtils_Show_Error(PK2_error_msg);
         // 		quit(1);
         // 	}
+    }
+    
+    public async uiActionNewGame() {
+        await this._clearCurrentGame();
+        
+        this._game = await this._prepareNewGame();
+        this.changeToGame(this._game);
+        await this._game.start();
+        
+        const minifn = (delta, time) => {
+            this._engine.gt.add(minifn.bind(this));
+            //const coef = delta / (1000 / PK2GAMELOOP);
+            this._game.gameLoop();
+        };
+        
+        this._engine.gt.add(minifn.bind(this));
+    }
+    
+    
+    public uiActionSoundMenu() {
+    
+    }
+    
+    public async _clearCurrentGame(): Promise<void> {
+    
+    }
+    
+    public async _prepareNewGame(): Promise<Game> {
+        const tmpEpisodeName = 'rooster island 1';
+        const map = await PK2Map.loadFromFile(this, /*seuraava_kartta*/ pathJoin('episodes', tmpEpisodeName), 'level005.map');
+        // TODO try catch
+        // 		printf("PK2    - Error loading map '%s' at '%s'\n", this.seuraava_kartta, polku);
+        // 		return 1;
+        return new Game(this, map);
     }
 }

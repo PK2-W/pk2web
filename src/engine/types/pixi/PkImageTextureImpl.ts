@@ -15,6 +15,7 @@ export class PkImageTextureImpl implements PkImageTexture {
     public constructor(base: PkImageImpl, frame?: PkRectangle) {
         this._base = base;
         this._frame = PkRectangleImpl.fromRectangle(frame) ?? PkRectangleImpl.$(0, 0, base.width, base.height);
+        this._frame.on(PkRectangle.EV_CHANGE, this._onFrameChanged, this);
         
         this._pixi = new PIXI.Texture(this._base.getPixiBaseTexture(), this._frame.getNative());
     }
@@ -31,6 +32,10 @@ export class PkImageTextureImpl implements PkImageTexture {
             PkImageTk.imageToImageData(this._base.getImage(), this._frame));
     }
     
+    public get frame(): PkRectangle { return this._frame; }
+    public get width(): number { return this._frame.width; }
+    public get height(): number { return this._frame.height; }
+    
     public changeFrame(frame: PkRectangle): void {
         if (!this._frame.equals(frame)) {
             this._frame = PkRectangleImpl.fromRectangle(frame);
@@ -39,10 +44,21 @@ export class PkImageTextureImpl implements PkImageTexture {
         }
     }
     
+    private _onFrameChanged() {
+        this._pixi.updateUvs();
+    }
+    
     
     ///  PIXI Impl  ///
     
     public getPixiTexture(): PIXI.Texture {
         return this._pixi;
+    }
+    
+    public static getImplNative(genImpl: PkImageTexture): PIXI.Texture {
+        if (!(genImpl instanceof PkImageTextureImpl))
+            throw new Error(`Conversion from ${ genImpl.constructor.name } to ${ this.constructor.name } not implemented.`);
+        
+        return genImpl.getPixiTexture();
     }
 }

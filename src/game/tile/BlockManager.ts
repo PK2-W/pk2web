@@ -1,7 +1,7 @@
 import { Effects } from '@game/effects/Effects';
 import { EBlockPrototype } from '@game/enum/EBlockPrototype';
+import { TEXTURE_ID_BLOCKS } from '@game/game/Game';
 import { GameContext } from '@game/game/GameContext';
-import { TEXTURE_ID_BLOCKS } from '@game/game/PK2Game';
 import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, KYTKIN_ALOITUSARVO } from '@game/map/PK2Map';
 import { Block } from '@game/tile/Block';
 import { BlockCollider } from '@game/tile/BlockCollider';
@@ -14,7 +14,7 @@ import { pathJoin } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { PkImage } from '@ng/types/PkImage';
 import { RESOURCES_PATH } from '../../support/constants';
-import { int, CVect, cvect } from '../../support/types';
+import { int, CVect, cvect } from '../support/types';
 
 export class BlockManager {
     // Game Environment
@@ -53,16 +53,20 @@ export class BlockManager {
     }
     
     public placeBgBlocks(): void {
+        let code: number;
+        let proto: BlockPrototype;
+        let block: Block;
+        
         for (let i = 0; i < PK2KARTTA_KARTTA_LEVEYS; i++) {
             for (let j = 0; j < PK2KARTTA_KARTTA_KORKEUS; j++) {
                 // Get prototype from map
-                const code = this._context.map.getBgBlockCode(i, j);
+                code = this._context.map.getBgBlockCode(i, j);
                 
                 if (code < 255) {
-                    const proto = this.getProto(code);
+                    proto = this.getProto(code);
                     
                     // Create the block at the correct position
-                    const block = new Block(this._blockCtx, proto, i, j, TEXTURE_ID_BLOCKS);
+                    block = new Block(this._blockCtx, proto, i, j, TEXTURE_ID_BLOCKS);
                     
                     // Add to the game
                     this.setBgBlock(block);
@@ -77,16 +81,20 @@ export class BlockManager {
      * SDL: PK2Kartta::Piirra_Seinat.
      */
     public placeFgBlocks(): void {
+        let code: number;
+        let proto: BlockPrototype;
+        let block: Block;
+        
         for (let i = 0; i < PK2KARTTA_KARTTA_LEVEYS; i++) {
             for (let j = 0; j < PK2KARTTA_KARTTA_KORKEUS; j++) {
                 // Get prototype from map
-                const code = this._context.map.getFgBlockCode(i, j);
+                code = this._context.map.getFgBlockCode(i, j);
                 
                 if (code < 255) {
-                    const proto = this.getProto(code);
+                    proto = this.getProto(code);
                     
                     // Create the block at the correct position
-                    const block = new Block(this._blockCtx, proto, i, j, TEXTURE_ID_BLOCKS);
+                    block = new Block(this._blockCtx, proto, i, j, TEXTURE_ID_BLOCKS);
                     
                     // Add to the game
                     this.setFgBlock(block);
@@ -305,11 +313,11 @@ export class BlockManager {
      * SDL: PK_Calculate_MovableBlocks_Position.
      */
     public calculateMovableBlocksPosition(): void {
-        this._prototypes[EBlockPrototype.BLOCK_HISSI_HORI].vasen = Math.floor(this._context.entropy.cos(this._context.entropy.degree % 360));
-        this._prototypes[EBlockPrototype.BLOCK_HISSI_HORI].oikea = Math.floor(this._context.entropy.cos(this._context.entropy.degree % 360));
+        this._prototypes[EBlockPrototype.BLOCK_ELEVATOR_H].vasen = Math.floor(this._context.entropy.cos(this._context.entropy.degree % 360));
+        this._prototypes[EBlockPrototype.BLOCK_ELEVATOR_H].oikea = Math.floor(this._context.entropy.cos(this._context.entropy.degree % 360));
         
-        this._prototypes[EBlockPrototype.BLOCK_HISSI_VERT].ala = Math.floor(this._context.entropy.sin(this._context.entropy.degree % 360));
-        this._prototypes[EBlockPrototype.BLOCK_HISSI_VERT].yla = Math.floor(this._context.entropy.sin(this._context.entropy.degree % 360));
+        this._prototypes[EBlockPrototype.BLOCK_ELEVATOR_V].ala = Math.floor(this._context.entropy.sin(this._context.entropy.degree % 360));
+        this._prototypes[EBlockPrototype.BLOCK_ELEVATOR_V].yla = Math.floor(this._context.entropy.sin(this._context.entropy.degree % 360));
         
         let kytkin1_y: int = 0;
         let kytkin2_y: int = 0;
@@ -349,28 +357,28 @@ export class BlockManager {
         kytkin2_y /= 2;
         kytkin3_x /= 2;
         
-        this._prototypes[EBlockPrototype.BLOCK_KYTKIN1].ala = kytkin1_y;
-        this._prototypes[EBlockPrototype.BLOCK_KYTKIN1].yla = kytkin1_y;
+        this._prototypes[EBlockPrototype.BLOCK_SWITCH1].ala = kytkin1_y;
+        this._prototypes[EBlockPrototype.BLOCK_SWITCH1].yla = kytkin1_y;
         
-        this._prototypes[EBlockPrototype.BLOCK_KYTKIN2_YLOS].ala = -kytkin2_y;
-        this._prototypes[EBlockPrototype.BLOCK_KYTKIN2_YLOS].yla = -kytkin2_y;
+        this._prototypes[EBlockPrototype.BLOCK_SWITCH2_GATE_U].ala = -kytkin2_y;
+        this._prototypes[EBlockPrototype.BLOCK_SWITCH2_GATE_U].yla = -kytkin2_y;
         
-        this._prototypes[EBlockPrototype.BLOCK_KYTKIN2_ALAS].ala = kytkin2_y;
-        this._prototypes[EBlockPrototype.BLOCK_KYTKIN2_ALAS].yla = kytkin2_y;
+        this._prototypes[EBlockPrototype.BLOCK_SWITCH2_GATE_D].ala = kytkin2_y;
+        this._prototypes[EBlockPrototype.BLOCK_SWITCH2_GATE_D].yla = kytkin2_y;
         
-        this._prototypes[EBlockPrototype.BLOCK_KYTKIN2].ala = kytkin2_y;
-        this._prototypes[EBlockPrototype.BLOCK_KYTKIN2].yla = kytkin2_y;
+        this._prototypes[EBlockPrototype.BLOCK_SWITCH2].ala = kytkin2_y;
+        this._prototypes[EBlockPrototype.BLOCK_SWITCH2].yla = kytkin2_y;
         
-        this._prototypes[EBlockPrototype.BLOCK_KYTKIN3_OIKEALLE].oikea = kytkin3_x;
-        this._prototypes[EBlockPrototype.BLOCK_KYTKIN3_OIKEALLE].vasen = kytkin3_x;
-        this._prototypes[EBlockPrototype.BLOCK_KYTKIN3_OIKEALLE].koodi = EBlockPrototype.BLOCK_HISSI_HORI;
+        this._prototypes[EBlockPrototype.BLOCK_SWITCH3_GATE_L].oikea = kytkin3_x;
+        this._prototypes[EBlockPrototype.BLOCK_SWITCH3_GATE_L].vasen = kytkin3_x;
+        this._prototypes[EBlockPrototype.BLOCK_SWITCH3_GATE_L].koodi = EBlockPrototype.BLOCK_ELEVATOR_H;
         
-        this._prototypes[EBlockPrototype.BLOCK_KYTKIN3_VASEMMALLE].oikea = -kytkin3_x;
-        this._prototypes[EBlockPrototype.BLOCK_KYTKIN3_VASEMMALLE].vasen = -kytkin3_x;
-        this._prototypes[EBlockPrototype.BLOCK_KYTKIN3_VASEMMALLE].koodi = EBlockPrototype.BLOCK_HISSI_HORI;
+        this._prototypes[EBlockPrototype.BLOCK_SWITCH3_GATE_R].oikea = -kytkin3_x;
+        this._prototypes[EBlockPrototype.BLOCK_SWITCH3_GATE_R].vasen = -kytkin3_x;
+        this._prototypes[EBlockPrototype.BLOCK_SWITCH3_GATE_R].koodi = EBlockPrototype.BLOCK_ELEVATOR_H;
         
-        this._prototypes[EBlockPrototype.BLOCK_KYTKIN3].ala = kytkin3_x;
-        this._prototypes[EBlockPrototype.BLOCK_KYTKIN3].yla = kytkin3_x;
+        this._prototypes[EBlockPrototype.BLOCK_SWITCH3].ala = kytkin3_x;
+        this._prototypes[EBlockPrototype.BLOCK_SWITCH3].yla = kytkin3_x;
     }
     
     
@@ -391,7 +399,7 @@ export class BlockManager {
         // First, try to fetch the resource from provided location
         uri = pathJoin(fpath, fname);
         try {
-            image = await PkAssetTk.getImage(uri);
+            image = await PkAssetTk.getBitmap(uri);
             found = true;
         } catch (err) {
             if (!(err instanceof ResourceNotFoundError)) {
@@ -405,14 +413,14 @@ export class BlockManager {
             uri = pathJoin(RESOURCES_PATH, 'gfx/tiles/', fname);
             
             try {
-                image = await PkAssetTk.getImage(uri);
+                image = await PkAssetTk.getBitmap(uri);
             } catch (err) {
                 throw err;
             }
         }
         
         // Remove transparent pixel and create the base texture
-        image.removeTransparentPixel();
+        //image.removeTransparentPixel();
         
         this.ctx.textureCache.add(TEXTURE_ID_BLOCKS, image);
         
@@ -493,7 +501,7 @@ export class BlockManager {
         
         // Add to the scene;
         // Blocks are added as not visible to help the initial culling
-        block.getDrawable().renderable = false;
+        block.getDrawable().setRenderable(false);
         this.ctx.composition.addBgBlock(block);
     }
     
@@ -755,7 +763,7 @@ export class BlockManager {
         this.calculateEdges();
     }
     
-    public palikat(editor: boolean = false) {
+    public updateOffsets(editor: boolean = false) {
         // int palikka;
         // int px = 0,
         //     py = 0,
@@ -808,43 +816,47 @@ export class BlockManager {
             for (let j = 0; j < PK2KARTTA_KARTTA_KORKEUS; j++) {
                 block = this.getFgBlock(i, j);
                 
-                if (block != null && !(!editor && block.code === EBlockPrototype.BLOCK_ESTO_ALAS)) {
-                    // px = ((palikka % 10) * 32);
-                    // py = ((palikka / 10) * 32);
-                    xOffset = 0;
-                    yOffset = 0;
-                    
-                    if (!editor) {
-                        if (block.code === EBlockPrototype.BLOCK_HISSI_VERT)
-                            yOffset = Math.floor(this.ctx.entropy.sin(this.ctx.entropy.degree % 360));
+                if (block != null && block.renderable) {
+                    // Show invisible block only in editor TODO: Extend to the dev-mode and a specific option in editor, not ever
+                    if (block.code === EBlockPrototype.BLOCK_ESTO_ALAS) {
+                        block.getDrawable().visible = editor;
+                    } else {
+                        // px = ((palikka % 10) * 32);
+                        // py = ((palikka / 10) * 32);
+                        xOffset = 0;
+                        yOffset = 0;
                         
-                        if (block.code === EBlockPrototype.BLOCK_HISSI_HORI)
-                            xOffset = Math.floor(this.ctx.entropy.cos(this.ctx.entropy.degree % 360));
+                        if (!editor) {
+                            if (block.code === EBlockPrototype.BLOCK_ELEVATOR_V)
+                                yOffset = Math.floor(this.ctx.entropy.sin(this.ctx.entropy.degree % 360));
+                            
+                            if (block.code === EBlockPrototype.BLOCK_ELEVATOR_H)
+                                xOffset = Math.floor(this.ctx.entropy.cos(this.ctx.entropy.degree % 360));
+                            
+                            if (block.code === EBlockPrototype.BLOCK_SWITCH1)
+                                yOffset = ajastin1_y / 2;
+                            
+                            if (block.code === EBlockPrototype.BLOCK_SWITCH2_GATE_U)
+                                yOffset = -ajastin2_y / 2;
+                            
+                            if (block.code === EBlockPrototype.BLOCK_SWITCH2_GATE_D)
+                                yOffset = ajastin2_y / 2;
+                            
+                            if (block.code === EBlockPrototype.BLOCK_SWITCH2)
+                                yOffset = ajastin2_y / 2;
+                            
+                            if (block.code === EBlockPrototype.BLOCK_SWITCH3_GATE_L)
+                                xOffset = ajastin3_x / 2;
+                            
+                            if (block.code === EBlockPrototype.BLOCK_SWITCH3_GATE_R)
+                                xOffset = -ajastin3_x / 2;
+                            
+                            if (block.code === EBlockPrototype.BLOCK_SWITCH3)
+                                yOffset = ajastin3_x / 2;
+                        }
                         
-                        if (block.code === EBlockPrototype.BLOCK_KYTKIN1)
-                            yOffset = ajastin1_y / 2;
-                        
-                        if (block.code === EBlockPrototype.BLOCK_KYTKIN2_YLOS)
-                            yOffset = -ajastin2_y / 2;
-                        
-                        if (block.code === EBlockPrototype.BLOCK_KYTKIN2_ALAS)
-                            yOffset = ajastin2_y / 2;
-                        
-                        if (block.code === EBlockPrototype.BLOCK_KYTKIN2)
-                            yOffset = ajastin2_y / 2;
-                        
-                        if (block.code === EBlockPrototype.BLOCK_KYTKIN3_OIKEALLE)
-                            xOffset = ajastin3_x / 2;
-                        
-                        if (block.code === EBlockPrototype.BLOCK_KYTKIN3_VASEMMALLE)
-                            xOffset = -ajastin3_x / 2;
-                        
-                        if (block.code === EBlockPrototype.BLOCK_KYTKIN3)
-                            yOffset = ajastin3_x / 2;
+                        block.setOffset(xOffset, yOffset);
                     }
-                    
-                    block.setOffset(xOffset, yOffset);
-                    //PisteDraw2_Image_CutClip(palikat_buffer, x * 32 - (kamera_x % 32) + ax, y * 32 - (kamera_y % 32) + ay, px, py, px + 32, py + 32);
                 }
             }
         }

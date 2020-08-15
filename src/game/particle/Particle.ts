@@ -3,22 +3,22 @@
 //==================================================
 
 import { ParticleContext } from '@game/particle/ParticleContext';
-import { PkImageTextureImpl } from '@ng/types/pixi/PkImageTextureImpl';
+import { int } from '@game/support/types';
+import { DwObjectBase } from '@ng/drawable/object/DwObjectBase';
+import { DwFactory } from '@ng/drawable/skeleton/DwFactory';
+import { DwSprite } from '@ng/drawable/skeleton/DwSprite';
 import { PkRectangleImpl } from '@ng/types/pixi/PkRectangleImpl';
 import { PkImage } from '@ng/types/PkImage';
-import { PkImageTexture } from '@ng/types/PkImageTexture';
-import { int } from '../../support/types';
-import * as PIXI from 'pixi.js';
 
 
-export abstract class Particle {
+export abstract class Particle extends DwObjectBase<DwSprite> {
     // Instance unique identifier
     private static IID: number = 0;
     private readonly __iid__: number;
     
     private _context: ParticleContext;
     
-    protected _drawable: PIXI.Sprite;
+    protected _drawable: DwSprite;
     
     private _type: int;
     private _time: int;
@@ -33,8 +33,6 @@ export abstract class Particle {
     private _weight: number;
     private _color: int;
     private _alpha: int;
-    
-    protected get dw(): PIXI.Sprite { return this._drawable; }
     
     public static create(context: ParticleContext, type: int, x: number, y: number, a: number, b: number, anim: int, time: int, weight: number, color: int) {
         switch (type) {
@@ -74,10 +72,10 @@ export abstract class Particle {
     }
     
     protected constructor(context: ParticleContext, type: int, x: number, y: number, a: number, b: number, anim: int, time: int, weight: number, color: int) {
+        super(DwFactory.new.sprite());
+        
         this.__iid__ = Particle.IID++;
         this._context = context;
-        
-        this._drawable = new PIXI.Sprite();
         
         this._type = type;
         this.x = x;
@@ -288,8 +286,7 @@ abstract class BgParticle extends Particle {
 
 class DustParticle extends FgParticle {
     protected stage() {
-        const tex = this.stuff.getTexture(PkRectangleImpl.$(226, 2, 18, 19));
-        this.dw.texture = (tex as PkImageTextureImpl).getPixiTexture();
+        this.dw.texture = this.stuff.getTexture(PkRectangleImpl.$(226, 2, 18, 19));
     }
     // public update(): void {
     //     super.update();
@@ -306,8 +303,7 @@ class DustParticle extends FgParticle {
 
 class FeatherParticle extends FgParticle {
     protected stage() {
-        const texture = this.stuff.getTexture(PkRectangleImpl.$(14, 1, 21, 12));
-        this.dw.texture = (texture as PkImageTextureImpl).getPixiTexture();
+        this.dw.texture = this.stuff.getTexture(PkRectangleImpl.$(14, 1, 21, 12));
     }
     public update(): void {
         super.update();
@@ -315,8 +311,7 @@ class FeatherParticle extends FgParticle {
         const xplus = Math.floor(this._anim / 7) * 21;
         
         this.dw.texture.frame.x = 14 + xplus;
-        this.dw.texture.updateUvs();
-    
+        
         this._anim++;
         if (this._anim > 63)
             this._anim = 0;
@@ -326,8 +321,7 @@ class FeatherParticle extends FgParticle {
 class SparkParticle extends FgParticle {
     /** @inheritDoc */
     protected stage() {
-        const tex = this.stuff.getTexture(PkRectangleImpl.$(99, 14, 7, 7));
-        this.dw.texture = (tex as PkImageTextureImpl).getPixiTexture();
+        this.dw.texture = this.stuff.getTexture(PkRectangleImpl.$(99, 14, 7, 7));
     }
     /** @inheritDoc */
     public update(): void {
@@ -344,8 +338,7 @@ class SparkParticle extends FgParticle {
 class SmokeParticle extends FgParticle {
     /** @inheritDoc */
     protected stage() {
-        const texture = this.stuff.getTexture(PkRectangleImpl.$(1, 338, 33, 28));
-        this.dw.texture = (texture as PkImageTextureImpl).getPixiTexture();
+        this.dw.texture = this.stuff.getTexture(PkRectangleImpl.$(1, 338, 33, 28));
     }
     /** @inheritDoc */
     public update(): void {
@@ -359,9 +352,7 @@ class SmokeParticle extends FgParticle {
             if (frame > 16)
                 yplus = 32;
             
-            this.dw.texture.frame.x = 1 + xplus;
-            this.dw.texture.frame.y = 338 + yplus;
-            this.dw.texture.updateUvs();
+            this.dw.texture.frame.change(1 + xplus, 338 + yplus, this.dw.texture.width, this.dw.texture.height);
             
             this._anim++;
         }
@@ -389,8 +380,7 @@ class PointParticle extends FgParticle {
 class StarParticle extends FgParticle {
     /** @inheritDoc */
     protected stage() {
-        const texture = this.stuff.getTexture(PkRectangleImpl.$(1, 1, 10, 10));
-        this.dw.texture = (texture as PkImageTextureImpl).getPixiTexture();
+        this.dw.texture = this.stuff.getTexture(PkRectangleImpl.$(1, 1, 10, 10));
         
         //     if (color > 99 || !settings.lapinakyvat_objektit)
         //         PisteDraw2_Image_CutClip(kuva_peli, x-Game::camera_x, y-Game::camera_y, 1, 1, 11, 11);
@@ -407,8 +397,7 @@ class StarParticle extends FgParticle {
 class LightParticle extends FgParticle {
     /** @inheritDoc */
     protected stage() {
-        const texture = this.stuff.getTexture(PkRectangleImpl.$(1, 14, 13, 13));
-        this.dw.texture = (texture as PkImageTextureImpl).getPixiTexture();
+        this.dw.texture = this.stuff.getTexture(PkRectangleImpl.$(1, 14, 13, 13));
         
         // if (settings.lapinakyvat_objektit)
         //     PK_Draw_Transparent_Object(kuva_peli, 1, 14, 13, 13, x-Game::camera_x, y-Game::camera_y, alpha, color);

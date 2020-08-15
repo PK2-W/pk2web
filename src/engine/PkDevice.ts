@@ -6,6 +6,6 @@ export class PkDevice {
         return 640;
     }
     public get screenHeight(): int {
-        return 480;
+        return 650;
     }
 }

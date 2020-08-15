@@ -5,7 +5,7 @@ export const PK2_VERSION = 'r3';
 
 export const RESOURCES_PATH = './pk2w/res/';
 
-export const INTRO_DURATION = 1000;
+export const INTRO_DURATION = 10000;
 
 export const PE_PATH_SIZE = 128;
 

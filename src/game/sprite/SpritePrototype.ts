@@ -21,7 +21,7 @@ import {
     MAX_AANIA,
     RESOURCES_PATH
 } from '../../support/constants';
-import { DWORD, int, str, CBYTE, cvect, CVect } from '../../support/types';
+import { DWORD, int, str, CBYTE, cvect, CVect } from '../support/types';
 
 export class SpritePrototype {
     private mContext: GameContext;
@@ -105,8 +105,8 @@ export class SpritePrototype {
     private _isKey: boolean;
     /** If the sprite must shake occasionally. */
     private _shakes: boolean;
-    /** Number of bonus sprite that it can leave. */
-    private _bonusten_lkm: CBYTE;
+    /** Number of bonus it drops when destroyed. */
+    private _droppedBonusCount: int;
     /** Attack 1 animation duration (number of frames). */
     private _hyokkays1_aika: int;
     /** Attack 2 animation duration (number of frames). */
@@ -127,7 +127,8 @@ export class SpritePrototype {
     public ammo2Proto: SpritePrototype;				// Ammussprite1 prototyypin indeksi. -1 jos ei ole
     
     // Lis�ykset 1.2 versiossa
-    private _tiletarkistus: boolean;									// t�rm�ileek� tileihin
+    /** If TRUE, sprite collisions are treated like a block. */
+    private _collidesWithBlocks: boolean;
     private _aani_frq: DWORD;										// ��nien perussoittotaajuus (esim. 22050)
     private _random_frq: boolean;										// satunnaisuutta taajuuteen?
     
@@ -144,7 +145,7 @@ export class SpritePrototype {
     private _liitokyky: boolean;										// voiko tippua hiljaa alas?
     private _boss: boolean;											// onko johtaja
     /** If TRUE, always (100% probability) leaves bonus when it's destroyed. */
-    private _bonus_aina: boolean;
+    private _alwaysDropsBonusWhenDestroyed: boolean;
     private _osaa_uida: boolean;										// vaikuttaako painovoima vedess�?
     
     public static async loadFromFile(ctx: GameContext, path: string, file: string) {
@@ -175,7 +176,7 @@ export class SpritePrototype {
         this._animaatioita = 0;
         this._isKey = false;
         this.bonusProto = null;
-        this._bonusten_lkm = 1;
+        this._droppedBonusCount = 1;
         this._energia = 0;
         this._obstacle = false;
         this._este_ylos = true;
@@ -203,7 +204,7 @@ export class SpritePrototype {
         this._random_frq = true;
         this._suojaus = EDamageType.VAHINKO_EI;
         this._shakes = false;
-        this._tiletarkistus = true;
+        this._collidesWithBlocks = true;
         this._tuhoutuminen = EDestructionType.TUHOUTUMINEN_ANIMAATIO;
         this._type = ESpriteType.TYYPPI_EI_MIKAAN;
         this._causedDamage = 0;
@@ -216,7 +217,7 @@ export class SpritePrototype {
         this._tulitauko = 0;
         this._liitokyky = false;
         this._boss = false;
-        this._bonus_aina = false;
+        this._alwaysDropsBonusWhenDestroyed = false;
         this._osaa_uida = false;
         
         for (let i = 0; i < SPRITE_MAX_AI; i++) {
@@ -259,7 +260,7 @@ export class SpritePrototype {
         this._animaatioita = 0;
         this._isKey = false;
         this.bonusProto = null;
-        this._bonusten_lkm = 1;
+        this._droppedBonusCount = 1;
         this._energia = 0;
         this._obstacle = false;
         this._este_ylos = true;
@@ -287,7 +288,7 @@ export class SpritePrototype {
         this._random_frq = true;
         this._suojaus = EDamageType.VAHINKO_EI;
         this._shakes = false;
-        this._tiletarkistus = true;
+        this._collidesWithBlocks = true;
         this._tuhoutuminen = EDestructionType.TUHOUTUMINEN_ANIMAATIO;
         this._type = ESpriteType.TYYPPI_EI_MIKAAN;
         this._causedDamage = 0;
@@ -300,7 +301,7 @@ export class SpritePrototype {
         this._tulitauko = 0;
         this._liitokyky = false;
         this._boss = false;
-        this._bonus_aina = false;
+        this._alwaysDropsBonusWhenDestroyed = false;
         this._osaa_uida = false;
         
         for (let i = 0; i < SPRITE_MAX_AI; i++) {
@@ -533,7 +534,7 @@ export class SpritePrototype {
         this._tuhoutuminen = stream.streamReadInt(4);
         this._isKey = stream.streamReadBool();
         this._shakes = stream.streamReadBool();
-        this._bonusten_lkm = stream.streamReadUint(1);
+        this._droppedBonusCount = stream.streamReadUint(1);
         stream.streamOffset++;                                    // <- 1 byte padding for struct alignment
         this._hyokkays1_aika = stream.streamReadInt(4);
         this._hyokkays2_aika = stream.streamReadInt(4);
@@ -544,7 +545,7 @@ export class SpritePrototype {
         this._ammo1ProtoName = ifempty(stream.streamReadCStr(100));
         this._ammo2ProtoName = ifempty(stream.streamReadCStr(100));
         
-        this._tiletarkistus = stream.streamReadBool();
+        this._collidesWithBlocks = stream.streamReadBool();
         
         stream.streamOffset += 3;                                 // <- 3 bytes padding for struct alignment
         this._aani_frq = stream.streamReadUint(4);
@@ -561,7 +562,7 @@ export class SpritePrototype {
         this._tulitauko = stream.streamReadInt(4);
         this._liitokyky = stream.streamReadBool();
         this._boss = stream.streamReadBool();
-        this._bonus_aina = stream.streamReadBool();
+        this._alwaysDropsBonusWhenDestroyed = stream.streamReadBool();
         this._osaa_uida = stream.streamReadBool();
     }
     
@@ -645,6 +646,12 @@ export class SpritePrototype {
     public set width(v: int) {
         this._leveys = v;
     }
+    
+    public get alwaysDropsBonusWhenDestroyed(): boolean { return this._alwaysDropsBonusWhenDestroyed === true; }
+    /** @deprecated */ public get bonus_aina(): boolean { throw new Error('DEPRECATED'); }
+    
+    public get droppedBonusCount(): int { return this._droppedBonusCount; }
+    /** @deprecated */ public get bonusten_lkm(): int { throw new Error('DEPRECATED'); }
     
     /** In a bonus sprite is the gift-time, i.e. bonus extra time, or extra time invisible... */
     public get latausaika() {
@@ -748,7 +755,7 @@ export class SpritePrototype {
     public isObstacle(): boolean {
         return this._obstacle == true;
     }
-    public get este(): boolean { return this._obstacle; }
+    /** @deprecated use isObstacle */ get este(): boolean { return this._obstacle; }
     public get este_alas(): boolean { return this._este_alas; }
     public get este_ylos(): boolean { return this._este_ylos; }
     public get este_oikealle(): boolean { return this._este_oikealle; }
@@ -777,10 +784,10 @@ export class SpritePrototype {
     }
     
     public isEnemy() { return this._isEnemy == true; }
-    /** @deprecated */ public get vihollinen(): boolean { throw new Error('DEPRECATED'); }
+    /** @deprecated */ public get vihollinen() { throw new Error('DEPRECATED'); }
     
     public isKey() { return this._isKey == true; }
-    /** @deprecated */ public get avain(): boolean { throw new Error('DEPRECATED'); }
+    /** @deprecated */ public get avain() { throw new Error('DEPRECATED'); }
     
     /** @deprecated use maxJump */
     public get max_hyppy(): CBYTE {
@@ -797,9 +804,8 @@ export class SpritePrototype {
         return this._pallarx_kerroin;
     }
     
-    public get tiletarkistus(): boolean {
-        return this._tiletarkistus;
-    }
+    public get collidesWithBlocks(): boolean { return this._collidesWithBlocks; }
+    /** @deprecated */ get tiletarkistus() { throw new Error('DEPRECATED'); }
     
     public isBackground(): boolean {
         return this.type === ESpriteType.TYYPPI_TAUSTA;

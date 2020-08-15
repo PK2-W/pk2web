@@ -1,6 +1,6 @@
 import { PkBinary } from '@ng/types/PkBinary';
 import { ANIMAATIO_MAX_SEKVENSSEJA } from '../../support/constants';
-import { CVect, CBYTE, cvect, uint } from '../../support/types';
+import { CVect, CBYTE, cvect, uint } from '../support/types';
 
 /**
  * SRC: PK2SPRITE_ANIMAATIO.

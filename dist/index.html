@@ -3,13 +3,19 @@
     <meta charset="utf-8">
 </head>
 <body>
-    <canvas id="pk-canvas" width="640" height="480" style="border: 1px solid #300; background: #000"></canvas>
+    <canvas id="pk-canvas" width="800" height="500" style="border: 1px solid #300; background: #000"></canvas>
     <br>
     click anywhere to start<br>
     bumxu © 2020
 
-    <div id="delta"></div>
+    <div id="delta">
+        <span id="tps" style="font-family: monospace"></span>
+    </div>
     <div id="speed"></div>
+    <div id="more">
+        <button onclick="try{pk2w._game.context.time.stop();}catch(e){};try{pk2w._engine._rendr._stage.removeChildren();}catch(e){};">ABORT</button><br>
+        <button onclick="try{pk2w._game.context.time.stop();}catch(e){};try{pk2w._engine._rendr._stage.removeChildren();}catch(e){};location.reload();">ABORT + RESET</button>
+    </div>
 
     <script type="text/javascript" src="j/vendor/xmeffects.js"></script>
     <script type="text/javascript" src="j/vendor/xm.js"></script>

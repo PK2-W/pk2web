@@ -1,5 +1,4 @@
 import { trim } from '@ng/support/utils';
-import { RESOURCES_PATH } from '../../support/constants';
 
 export class PkVirtualFs {
     private readonly _root: VFolder;

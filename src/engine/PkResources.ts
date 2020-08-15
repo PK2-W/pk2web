@@ -1,7 +1,7 @@
 import { ResourceFetchError } from '@ng/error/ResourceFetchError';
 import { ResourceNotFoundError } from '@ng/error/ResourceNotFoundError';
-import { PkBinary } from '@ng/types/PkBinary';
 import { pathJoin, cloneStruct } from '@ng/support/utils';
+import { PkBinary } from '@ng/types/PkBinary';
 
 /**
  * @deprecated Use PkAssetTk instead.

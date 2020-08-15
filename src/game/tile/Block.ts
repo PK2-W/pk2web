@@ -1,17 +1,14 @@
+import { uint } from '@game/support/types';
 import { BlockCollider } from '@game/tile/BlockCollider';
-import { BLOCK_SIZE} from '@game/tile/BlockConstants';
+import { BLOCK_SIZE } from '@game/tile/BlockConstants';
 import { BlockContext } from '@game/tile/BlockContext';
 import { BlockPrototype, TBlockProtoCode } from '@game/tile/BlockPrototype';
-import { EBlockPrototype } from '@game/enum/EBlockPrototype';
-import { IDrawable } from '@ng/drawable/IDrawable';
-import { Log } from '@ng/support/log/LoggerImpl';
-import { PkImageTextureImpl } from '@ng/types/pixi/PkImageTextureImpl';
-import * as PIXI from 'pixi.js';
-import { uint } from '../../support/types';
+import { DwObjectBase } from '@ng/drawable/object/DwObjectBase';
+import { DwFactory } from '@ng/drawable/skeleton/DwFactory';
+import { DwSprite } from '@ng/drawable/skeleton/DwSprite';
 
-export class Block implements IDrawable {
+export class Block extends DwObjectBase<DwSprite> {
     private readonly _context: BlockContext;
-    private readonly _drawable: PIXI.Container;
     
     // Type of block
     private readonly _proto: BlockPrototype;
@@ -35,6 +32,8 @@ export class Block implements IDrawable {
     
     
     public constructor(context: BlockContext, proto: BlockPrototype, i: number, j: number, textureId: string) {
+        super(DwFactory.new.sprite());
+        
         this._context = context;
         this._proto = proto;
         this._textureId = textureId;
@@ -44,10 +43,10 @@ export class Block implements IDrawable {
         this._xOffset = 0;
         this._yOffset = 0;
         
-        this._drawable = new PIXI.Container();
-        this._drawable.x = this.x;
-        this._drawable.y = this.y;
         this.relayout();
+    
+        this.dw.x = this.x;
+        this.dw.y = this.y;
     }
     
     
@@ -84,13 +83,12 @@ export class Block implements IDrawable {
     
     ///  Graphics  ///
     
-    private tmpSpr = new PIXI.Sprite();
+    //private tmpSpr = DwFactory.new.sprite();
     public relayout(): void {
-        this._drawable.removeChildren();
+        //this._drawable.clear();
         const texture = this._context.textureCache.getTexture(this._textureId, this._proto.getTextureArea(this._textureOffset));
-        this.tmpSpr.texture = (texture as PkImageTextureImpl).getPixiTexture();
-        
-        this._drawable.addChild(this.tmpSpr);
+        this._drawable.setTexture(texture);
+        //this._drawable.add(this.tmpSpr);
         
         // Debug
         // const graphics = new PIXI.Graphics();
@@ -115,20 +113,8 @@ export class Block implements IDrawable {
     
     public setTextureOffset(offset: uint): void {
         this._textureOffset = offset;
-        this.relayout();
+        // this.relayout();
     }
-    
-    public getDrawable(): PIXI.DisplayObject {
-        return this._drawable;
-    }
-    
-    public invalidate(propagate: boolean): void {
-    }
-    
-    public isInvalidated(): boolean {
-        return false;
-    }
-    
     
     ///
     
@@ -168,8 +154,8 @@ export class Block implements IDrawable {
         this._xOffset = xOffset;
         this._yOffset = yOffset;
         
-        this.tmpSpr.x = xOffset;
-        this.tmpSpr.y = yOffset;
+        this.dw.x = this.x;
+        this.dw.y = this.y;
         
         // if (this.code === EBlockProtoCode.BLOCK_KYTKIN1 || this.code === EBlockProtoCode.BLOCK_KYTKIN2 || this.code === EBlockProtoCode.BLOCK_KYTKIN3)
         //     Log.d(`[!Switch] Switch ${ this.code } offset set to ${ this.tmpSpr }`);

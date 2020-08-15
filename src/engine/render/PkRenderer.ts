@@ -1,21 +1,11 @@
-//#########################
-//PisteEngine - PisteDraw
-//by Janne Kivilahti from Piste Gamez
-//#########################
-
-import { PkEngine } from '@ng/PkEngine';
+import { uint, int, bool, FONTID } from '@game/support/types';
+import { PkEngine } from '@ng/core/PkEngine';
+import { DwImpl } from '@ng/drawable/impl-pixi/DwImpl';
+import { PkTickable } from '@ng/support/PkTickable';
+import { WEB_CANVAS_QS } from '@sp/constants';
 import * as PIXI from 'pixi.js';
-import { WEB_CANVAS_QS } from '../../support/constants';
-import { uint, int, bool, FONTID } from '../../support/types';
-import { PkFont } from '../PkFont';
-import { PkScreen } from '../screen/PkScreen';
-
-// #include <SDL2/SDL.h>
-// #include <vector>
-//
-// #include "PisteFont.hpp"
-// #include "platform.hpp"
-//
+import { PkFontAsset } from '../types/font/PkFontAsset';
+import { PkScreen } from '../ui/PkScreen';
 
 export enum FADE {
     FADE_FAST = 5,
@@ -23,42 +13,23 @@ export enum FADE {
     FADE_SLOW = 1
 }
 
-// #define		PD_FILTER_NEAREST  "0"
-// #define		PD_FILTER_BILINEAR "1"
-//
-// namespace Piste {
-//
-
-//
-// #define		PD_FILTER_NEAREST  "0"
-// #define		PD_FILTER_BILINEAR "1"
-//
-const MAX_IMAGES: int = 2000;
-// const int MAX_FONTS = 20;
-//
-
-
-export class PkRenderer {
+export class PkRenderer implements PkTickable {
     private static instance: PkRenderer;
     
     private readonly _canvas: HTMLCanvasElement;
     private readonly _renderer: PIXI.Renderer;
     private readonly _stage: PIXI.Container;
     
+    private _screenIndex: Map<string, PkScreen>;
     private _activeScreen: PkScreen;
+    
+    
     private _nextScreen: PkScreen;
     
-    // SDL_Surface*  frameBuffer8 = NULL;
-    
-    // SDL_Surface*  imageList[MAX_IMAGES];
     private imageList: HTMLImageElement[] = [];
-    private readonly fontList: Map<FONTID, PkFont> = new Map<FONTID, PkFont>();
+    private readonly fontList: Map<FONTID, PkFontAsset> = new Map<FONTID, PkFontAsset>();
     // SDL_Palette*  game_palette = NULL;
     
-    private screenWidth: int;
-    private screenHeight: int;
-    // SDL_Rect Screen_dest = {0, 0, 0, 0};
-    // bool ScreenFit = false;
     
     private _alive = false;
     
@@ -73,6 +44,8 @@ export class PkRenderer {
         //         for(int i = 0; i < 256; i++) game_palette->colors[i] = {(Uint8)i,(Uint8)i,(Uint8)i,(Uint8)i};
         //     }
         //
+        
+        this._screenIndex = new Map();
         
         this._alive = true;
         
@@ -101,17 +74,11 @@ export class PkRenderer {
         this.adjustScreen();
     }
     
-    /** @deprecated now screens are autonomous */
-    public PisteDraw2_IsFading() { PkRenderer.deprecated(); }
-    
-    /** @deprecated now screens are autonomous */
-    public PisteDraw2_FadeOut() { PkRenderer.deprecated(); }
-    
-    /** @deprecated now screens are autonomous */
-    public fadeOut() { PkRenderer.deprecated(); }
-    
-    /** @deprecated now screens are autonomous */
-    public fadeIn() { PkRenderer.deprecated(); }
+    public tick(delta: number, time: number): void {
+        if (this._activeScreen != null) {
+            this._activeScreen.tick(delta, time);
+        }
+    }
     
     private static deprecated(): void { throw new Error('DEPRECATED'); }
     
@@ -121,78 +88,6 @@ export class PkRenderer {
                 return i;
         return -1;
     }
-    
-    // void PisteDraw2_RotatePalette(BYTE start, BYTE end);
-    
-    
-    /** @deprecated */
-    public PisteDraw2_Image_New(/*int w, int h*/) { PkRenderer.deprecated(); }
-    /** @deprecated */
-    public PisteDraw2_Image_Load(/*filename: string/*, bool getPalette*/) { PkRenderer.deprecated(); }
-    /** @deprecated */
-    public PisteDraw2_Image_Copy(/*int src_i, int dst_i*/) { PkRenderer.deprecated(); }
-    /** @deprecated */
-    public PisteDraw2_Image_Cut(/*int ImgIndex, int x, int y, int w, int h*/) { PkRenderer.deprecated(); }
-    //public PisteDraw2_Image_Cut(/*int ImgIndex, PD_RECT area*/) { PK2wRenderer.deprecated(); }
-    /** @deprecated */
-    public PisteDraw2_Image_Clip(/*int index, int x, int y*/) { PkRenderer.deprecated(); }
-    /** @deprecated */
-    public PisteDraw2_Image_ClipTransparent(/*int index, int x, int y, int alpha*/) { PkRenderer.deprecated(); }
-    /** @deprecated */
-    public PisteDraw2_Image_CutClip(/*int index, int dstx, int dsty, int srcx, int srcy, int oikea, int ala*/) { PkRenderer.deprecated(); }
-    //public PisteDraw2_Image_CutClip(/*int index, PD_RECT srcrect, PD_RECT dstrect*/) { PK2wRenderer.deprecated(); }
-    /** @deprecated */
-    public PisteDraw2_Image_CutClipTransparent(/*int index, PD_RECT srcrect, PD_RECT dstrect, int alpha*/) { PkRenderer.deprecated(); }
-    //public PisteDraw2_Image_CutClipTransparent(/*int index, PD_RECT srcrect, PD_RECT dstrect, int alpha, int colorsum*/) { PK2wRenderer.deprecated(); }
-    /** @deprecated */
-    public PisteDraw2_Image_GetSize(/*int index, int& w, int& h*/) { PkRenderer.deprecated(); }
-    /** @deprecated */
-    public PisteDraw2_Image_FlipHori(/*int index*/) { PkRenderer.deprecated(); }
-    /** @deprecated */
-    public PisteDraw2_Image_Snapshot(/*int index*/) { PkRenderer.deprecated(); }
-    /** @deprecated */
-    public PisteDraw2_Image_Delete(/*int& index*/) { PkRenderer.deprecated(); }
-    
-    // int PisteDraw2_ImageFill(int index, BYTE color) { PK2wRenderer.deprecated(); }
-    // int PisteDraw2_ImageFill(int index, int posx, int posy, int oikea, int ala, BYTE color) { PK2wRenderer.deprecated(); }
-    // int PisteDraw2_ScreenFill(BYTE color) { PK2wRenderer.deprecated(); }
-    // int PisteDraw2_ScreenFill(int posx, int posy, int oikea, int ala, BYTE color) { PK2wRenderer.deprecated(); }
-    // void PisteDraw2_SetMask(int x, int y, int w, int h) { PK2wRenderer.deprecated(); }
-    //
-    // int PisteDraw2_DrawScreen_Start(BYTE *&pixels, DWORD &pitch);
-    // int PisteDraw2_DrawScreen_End();
-    // int PisteDraw2_DrawImage_Start(int index, BYTE *&pixels, DWORD &pitch);
-    // int PisteDraw2_DrawImage_End(int index);
-    // BYTE PisteDraw2_BlendColors(BYTE color, BYTE colBack,int alpha);
-    //
-    
-    // Never used
-    // int PisteDraw2_Font_Create(int image, int x, int y, int width, int height, int count);
-    
-    /** @deprecated use {@link createFont} */
-    public async PisteDraw2_Font_Create(uri: string): Promise<FONTID> {
-        return this.createFont(uri);
-    }
-    
-    public async createFont(uri: string): Promise<FONTID> {
-        console.log(`PD     - Creating font from "${ uri }"`);
-        
-        try {
-            const font = await PkFont.load(uri);
-            this.fontList.set(font.iid, font);
-            return font.iid;
-            
-        } catch (err) {
-            console.warn(`PD     - Font couldn't be loaded from "${ uri }"`);
-            throw err;
-        }
-    }
-    
-    // int PisteDraw2_Font_Write(int font_index, const char* text, int x, int y);
-    // int PisteDraw2_Font_WriteAlpha(int font_index, const char* text, int x, int y, BYTE alpha);
-    
-    // int PisteDraw2_SetFilter(const char* filter);
-    // void PisteDraw2_FullScreen(bool set);
     
     public setNextScreen(screen: PkScreen) {
         if (this._activeScreen == null) {
@@ -204,7 +99,9 @@ export class PkRenderer {
     
     public setActiveScreen(screen: PkScreen) {
         this._stage.removeChildren();
-        this._stage.addChild(screen.getDrawable());
+        
+        this._activeScreen = screen;
+        this._stage.addChild((screen.getDrawable() as DwImpl<PIXI.DisplayObject>).pixi);
         
         //screen.show();
         
@@ -213,6 +110,8 @@ export class PkRenderer {
     }
     
     public tmp() {
+        //try{ window.pk2w._game.context.time.trigger(); } catch(r){}
+        
         if (window.nor != true)
             this._renderer.render(this._stage);
         
@@ -237,19 +136,6 @@ export class PkRenderer {
         //     Screen_dest.x = (int)((w - Screen_dest.w) / 2);
         //     Screen_dest.y = 0;
         // }
-    }
-    
-    // void PisteDraw2_FitScreen(bool fit);
-    // void PisteDraw2_ChangeResolution(int w, int h);
-    //
-    // void PisteDraw2_GetWindowPosition(int* x, int* y);
-    //
-    // int PisteDraw2_GetXOffset();
-    // void PisteDraw2_SetXOffset(int x);
-    // int PisteDraw2_Start(int width, int height, const char* name, const char* icon);
-    
-    public clearFonts(): void {
-        this.fontList.clear();
     }
     
     public destroy(): void {
@@ -277,51 +163,20 @@ export class PkRenderer {
         this._alive = false;
     }
     
-    public PisteDraw2_Update(draw: bool) {
-        if (!this._alive) return;
+    ///
+    
+    public add(screenId: string, screen: PkScreen) {
+        this._screenIndex.set(screenId, screen);
+    }
+    
+    public setActive(screenId: string) {
+        const screen = this._screenIndex.get(screenId);
         
-        if (draw) {
-            // SDL_Texture* texture;
-            // BYTE alpha = (BYTE)(PD_alpha*255/100);
-            //
-            // texture = SDL_CreateTextureFromSurface(PD_Renderer,frameBuffer8);
-            // SDL_SetTextureColorMod(texture,alpha,alpha,alpha);
-            //
-            // SDL_RenderClear(PD_Renderer);
-            //
-            // if(ScreenFit)
-            //     SDL_RenderCopy(PD_Renderer, texture, NULL, NULL);
-            // else
-            //     SDL_RenderCopy(PD_Renderer, texture, NULL, &Screen_dest);
-            //
-            // PisteInput_DrawGui(alpha);
-            //
-            // SDL_RenderPresent(PD_Renderer);
-            //
-            // SDL_DestroyTexture(texture);
-            //if (this.PisteDraw2_IsFading()) {
-            // this.alpha += this.fadeSpeed;
-            // if (this.alpha < 0) this.alpha = 0;
-            // if (this.alpha > 255) this.alpha = 255;
-            //}
-            
-            // SDL_Rect r = {0, 0, XOffset, PD_screen_height}; // Fill the unused borders
-            // SDL_FillRect(frameBuffer8, &r, 0);
-            // r.x = PD_screen_width - XOffset;
-            // SDL_FillRect(frameBuffer8, &r, 0);
+        if (screen != null && (screen.isOperating() || screen.isResuming())) {
+            if (this._activeScreen != null) {
+                this._activeScreen.setActive(false);
+            }
+            this._activeScreen = screen;
         }
     }
-    
-    // void* PisteDraw2_GetRenderer();
-    
-    public getFont(fontId: FONTID): PkFont {
-        return this.fontList.get(fontId);
-    }
 }
-
-type RECT = {
-    x: uint;
-    y: uint;
-    w: uint;
-    h: uint;
-};

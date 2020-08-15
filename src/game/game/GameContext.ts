@@ -1,11 +1,11 @@
 import { Entropy } from '@game/Entropy';
-import { GameComposition } from '@game/game/GameComposition';
+import { GameComposition } from '@game/display/GameComposition';
 import { TextureCache } from '@game/game/TextureCache';
 import { PK2Map } from '@game/map/PK2Map';
 import { ParticleSystem } from '@game/particle/ParticleSystem';
 import { PK2Context } from '@game/PK2Context';
-import { PkDevice } from '@ng/PkDevice';
-import { PKSound } from '@ng/PKSound';
+import { PkDevice } from '@ng/core/PkDevice';
+import { PKSound } from '@ng/core/PKSound';
 import { PkImage } from '@ng/types/PkImage';
 
 /**

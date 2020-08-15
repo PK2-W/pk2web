@@ -4,17 +4,6 @@ export class PkColor {
     private _blue: number;
     private _alpha: number;
     
-    public static rgb(r: number, g: number, b: number): PkColor {
-        const color = new PkColor();
-        
-        color._red = r;
-        color._green = g;
-        color._blue = b;
-        color._alpha = 255;
-        
-        return color;
-    }
-    
     public static bgr(b: number, g: number, r: number): PkColor {
         const color = new PkColor();
         
@@ -26,13 +15,24 @@ export class PkColor {
         return color;
     }
     
-    public static rgba(r: number, g: number, b: number, a: number): PkColor {
+    public static rgba(r: number, g: number, b: number, a255: number = 255): PkColor {
         const color = new PkColor();
         
         color._red = r;
         color._green = g;
         color._blue = b;
-        color._alpha = a;
+        color._alpha = a255;
+        
+        return color;
+    }
+    
+    public static rgba1(r: number, g: number, b: number, a01: number): PkColor {
+        const color = new PkColor();
+        
+        color._red = r;
+        color._green = g;
+        color._blue = b;
+        color._alpha = a01 * 255;
         
         return color;
     }
@@ -49,7 +49,17 @@ export class PkColor {
         return this._blue;
     }
     
-    public get a(): number {
+    public get a255(): number {
         return this._alpha;
     }
+    
+    public get a01(): number {
+        return this._alpha / 255;
+    }
+    
+    public toRGBInt(): number {
+        return ((1 << 24) + (this.r << 16) + (this.g << 8) + this.b);
+    }
 }
+
+export type TColor = number;
