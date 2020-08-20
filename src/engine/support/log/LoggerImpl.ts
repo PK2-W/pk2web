@@ -9,7 +9,7 @@ class LoggerImpl implements Logger {
     // Instancia
     public static readonly instance: Logger = new LoggerImpl();
     
-    public static DEBUG = false;
+    public static DEBUG = true;
     public static VERBOSE = false;
     public static VVERBOSE = false;
     

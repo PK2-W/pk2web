@@ -1,4 +1,4 @@
-import { PK2Context } from '@game/PK2Context';
+import { PekkaContext } from '@game/PekkaContext';
 import { int } from '@game/support/types';
 import { TX } from '@game/texts';
 import { IntroText } from '@game/ui/screen/intro/IntroText';
@@ -34,7 +34,7 @@ export class IntroScreen extends Screen {
     private _tmpObjs = [];
     
     
-    public static create(context: PK2Context) {
+    public static create(context: PekkaContext) {
         return new IntroScreen(context);
     }
     
@@ -46,7 +46,7 @@ export class IntroScreen extends Screen {
     }
     
     public async start() {
-        this.startTime = this._context.time.now();
+        this.startTime = this.context.time.now();
         
         Log.d(`[${ IntroScreen.name }] Initializing intro screen`);
         
@@ -74,13 +74,13 @@ export class IntroScreen extends Screen {
     }
     
     protected doSuspend() {
-        this._context.audio.stopMusic();
+        this.context.audio.stopMusic();
     }
     
     
     ///  Graphics  ///
     
-    protected tick(delta: number, time: number) {
+    public tick(delta: number, time: number) {
         super.tick(delta, time);
         
         const elapsed = time - this.lastResumeTime;
@@ -96,7 +96,7 @@ export class IntroScreen extends Screen {
     }
     
     public arrange() {
-        const font = this._context.font1;
+        const font = this.context.font1;
         
         // let black = new PIXI.Graphics();
         // black.beginFill(0x000000);
@@ -139,7 +139,7 @@ export class IntroScreen extends Screen {
     
     public createText(str: string, font: PkFont, x: int, y: int, iT: int, eT: int) {
         let component = IntroText
-            .create(this._context, str, font, x, y, iT, eT)
+            .create(this.context, str, font, x, y, iT, eT)
             .applyEffect(PkUIEffectDelay.for(iT)
                 .then(PkUIEffectFadeIn.for(6000)
                     .then(PkUIEffectDelay.for(eT - iT - 6000)

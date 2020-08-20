@@ -1,4 +1,4 @@
-import { PK2Context } from '@game/PK2Context';
+import { PekkaContext } from '@game/PekkaContext';
 import { TTextId } from '@game/support/types';
 import { UIText } from '@game/ui/component/UIText';
 import { PkFont } from '@ng/types/font/PkFont';
@@ -10,13 +10,13 @@ export class IntroText extends UIText {
     private _startTime: number;
     
     
-    public static create(context: PK2Context, textId: TTextId | string, font: PkFont, x: number, y: number, iniTs: number, endTs: number): IntroText {
+    public static create(context: PekkaContext, textId: TTextId | string, font: PkFont, x: number, y: number, iniTs: number, endTs: number): IntroText {
         const instance = new IntroText(context, textId, font, x, y, iniTs, endTs);
         instance.start();
         return instance;
     }
     
-    public constructor(context: PK2Context, textId: TTextId | string, font: PkFont, x: number, y: number, iniTs: number, endTs: number) {
+    public constructor(context: PekkaContext, textId: TTextId | string, font: PkFont, x: number, y: number, iniTs: number, endTs: number) {
         super(context, textId, font, x, y);
         
         this._iniTs = iniTs;

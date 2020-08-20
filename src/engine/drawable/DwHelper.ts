@@ -26,6 +26,7 @@ export class DwHelper {
     ///  Eventos  ///
     public static readonly EV_POINTEROVER = Symbol('over.pointer.drawable.ev');
     public static readonly EV_POINTEROUT = Symbol('out.pointer.drawable.ev');
+    public static readonly EV_POINTERMOVE = Symbol('move.pointer.drawable.ev');
     public static readonly EV_POINTERTAP = Symbol('click.pointer.drawable.ev');
     /**
      * Se emite cuando el elemento actual, que implementa IDrawable, se invalida y debe redibujarse.

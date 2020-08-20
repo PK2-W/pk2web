@@ -6,6 +6,7 @@ import { ifnul } from '@ng/support/utils';
 export class DwContainerImpl extends DwImpl<PIXI.Container> implements DwContainer {
     private _children: DwImpl<PIXI.DisplayObject>[];
     
+    
     public constructor() {
         super(new PIXI.Container());
         

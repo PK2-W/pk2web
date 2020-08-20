@@ -1,11 +1,11 @@
-import { PK2Context } from '@game/PK2Context';
+import { PekkaContext } from '@game/PekkaContext';
 import { DwCanvas } from '@ng/drawable/skeleton/DwCanvas';
 import { DwCanvasImpl } from '@ng/drawable/impl-pixi/DwCanvasImpl';
 import { PkTickable } from '@ng/support/PkTickable';
 import { TColor } from '@ng/types/PkColor';
 import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
 
-export class MenuSquare extends PkUIComponent implements PkTickable {
+export class UIMenuSquare extends PkUIComponent implements PkTickable {
     // Set of 11 colors used to draw the square
     private _palette: TColor[];
     private readonly _canvas: DwCanvas;
@@ -19,7 +19,7 @@ export class MenuSquare extends PkUIComponent implements PkTickable {
     private _degree = 0;
     
     
-    public constructor(context: PK2Context, x1: number, y1: number, x2: number, y2: number, palette: number[]) {
+    public constructor(context: PekkaContext, x1: number, y1: number, x2: number, y2: number, palette: number[]) {
         super(context);
         
         this._palette = palette;

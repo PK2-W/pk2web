@@ -1,47 +1,78 @@
-import { PkFont } from '@ng/types/font/PkFont';
+import type { PekkaContext } from '@game/PekkaContext';
+import type { TTextId } from '@game/support/types';
+import type { PkFont } from '@ng/types/font/PkFont';
 import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
-import { PK2Context } from '@game/PK2Context';
-import { TTextId } from '@game/support/types';
 
-export abstract class UIText extends PkUIComponent {
-    protected readonly _context: PK2Context;
-    protected readonly _textId: TTextId;
-    protected readonly _font: PkFont;
+export abstract class UIText extends PkUIComponent<PekkaContext> {
+    protected _text: TTextId | string;
+    protected _font: PkFont;
+    protected _translatable: boolean;
     
-    
-    protected constructor(context: PK2Context, textId: TTextId | string, font: PkFont, x: number = 0, y: number = 0) {
+    protected constructor(context: PekkaContext, text: TTextId | string, font: PkFont, translatable: boolean = false, x: number = 0, y: number = 0) {
         super(context);
         
-        this._textId = textId;
+        this._text = text;
         this._font = font;
+        this._translatable = translatable;
         
         this.x = x;
         this.y = y;
     }
     
+    ///  Properties  ///
     
-    ///  Accessors  ///
+    public get text(): string { return this._text; }
+    public set text(text: string) { this.setText(text); }
+    /** Sets the {@link text} property. */
+    public setText(text: string): this {
+        this._text = text;
+        this._refreshText();
+        return this;
+    }
     
-    /**
-     * Returns the appropriate translation for the text with the specified id.<br>
-     * If a suitable translation is not found, the id will be returned.
-     */
-    public get text(): string {
-        return this._context.tx.get(this._textId) || this._textId;
+    public get font(): PkFont { return this._font; }
+    public set font(font: PkFont) { this.setFont(font); }
+    /** Sets the {@link font} property. */
+    public setFont(font: PkFont): this {
+        this._font = font;
+        this._refreshText();
+        return this;
+    }
+    
+    public get translatable(): boolean { return this._translatable; }
+    public set translatable(translatable: boolean) { this.setTranslatable(translatable); }
+    /** Sets the {@link translatable} property. */
+    public setTranslatable(translatable: boolean): this {
+        this._translatable = translatable === true;
+        this._refreshText();
+        return this;
+    }
+    
+    
+    ///  Drawing  ///
+    
+    protected _refreshText(): void {
+        // ...
+        this.arrange();
+    }
+    
+    public arrange(): void {
+    
+    }
+    
+    
+    ///  Computed properties  ///
+    
+    public getFinalText() {
+        return this.translatable
+            ? this.context.tx.get(this.text) || this.text.toLowerCase()
+            : this.text.toLowerCase();
     }
     
     /**
-     * Returns the font used in this text component.
+     * Returns calculated width, in pixels, taken by this text component.
      */
-    public get font(): PkFont {
-        return this._font;
-    }
-    
-    /**
-     * Returns the width, in pixels, taken by this text component as:<br>
-     * *`number_of_chars × font_char_with`*.
-     */
-    public get width(): number {
+    public getWidth(): number {
         return this._font.charWidth * this.text.length;
     }
 }

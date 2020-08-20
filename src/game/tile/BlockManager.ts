@@ -3,6 +3,7 @@ import { EBlockPrototype } from '@game/enum/EBlockPrototype';
 import { TEXTURE_ID_BLOCKS } from '@game/game/Game';
 import { GameContext } from '@game/game/GameContext';
 import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, KYTKIN_ALOITUSARVO } from '@game/map/PK2Map';
+import { int, CVect, cvect } from '@game/support/types';
 import { Block } from '@game/tile/Block';
 import { BlockCollider } from '@game/tile/BlockCollider';
 import { BLOCK_SIZE } from '@game/tile/BlockConstants';
@@ -13,8 +14,7 @@ import { Log } from '@ng/support/log/LoggerImpl';
 import { pathJoin } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { PkImage } from '@ng/types/PkImage';
-import { RESOURCES_PATH } from '../../support/constants';
-import { int, CVect, cvect } from '../support/types';
+import { RESOURCES_PATH } from '@sp/constants';
 
 export class BlockManager {
     // Game Environment
@@ -501,7 +501,7 @@ export class BlockManager {
         
         // Add to the scene;
         // Blocks are added as not visible to help the initial culling
-        block.getDrawable().setRenderable(false);
+        block.renderable = false;
         this.ctx.composition.addBgBlock(block);
     }
     
@@ -538,7 +538,7 @@ export class BlockManager {
         
         // Add to the scene;
         // Blocks are added as not visible to help the initial culling
-        block.getDrawable().renderable = false;
+        block.renderable = false;
         // Add to the scene
         this.ctx.composition.addFgBlock(block);
     }
@@ -695,11 +695,11 @@ export class BlockManager {
                 for (let i = ai; i <= bi; i++) {
                     for (let j = aj; j <= bj; j++) {
                         block = this.getBgBlock(i, j);
-                        if (block != null && block.getDrawable().renderable) {
+                        if (block != null && block.renderable) {
                             hide.add(block);
                         }
                         block = this.getFgBlock(i, j);
-                        if (block != null && block.getDrawable().renderable) {
+                        if (block != null && block.renderable) {
                             hide.add(block);
                         }
                     }
@@ -732,8 +732,8 @@ export class BlockManager {
                 }
             }
             
-            show.forEach(b => b.getDrawable().renderable = true);
-            [...hide].filter(b => !show.has(b)).forEach(b => b.getDrawable().renderable = false);
+            show.forEach(b => b.renderable = true);
+            [...hide].filter(b => !show.has(b)).forEach(b => b.renderable = false);
         } else {
             //TODO
         }
@@ -812,53 +812,54 @@ export class BlockManager {
         
         let block: Block;
         
-        for (let i = 0; i < PK2KARTTA_KARTTA_LEVEYS; i++) {
-            for (let j = 0; j < PK2KARTTA_KARTTA_KORKEUS; j++) {
-                block = this.getFgBlock(i, j);
-                
-                if (block != null && block.renderable) {
-                    // Show invisible block only in editor TODO: Extend to the dev-mode and a specific option in editor, not ever
-                    if (block.code === EBlockPrototype.BLOCK_ESTO_ALAS) {
-                        block.getDrawable().visible = editor;
-                    } else {
-                        // px = ((palikka % 10) * 32);
-                        // py = ((palikka / 10) * 32);
-                        xOffset = 0;
-                        yOffset = 0;
+        // for (let j = 0; j < PK2KARTTA_KARTTA_KORKEUS; j++) {
+        //     for (let i = 0; i < PK2KARTTA_KARTTA_LEVEYS; i++) {
+        for (let b = 0, len = this._fgBlocks.length; b < len; b++) {
+            block = this._fgBlocks[b];
+            
+            if (block != null && block.renderable) {
+                // Show invisible block only in editor TODO: Extend to the dev-mode and a specific option in editor, not ever
+                if (block.code === EBlockPrototype.BLOCK_ESTO_ALAS) {
+                    block.visible = editor;
+                } else {
+                    // px = ((palikka % 10) * 32);
+                    // py = ((palikka / 10) * 32);
+                    xOffset = 0;
+                    yOffset = 0;
+                    
+                    if (!editor) {
+                        if (block.code === EBlockPrototype.BLOCK_ELEVATOR_V)
+                            yOffset = Math.floor(this.ctx.entropy.sin(this.ctx.entropy.degree % 360));
                         
-                        if (!editor) {
-                            if (block.code === EBlockPrototype.BLOCK_ELEVATOR_V)
-                                yOffset = Math.floor(this.ctx.entropy.sin(this.ctx.entropy.degree % 360));
-                            
-                            if (block.code === EBlockPrototype.BLOCK_ELEVATOR_H)
-                                xOffset = Math.floor(this.ctx.entropy.cos(this.ctx.entropy.degree % 360));
-                            
-                            if (block.code === EBlockPrototype.BLOCK_SWITCH1)
-                                yOffset = ajastin1_y / 2;
-                            
-                            if (block.code === EBlockPrototype.BLOCK_SWITCH2_GATE_U)
-                                yOffset = -ajastin2_y / 2;
-                            
-                            if (block.code === EBlockPrototype.BLOCK_SWITCH2_GATE_D)
-                                yOffset = ajastin2_y / 2;
-                            
-                            if (block.code === EBlockPrototype.BLOCK_SWITCH2)
-                                yOffset = ajastin2_y / 2;
-                            
-                            if (block.code === EBlockPrototype.BLOCK_SWITCH3_GATE_L)
-                                xOffset = ajastin3_x / 2;
-                            
-                            if (block.code === EBlockPrototype.BLOCK_SWITCH3_GATE_R)
-                                xOffset = -ajastin3_x / 2;
-                            
-                            if (block.code === EBlockPrototype.BLOCK_SWITCH3)
-                                yOffset = ajastin3_x / 2;
-                        }
+                        if (block.code === EBlockPrototype.BLOCK_ELEVATOR_H)
+                            xOffset = Math.floor(this.ctx.entropy.cos(this.ctx.entropy.degree % 360));
                         
-                        block.setOffset(xOffset, yOffset);
+                        if (block.code === EBlockPrototype.BLOCK_SWITCH1)
+                            yOffset = ajastin1_y / 2;
+                        
+                        if (block.code === EBlockPrototype.BLOCK_SWITCH2_GATE_U)
+                            yOffset = -ajastin2_y / 2;
+                        
+                        if (block.code === EBlockPrototype.BLOCK_SWITCH2_GATE_D)
+                            yOffset = ajastin2_y / 2;
+                        
+                        if (block.code === EBlockPrototype.BLOCK_SWITCH2)
+                            yOffset = ajastin2_y / 2;
+                        
+                        if (block.code === EBlockPrototype.BLOCK_SWITCH3_GATE_L)
+                            xOffset = ajastin3_x / 2;
+                        
+                        if (block.code === EBlockPrototype.BLOCK_SWITCH3_GATE_R)
+                            xOffset = -ajastin3_x / 2;
+                        
+                        if (block.code === EBlockPrototype.BLOCK_SWITCH3)
+                            yOffset = ajastin3_x / 2;
                     }
+                    
+                    block.setOffset(xOffset, yOffset);
                 }
             }
+            //  }
         }
         
         // if (vesiaste % 2 == 0) {

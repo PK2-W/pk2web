@@ -2,7 +2,7 @@ import { PkUIComponentImpl } from '@ng/ui/PkUIComponentImpl';
 import * as PIXI from 'pixi.js';
 import { TColor } from '../../support/types';
 import { minmax } from '@ng/support/utils';
-import { PK2Context } from '../../PK2Context';
+import { PekkaContext } from '../../PekkaContext';
 
 export class UIProgressBar extends PkUIComponentImpl {
     private _width: number;
@@ -12,7 +12,7 @@ export class UIProgressBar extends PkUIComponentImpl {
     private _progress: number;
     
     
-    public constructor(context: PK2Context, x: number, y: number, width: number, height: number, color: TColor) {
+    public constructor(context: PekkaContext, x: number, y: number, width: number, height: number, color: TColor) {
         super(context, new PIXI.Graphics());
         
         this._width = width;

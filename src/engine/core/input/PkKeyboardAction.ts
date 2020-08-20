@@ -1,12 +1,13 @@
 import { PkInputDevices } from '@ng/core/input/enum/PkInputDevices';
 import { PkDeviceAction } from '@ng/core/input/PkDeviceAction';
-import type { Key } from 'ts-key-enum';
+import { Key } from '@ng/core/PkInput';
 
 export class PkKeyboardAction extends PkDeviceAction {
     protected _key: Key | string;
     protected readonly _shift: boolean;
     protected readonly _control: boolean;
     protected readonly _alt: boolean;
+    
     
     public constructor(key: Key | string, shift: boolean = false, control: boolean = false, alt: boolean = false) {
         super(PkInputDevices.KEYBOARD, key);

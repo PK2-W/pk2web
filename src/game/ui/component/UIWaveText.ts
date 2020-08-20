@@ -1,63 +1,120 @@
-import { PK2Context } from '@game/PK2Context';
+import { InputAction } from '@game/InputActions';
+import { PekkaContext } from '@game/PekkaContext';
 import { TTextId } from '@game/support/types';
 import { UIText } from '@game/ui/component/UIText';
-import { Dw } from '@ng/drawable/skeleton/Dw';
+import { PkInputEvent } from '@ng/core/input/PkInputEvent';
+import { PkInput } from '@ng/core/PkInput';
+import { DwContainer } from '@ng/drawable/skeleton/DwContainer';
+import { DwFactory } from '@ng/drawable/skeleton/DwFactory';
 import { PkFont } from '@ng/types/font/PkFont';
+import { PkRectangleImpl } from '@ng/types/pixi/PkRectangleImpl';
+import { PkRectangle } from '@ng/types/PkRectangle';
 import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
 
 export class UIWaveText extends UIText {
-    // Fast/slow wave animation
     private _fast: boolean;
+    private _shadow: boolean;
+    
+    private readonly _dwShadow: DwContainer;
+    private readonly _dwFront: DwContainer;
     
     
-    ///  Build  ///
-    
-    public constructor(context: PK2Context, textId: TTextId, fontId: PkFont, x: number = 0, y: number = 0, fast: boolean = false) {
-        super(context, textId, fontId, x, y);
-        this._fast = fast;
+    public constructor(context: PekkaContext, text: TTextId | string, font: PkFont, translatable: boolean = false, x: number = 0, y: number = 0) {
+        super(context, text, font, translatable, x, y);
         
-        this._createText();
+        this._fast = false;
+        this._shadow = true;
+        
+        this._dwShadow = DwFactory.new.container().addTo(this.dw);
+        this._dwFront = DwFactory.new.container().addTo(this.dw);
+        
+        this._refreshText();
         
         // this.listen('space', () => {
         //     this.emit(PkUIComponentImpl.EV_ACTION);
         // });
         
-        const b: PIXI.Rectangle = this.dw.pixi.getLocalBounds();
-        this.dw.pixi.hitArea = new PIXI.Rectangle(b.x - 2, b.y - 2, b.width + 4, b.height + 4);
-        this.dw.pixi.interactiveChildren = false;
+
+        //this.dw.pixi.interactiveChildren = false;
         
         // Special
-        this.on(PkUIComponent.EV_POINTEROVER, () => {
-            this.focus();
+        this.on(PkUIComponent.EV_POINTEROVER, () => this.focus());
+        this.on(PkUIComponent.EV_POINTERMOVE, () => this.focus());
+        this.on(PkUIComponent.EV_POINTEROUT, () => this.blur());
+        this.on(PkUIComponent.EV_POINTERTAP, () => {
+            if (this.isFocused()) {
+                this.emit(UIWaveText.EV_ACTUATED, this);
+            }
         });
-        this.on(PkUIComponent.EV_POINTEROUT, () => {
-            this.blur();
+        this.on(PkInput.EV_KEYDOWN, (ev: PkInputEvent) => {
+            if (ev.gameActns.includes(InputAction.UI_ACTUATE)) {
+                this.emit(UIWaveText.EV_ACTUATED, this);
+            }
+            //     if (!ev.gameActns.includes(InputAction.UI_DOWN)) {
+            //         this._inputText('' + Math.floor(Math.random() * 10));
+            //     }
         });
     }
     
-    private _createText(): void {
-        const text = this.text;
-        let xs, ys, dw: Dw, vali = 0;
+    protected _refreshText(): void {
+        const text = this.getFinalText();
         
-        this._drawable.clear();
+        this._dwShadow.clear();
+        this._dwFront.clear();
         
-        // For every letter...
-        for (let i = 0; i < text.length; i++) {
-            ys = this.sin(((i + this._context.entropy.degree) * 8) % 360) / 7;
-            xs = this.cos(((i + this._context.entropy.degree) * 8) % 360) / 9;
+        if (this._shadow) {
+            this.context.font4.writeText(text, this._dwShadow.clear());
+        }
+        this._getFont().writeText(text, this._dwFront.clear());
+    
+        const bounds: PkRectangle = this.dw.getBounds();
+        this.dw.hitArea = PkRectangleImpl.$(bounds.x - 2, bounds.y - 2, bounds.width + 4, bounds.height + 4);
+        
+        this.arrange();
+    }
+    
+    public arrange(): void {
+        let xmov, ymov;
+        let offset = 0;
+        let shadowOffset;
+        
+        // For every letter....
+        for (let i = 0; i < this._dwFront.children; i++) {
+            if (this._fast || this.isFocused()) {
+                ymov = this.context.entropy.sin(((i + this.context.entropy.degree) * 8) % 360) / 7;
+                xmov = this.context.entropy.cos(((i + this.context.entropy.degree) * 8) % 360) / 9;
+                shadowOffset = 3;
+            } else {
+                ymov = this.context.entropy.sin(((i + this.context.entropy.degree) * 4) % 360) / 9;
+                xmov = this.context.entropy.cos(((i + this.context.entropy.degree) * 4) % 360) / 11;
+                shadowOffset = 1;
+            }
             
-            // TODO: Font shadow -> PisteDraw2_Font_Write(fontti4, kirjain, x + vali - xs + 3, y + ys + 3);
-            dw = this._getFont().writeText(text[i]);
-            dw.x = vali - xs + 3;
-            dw.y = ys + 3;
-            this._drawable.add(dw);
+            if (this._shadow) {
+                this._dwShadow.get(i).setPosition(offset - xmov + shadowOffset, ymov + shadowOffset);
+            }
+            this._dwFront.get(i).setPosition(offset - xmov, ymov);
             
-            vali += this._font.charWidth;
+            // TODO: settings option to disable shadow in slow
+            
+            offset += this._getFont().charWidth;
         }
     }
     
     
     ///   Properties  ///
+    
+    public get shadow(): boolean { return this._shadow; }
+    public set shadow(shadow: boolean) { this.setShadow(shadow); }
+    /** Sets the {@link shadow} property. */
+    public setShadow(shadow: boolean): this {
+        this._shadow = shadow === true;
+        
+        this._dwShadow.clear();
+        this.arrange();
+        
+        return this;
+    }
     
     public isFast(): boolean {
         return this._fast === true;
@@ -72,59 +129,25 @@ export class UIWaveText extends UIText {
     public tick(delta: number, time: number): void {
         super.tick(delta, time);
         
-        this.layout();
+        this.arrange();
     }
     
     
     ///  Graphics  ///
     
-    public focus(): void {
+    public focus(): this {
         super.focus();
-        this._createText();
+        this._refreshText();
+        return this;
     }
     
-    public blur(): void {
+    public blur(): this {
         super.blur();
-        this._createText();
-    }
-    
-    private layout(): void {
-        let xmov, ymov, offset = 0;
-        
-        // For every letter....
-        for (let i = 0; i < this._drawable.children; i++) {
-            if (this._fast || this.isFocused()) {
-                ymov = this.sin(((i + this._context.entropy.degree) * 8) % 360) / 7;
-                xmov = this.cos(((i + this._context.entropy.degree) * 8) % 360) / 9;
-            } else {
-                ymov = this.sin(((i + this._context.entropy.degree) * 4) % 360) / 9;
-                xmov = this.cos(((i + this._context.entropy.degree) * 4) % 360) / 11;
-            }
-            
-            // TODO: Shadow +1 if slow, shadow +3 if fast
-            // TODO: settings option to disable shadow in slow
-            // PisteDraw2_Font_Write(fontti4, kirjain, x + offset - xmov + 3, y + ymov + 3);
-            this._drawable.get(i).x = offset - xmov + 3;
-            this._drawable.get(i).y = ymov + 3;
-            
-            offset += this._getFont().charWidth;
-        }
+        this._refreshText();
+        return this;
     }
     
     private _getFont(): PkFont {
-        return this.isFocused() ? this._context.font3 : this._context.font2;
-    }
-    
-    /** @deprecated */
-    public sin(deg): number {
-        //return Math.sin(deg * Math.PI / 180) * 180 / Math.PI;
-        // return Math.sin(2 * Math.PI * (deg % 360) / 180) * 33;
-        return this._context.entropy.sin(deg);
-    }
-    /** @deprecated */
-    public cos(deg): number {
-        //return Math.cos(deg * Math.PI / 180) * 180 / Math.PI;
-        //     return Math.cos(2 * Math.PI * (deg % 360) / 180) * 33;
-        return this._context.entropy.cos(deg);
+        return this.isFocused() ? this.context.font3 : this.context.font2;
     }
 }

@@ -1,12 +1,14 @@
+import { TEasingFunction } from '@ng/support/PkEasing';
 import { PkTickable } from '@ng/support/PkTickable';
 import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
 import { EventEmitter } from 'eventemitter3';
 
 export abstract class PkUiEffect extends EventEmitter implements PkTickable {
-    protected _elapsed: number;
     private _component: PkUIComponent;
     private readonly _thenEffects: Set<PkUiEffect>;
     private readonly _thenActions: Set<(component: PkUIComponent) => void>;
+    protected _easingFn: TEasingFunction;
+    protected _elapsed: number;
     
     protected constructor() {
         super();
@@ -26,12 +28,22 @@ export abstract class PkUiEffect extends EventEmitter implements PkTickable {
         return this;
     }
     
-    public prepare(component: PkUIComponent): void {
-        this._component = component;
+    public applyTo(component: PkUIComponent): void {
+        if (this._component == null) {
+            this._component = component;
+        }
+        this._started();
     }
     
+    protected _started(): void { }
+    
     public tick(delta: number, time: number) {
-        this._elapsed += delta;
+        // Prevent artifacts for long first tick
+        if (this._elapsed === 0) {
+            this._elapsed = 0.1;
+        } else {
+            this._elapsed += delta;
+        }
     }
     
     protected _finished(): void {

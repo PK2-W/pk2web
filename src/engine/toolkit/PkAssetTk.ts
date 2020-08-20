@@ -122,7 +122,7 @@ export class PkAssetTk {
      * @param url - Full URL of the resource.
      */
     public static async getFont(url: string): Promise<PkFontAsset> {
-        Log.d(`Loading font from "${ url }"`);
+        Log.d('[PkAssetTk] Loading font from "', url, '"');
         
         try {
             return await PkFontAsset.from(url);

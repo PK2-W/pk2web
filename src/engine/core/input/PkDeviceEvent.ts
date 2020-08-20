@@ -1,5 +1,9 @@
+import { PkInputEventType } from '@ng/core/input/enum/PkInputEventType';
 import { PkDeviceAction } from '@ng/core/input/PkDeviceAction';
 
-export class PkDeviceEvent {
+export abstract class PkDeviceEvent {
     protected _deviceAction: PkDeviceAction;
+    
+    public readonly type: PkInputEventType;
+    public readonly action: PkDeviceAction;
 }

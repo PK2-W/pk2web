@@ -1,7 +1,7 @@
 import { PkUIComponentImpl } from '@ng/ui/PkUIComponentImpl';
 import * as PIXI from 'pixi.js';
 import { TColor } from '../../support/types';
-import { PK2Context } from '../../PK2Context';
+import { PekkaContext } from '../../PekkaContext';
 
 export class UIBackground extends PkUIComponentImpl {
     private _width: number;
@@ -11,7 +11,8 @@ export class UIBackground extends PkUIComponentImpl {
     private readonly _colorLayer: PIXI.Graphics;
     private _imageLayer: PIXI.Sprite;
     
-    public constructor(context: PK2Context, width: number, height: number, color?: TColor) {
+    
+    public constructor(context: PekkaContext, width: number, height: number, color?: TColor) {
         super(context, new PIXI.Container());
         
         this._width = width;

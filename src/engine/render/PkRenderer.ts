@@ -1,10 +1,11 @@
-import { uint, int, bool, FONTID } from '@game/support/types';
+import { PkInputEvent } from '@ng/core/input/PkInputEvent';
 import { PkEngine } from '@ng/core/PkEngine';
+import { PkInput } from '@ng/core/PkInput';
 import { DwImpl } from '@ng/drawable/impl-pixi/DwImpl';
 import { PkTickable } from '@ng/support/PkTickable';
+import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
 import { WEB_CANVAS_QS } from '@sp/constants';
 import * as PIXI from 'pixi.js';
-import { PkFontAsset } from '../types/font/PkFontAsset';
 import { PkScreen } from '../ui/PkScreen';
 
 export enum FADE {
@@ -14,7 +15,7 @@ export enum FADE {
 }
 
 export class PkRenderer implements PkTickable {
-    private static instance: PkRenderer;
+    private readonly _engine: PkEngine;
     
     private readonly _canvas: HTMLCanvasElement;
     private readonly _renderer: PIXI.Renderer;
@@ -23,22 +24,16 @@ export class PkRenderer implements PkTickable {
     private _screenIndex: Map<string, PkScreen>;
     private _activeScreen: PkScreen;
     
-    
+    /** @deprecated */
     private _nextScreen: PkScreen;
     
     private imageList: HTMLImageElement[] = [];
-    private readonly fontList: Map<FONTID, PkFontAsset> = new Map<FONTID, PkFontAsset>();
     // SDL_Palette*  game_palette = NULL;
-    
     
     private _alive = false;
     
-    private fadeSpeed: int = 0;
-    private alpha: int = 100;
-    
-    private XOffset = 0;
-    
-    public constructor(ng: PkEngine) {
+    public constructor(engine: PkEngine) {
+        this._engine = engine;
         //     if (game_palette == NULL) {
         //         game_palette = SDL_AllocPalette(256);
         //         for(int i = 0; i < 256; i++) game_palette->colors[i] = {(Uint8)i,(Uint8)i,(Uint8)i,(Uint8)i};
@@ -57,56 +52,36 @@ export class PkRenderer implements PkTickable {
         this._renderer = PIXI.autoDetectRenderer({
             view: this._canvas,
             antialias: true,
-            width: ng.device.screenWidth,
-            height: ng.device.screenHeight
+            width: engine.device.screenWidth,
+            height: engine.device.screenHeight
         });
-        
-        //  x  frameBuffer8 = SDL_CreateRGBSurface(0, width, height, 8, 0, 0, 0, 0);
-        //  x  frameBuffer8->userdata = (void *)frameBuffer8->format->palette;
-        //  x  frameBuffer8->format->palette = game_palette;
-        //  x  SDL_SetColorKey(frameBuffer8, SDL_TRUE, 255);
-        //  x  SDL_FillRect(frameBuffer8, NULL, 255);
-        //  x  SDL_Rect r = {0, 0, width, height};
-        //  x  SDL_SetClipRect(frameBuffer8, &r);
         
         this._stage = new PIXI.Container();
         
         this.adjustScreen();
+        
+        this._engine.input.on(PkInput.EV_KEYDOWN, (ev: PkInputEvent) => {
+            let component: PkUIComponent = this._activeScreen?.focusedComponent;
+            if (component == null) {
+                component = this._activeScreen;
+            }
+            while (component != null && ev.propagate) {
+                component.emit(PkInput.EV_KEYDOWN, ev);
+                component = component.parent;
+            }
+        });
     }
     
     public tick(delta: number, time: number): void {
-        if (this._activeScreen != null) {
+        /*if (this._activeScreen != null) {
             this._activeScreen.tick(delta, time);
+        }*/
+        
+        for (let scr of this._screenIndex.values()) {
+            if (!scr.isSuspended()) {
+                scr.tick(delta, time);
+            }
         }
-    }
-    
-    private static deprecated(): void { throw new Error('DEPRECATED'); }
-    
-    private findfreeimage(): int {
-        for (let i = 0; i < MAX_IMAGES; i++)
-            if (this.imageList[i] == null)
-                return i;
-        return -1;
-    }
-    
-    public setNextScreen(screen: PkScreen) {
-        if (this._activeScreen == null) {
-            this.setActiveScreen(screen);
-            
-            this._nextScreen = null;
-        }
-    }
-    
-    public setActiveScreen(screen: PkScreen) {
-        this._stage.removeChildren();
-        
-        this._activeScreen = screen;
-        this._stage.addChild((screen.getDrawable() as DwImpl<PIXI.DisplayObject>).pixi);
-        
-        //screen.show();
-        
-        //this.tmp();
-        // this._renderer.render(this._stage);
     }
     
     public tmp() {
@@ -116,6 +91,51 @@ export class PkRenderer implements PkTickable {
             this._renderer.render(this._stage);
         
         requestAnimationFrame(this.tmp.bind(this));
+    }
+    
+    ///
+    
+    public add(screenId: string, screen: PkScreen) {
+        this._screenIndex.set(screenId, screen);
+        this._stage.addChild((screen.getDrawable() as DwImpl<PIXI.DisplayObject>).pixi);
+    }
+    
+    public setActive(screenId: string) {
+        const screen = this._screenIndex.get(screenId);
+        
+        if (screen != null && (screen.isOperating() || screen.isResuming())) {
+            if (this._activeScreen != null) {
+                this._activeScreen.setActive(false);
+            }
+            this._activeScreen = screen.setActive(true);
+        }
+    }
+    
+    
+    ///  Rubish  ///
+    
+    public destroy(): void {
+        if (!this._alive) return;
+        
+        // int;
+        // i, j;
+        //
+        // for (i = 0; i < MAX_IMAGES; i++)
+        //     if (imageList[i] != NULL) {
+        //         j = i;
+        //         PisteDraw2_Image_Delete(j);
+        //     }
+        
+        
+        // frameBuffer8->format->palette = (SDL_Palette *);
+        // frameBuffer8->userdata;
+        // SDL_FreeSurface(frameBuffer8);
+        // SDL_DestroyRenderer(PD_Renderer);
+        // SDL_DestroyWindow(PD_Window);
+        //
+        // if (window_icon != NULL) SDL_FreeSurface(window_icon);
+        
+        this._alive = false;
     }
     
     private adjustScreen(): void {
@@ -138,45 +158,16 @@ export class PkRenderer implements PkTickable {
         // }
     }
     
-    public destroy(): void {
-        if (!this._alive) return;
+    /** @deprecated */
+    public setActiveScreen(screen: PkScreen) {
+        this._stage.removeChildren();
         
-        // int;
-        // i, j;
-        //
-        // for (i = 0; i < MAX_IMAGES; i++)
-        //     if (imageList[i] != NULL) {
-        //         j = i;
-        //         PisteDraw2_Image_Delete(j);
-        //     }
+        this._activeScreen = screen;
+        // this._stage.addChild((screen.getDrawable() as DwImpl<PIXI.DisplayObject>).pixi);
         
-        this.clearFonts();
+        //screen.show();
         
-        // frameBuffer8->format->palette = (SDL_Palette *);
-        // frameBuffer8->userdata;
-        // SDL_FreeSurface(frameBuffer8);
-        // SDL_DestroyRenderer(PD_Renderer);
-        // SDL_DestroyWindow(PD_Window);
-        //
-        // if (window_icon != NULL) SDL_FreeSurface(window_icon);
-        
-        this._alive = false;
-    }
-    
-    ///
-    
-    public add(screenId: string, screen: PkScreen) {
-        this._screenIndex.set(screenId, screen);
-    }
-    
-    public setActive(screenId: string) {
-        const screen = this._screenIndex.get(screenId);
-        
-        if (screen != null && (screen.isOperating() || screen.isResuming())) {
-            if (this._activeScreen != null) {
-                this._activeScreen.setActive(false);
-            }
-            this._activeScreen = screen;
-        }
+        //this.tmp();
+        // this._renderer.render(this._stage);
     }
 }

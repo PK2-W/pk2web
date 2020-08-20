@@ -3,6 +3,7 @@ import { DwObjectBase } from '@ng/drawable/object/DwObjectBase';
 import { DwContainer } from '@ng/drawable/skeleton/DwContainer';
 import { DwFactory } from '@ng/drawable/skeleton/DwFactory';
 import type { PkTickable } from '@ng/support/PkTickable';
+import { minmax } from '@ng/support/utils';
 import type { PkUIComponentContainer } from '@ng/ui/component/PkUIComponentContainer';
 import { PkUiEffect } from '@ng/ui/effect/PkUiEffect';
 import type { PkScreen } from '@ng/ui/PkScreen';
@@ -12,7 +13,7 @@ export abstract class PkUIComponent<T extends PkUIContext = PkUIContext>
     extends DwObjectBase<DwContainer>
     implements PkTickable {
     
-    protected readonly _context: T;
+    public readonly context: T;
     private readonly _effects: Set<PkUiEffect>;
     private _focusable: boolean;
     
@@ -21,11 +22,13 @@ export abstract class PkUIComponent<T extends PkUIContext = PkUIContext>
     protected constructor(context: T) {
         super(DwFactory.new.container());
         
-        this._context = context;
+        this.context = context;
         this._effects = new Set();
+        this._focusable = false;
         
         // Mouse events
         this._drawable.on(DwHelper.EV_POINTEROVER, () => this.emit(PkUIComponent.EV_POINTEROVER));
+        this._drawable.on(DwHelper.EV_POINTERMOVE, () => this.emit(PkUIComponent.EV_POINTERMOVE));
         this._drawable.on(DwHelper.EV_POINTEROUT, () => this.emit(PkUIComponent.EV_POINTEROUT));
         this._drawable.on(DwHelper.EV_POINTERTAP, () => this.emit(PkUIComponent.EV_POINTERTAP));
     }
@@ -35,8 +38,22 @@ export abstract class PkUIComponent<T extends PkUIContext = PkUIContext>
      *
      * @param container - Target parent component.
      */
-    public addTo(container: PkUIComponentContainer): this {
+    public addTo(container: PkUIComponentContainer): this
+    /**
+     * Adds this component as child to a parent container component at the specified position.
+     *
+     * @param container - Target parent component.
+     * @param x - Position x-coordinate.
+     * @param y - Position y-coordinate.
+     */
+    public addTo(container: PkUIComponentContainer, x: number, y: number): this
+    public addTo(container: PkUIComponentContainer, x?: number, y?: number): this {
         container.add(this);
+        
+        if (x != null && y != null) {
+            this.setPosition(x, y);
+        }
+        
         return this;
     }
     
@@ -58,39 +75,45 @@ export abstract class PkUIComponent<T extends PkUIContext = PkUIContext>
      * Makes this component the focused component of his screen.<br>
      * Component must be inside a screen and be focusable.
      */
-    public focus(): void {
+    public focus(): this {
         // Component must be inside a screen
         if (this.screen == null)
             return;
         
-        this.screen.focus(this);
+        this.screen._demandsFocus(this);
+        
+        return this;
     }
     
     /**
      * Removes focus from this component.
      */
-    public blur(): void {
+    public blur(): this {
         // Component must be focused
         if (!this.isFocused())
             return;
         
         this.screen.blur();
+        
+        return this;
     }
     
     /**
-     * Sets {@link visible} property to TRUE.<br>
+     * Sets {@link visible} and {@link renderable} properties to TRUE.<br>
      * Returns instance.
      */
     public show(): this {
+        this.renderable = true;
         this.visible = true;
         return this;
     }
     
     /**
-     * Sets {@link visible} property to FALSE.<br>
+     * Sets {@link visible} and {@link renderable} properties FALSE.<br>
      * Returns instance.
      */
     public hide(): this {
+        this.renderable = false;
         this.visible = false;
         return this;
     }
@@ -99,7 +122,7 @@ export abstract class PkUIComponent<T extends PkUIContext = PkUIContext>
      * Returns the screen where this component is included.<br>
      * If the component is not in a screen, NULL is returned.
      */
-    public get screen(): PkScreen {
+    public get screen(): PkScreen | null {
         // If standalone -> no screen
         if (this._parent == null)
             return null;
@@ -137,17 +160,23 @@ export abstract class PkUIComponent<T extends PkUIContext = PkUIContext>
         return this;
     }
     
-    public get visible(): boolean { return this._drawable.visible; }
-    public set visible(value: boolean) { this.setVisible(value); }
-    public setVisible(value: boolean): this {
-        this._drawable.visible = value;
+    public get visible(): boolean { return this.dw.visible; }
+    public set visible(visible: boolean) { this.setVisible(visible); }
+    /** Sets the {@link visible} property. */
+    public setVisible(visible: boolean): this {
+        this.dw.visible = visible === true;
         return this;
     }
     
-    public get renderable(): boolean { return this._drawable.renderable; }
-    public set renderable(value: boolean) { this.setRenderable(value); }
-    public setRenderable(value: boolean): this {
-        this._drawable.renderable = value;
+    public get worldVisible(): boolean {
+        return this.dw.pixi.worldVisible;
+    }
+    
+    public get renderable(): boolean { return this.dw.renderable; }
+    public set renderable(renderable: boolean) { this.setRenderable(renderable); }
+    /** Sets the {@link renderable} property. */
+    public setRenderable(renderable: boolean): this {
+        this.dw.renderable = renderable;
         return this;
     }
     
@@ -160,14 +189,56 @@ export abstract class PkUIComponent<T extends PkUIContext = PkUIContext>
     
     public isFocused(): boolean {
         return this.screen != null
-            && this.screen.isFocused(this);
+            && this.screen.focusedComponent === this;
+    }
+    
+    public canBeFocused(): boolean {
+        return this.focusable && this.worldVisible && this.renderable && this.alpha > 0 && this.globalAlpha > 0;
     }
     
     public get alpha(): number { return this._drawable.alpha; }
-    public set alpha(value: number) { this._drawable.alpha = value; }
+    public set alpha(value: number) { this._drawable.alpha = minmax(value, 0, 1); }
     public setAlpha(value: number): this {
         this.alpha = value;
         return this;
+    }
+    
+    public get globalAlpha(): number { return this.dw.globalAlpha; }
+    public set globalAlpha(alpha: number) { this.setGlobalAlpha(alpha); }
+    /** Sets the {@link globalAlpha} property. */
+    public setGlobalAlpha(alpha: number): this {
+        this.dw.globalAlpha = minmax(alpha, 0, 1);
+        return this;
+    }
+    
+    
+    ///  Statics  ///
+    
+    /**
+     * Static shortcut for {@link PkUIComponent#show}.
+     *
+     * @param component - Target component.
+     */
+    public static show(component: PkUIComponent): void {
+        component.show();
+    }
+    
+    /**
+     * Static shortcut for {@link PkUIComponent#hide}.
+     *
+     * @param component - Target component.
+     */
+    public static hide(component: PkUIComponent): void {
+        component.hide();
+    }
+    
+    /**
+     * Static shortcut for {@link PkUIComponent#canBeFocused}.
+     *
+     * @param component - Target component.
+     */
+    public static canBeFocused(component: PkUIComponent): boolean {
+        return component.canBeFocused();
     }
     
     
@@ -194,7 +265,7 @@ export abstract class PkUIComponent<T extends PkUIContext = PkUIContext>
                 // Apply THEN callbacks
                 thenActions.forEach(fn => fn(this));
             });
-            effect.prepare(this);
+            effect.applyTo(this);
         }
         
         return this;
@@ -217,8 +288,7 @@ export abstract class PkUIComponent<T extends PkUIContext = PkUIContext>
     public static readonly EV_FOCUS = Symbol('focus.component.ui.evt');
     public static readonly EV_POINTEROVER = Symbol('over.pointer.component.ui.evt');
     public static readonly EV_POINTEROUT = Symbol('out.pointer.component.ui.evt');
+    public static readonly EV_POINTERMOVE = Symbol('move.pointer.component.ui.evt');
     public static readonly EV_POINTERTAP = Symbol('click.pointer.component.ui.evt');
-    public static readonly EV_KEYUP = Symbol('up.key.component.ui.evt');
-    public static readonly EV_KEYDOWN = Symbol('down.key.component.ui.evt');
-    public static readonly EV_KEYPRESS = Symbol('press.key.component.ui.evt');
+    public static readonly EV_ACTUATED = Symbol('actuated.component.ui.evt');
 }

@@ -1,12 +1,18 @@
-import { PK2Context } from '@game/PK2Context';
+import { InputAction } from '@game/InputActions';
+import { PekkaContext } from '@game/PekkaContext';
 import { TX } from '@game/texts';
 import { UIStackLayout } from '@game/ui/component/UIStackLayout';
 import { UIText } from '@game/ui/component/UIText';
 import { UIWaveText } from '@game/ui/component/UIWaveText';
+import { MenuScreen } from '@game/ui/screen/menu/MenuScreen';
+import { PkInputEvent } from '@ng/core/input/PkInputEvent';
+import { PkInput } from '@ng/core/PkInput';
 import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
 import { PkUIComponentContainer } from '@ng/ui/component/PkUIComponentContainer';
 
-export class MainMenuGroup extends PkUIComponentContainer<PK2Context> {
+export class MainMenuGroup extends PkUIComponentContainer<PekkaContext> {
+    private readonly _menu: MenuScreen;
+    
     public readonly lbResumeGame: UIText;
     public readonly lbNewGame: UIText;
     public readonly lbLoadGame: UIText;
@@ -15,69 +21,63 @@ export class MainMenuGroup extends PkUIComponentContainer<PK2Context> {
     public readonly lbControls: UIText;
     public readonly lbGraphics: UIText;
     public readonly lbSounds: UIText;
-    public readonly lbExit: UIText;
     
-    public constructor(context: PK2Context) {
+    public constructor(context: PekkaContext, menu: MenuScreen) {
         super(context);
+        this._menu = menu;
         
-        // Layout
+        // Contents ¬
         
-        const fontFg = this._context.font2;
-        const fontBg = this._context.font4;
-        const container = new UIStackLayout(context, 20)
+        const fontFg = this.context.font2;
+        const stack = new UIStackLayout(context, 23)
             .setPosition(180, 240)
             .addTo(this);
         
         // Continue game
-        this.lbResumeGame = new UIWaveText(context, TX.MAINMENU_CONTINUE, fontFg)
-            .addTo(container)
-            .setFocusable(true);
+        // this.lbResumeGame = new UIWaveText(context, TX.MAINMENU_CONTINUE, fontFg, true)
+        //     .addTo(stack)
+        //     .setFocusable();
         
         // New game
-        this.lbNewGame = new UIWaveText(context, TX.MAINMENU_NEW_GAME, fontFg)
-            .addTo(container)
-            .setFocusable(true)
-            .on(PkUIComponent.EV_POINTERTAP, () => this.emit(MainMenuGroup.EV_ACTION_NEWGAME));
-        // .on(PkUIComponentImpl.EV_ACTION, () => {                this.showNameMenu();            });
+        this.lbNewGame = new UIWaveText(context, TX.MAINMENU_NEW_GAME, fontFg, true)
+            .addTo(stack)
+            .setFocusable()
+            .on(PkUIComponent.EV_ACTUATED, () => this._menu.acNewGame());
         
         // Save game
-        this.lbSaveGame = new UIWaveText(context, TX.MAINMENU_SAVE_GAME, fontFg)
-            .addTo(container)
-            .setFocusable(true);
+        // this.lbSaveGame = new UIWaveText(context, TX.MAINMENU_SAVE_GAME, fontFg, true)
+        //     .addTo(stack)
+        //     .setFocusable();
         
         // Load game
-        this.lbLoadGame = new UIWaveText(context, TX.MAINMENU_LOAD_GAME, fontFg)
-            .addTo(container)
-            .setFocusable(true);
+        this.lbLoadGame = new UIWaveText(context, TX.MAINMENU_LOAD_GAME, fontFg, true)
+            .addTo(stack)
+            .setFocusable();
         
         // Language
-        this.lbLanguage = new UIWaveText(context, TX.MAINMENU_LOAD_LANGUAGE, fontFg)
-            .addTo(container)
-            .setFocusable(true);
+        this.lbLanguage = new UIWaveText(context, TX.MAINMENU_LOAD_LANGUAGE, fontFg, true)
+            .addTo(stack)
+            .setFocusable();
         
         // Controls
-        this.lbControls = new UIWaveText(context, TX.MAINMENU_CONTROLS, fontFg)
-            .addTo(container)
-            .setFocusable(true);
+        this.lbControls = new UIWaveText(context, TX.MAINMENU_CONTROLS, fontFg, true)
+            .addTo(stack)
+            .setFocusable();
         //.on(PkUIComponentImpl.EV_ACTION, () => {                this.showControlsMenu();            });
         
         // Graphics
-        this.lbGraphics = new UIWaveText(context, TX.MAINMENU_GRAPHICS, fontFg)
-            .addTo(container)
-            .setFocusable(true);
+        this.lbGraphics = new UIWaveText(context, TX.MAINMENU_GRAPHICS, fontFg, true)
+            .addTo(stack)
+            .setFocusable()
+            .on(PkUIComponent.EV_ACTUATED, () => this._menu.acGoToGraphicsMenu());
         
         // Sounds
-        this.lbSounds = new UIWaveText(context, TX.MAINMENU_SOUNDS, fontFg)
-            .addTo(container)
-            .setFocusable(true)
-            .on(PkUIComponent.EV_POINTERTAP, () => this.emit(MainMenuGroup.EV_ACTION_AUDIO));
+        this.lbSounds = new UIWaveText(context, TX.MAINMENU_SOUNDS, fontFg, true)
+            .addTo(stack)
+            .setFocusable()
+            .on(PkUIComponent.EV_ACTUATED, () => this._menu.acGoToSoundsMenu());
         
-        // Exit
-        this.lbExit = new UIWaveText(context, TX.MAINMENU_EXIT, fontFg)
-            .addTo(container)
-            .setFocusable(true);
-        
-        container.layout();
+        stack.layout();
     }
     
     public static readonly EV_ACTION_NEWGAME = Symbol('new.game.action.menu.ev');

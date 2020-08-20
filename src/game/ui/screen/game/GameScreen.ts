@@ -1,12 +1,12 @@
 import { Game } from '@game/game/Game';
-import { PK2Context } from '@game/PK2Context';
+import { PekkaContext } from '@game/PekkaContext';
 import { UIGame } from '@game/ui/component/UIGame';
 import { Screen } from '@game/ui/screen/Screen';
 
 export class GameScreen extends Screen {
     private _uiGame: UIGame;
     
-    public static create(context: PK2Context): GameScreen {
+    public static create(context: PekkaContext): GameScreen {
         return new GameScreen(context);
     }
     

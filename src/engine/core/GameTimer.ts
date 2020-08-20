@@ -46,7 +46,7 @@ export class GameTimer {
             return;
         
        // this._timer = setTimeout(this._trigger.bind(this), 1);
-        this._timer = setInterval(this._trigger.bind(this), this._tickT);
+        this._timer = setTimeout(this._trigger.bind(this), this._tickT);
     }
     
     public stop() {
@@ -91,7 +91,7 @@ export class GameTimer {
      * encontraba detenido.
      */
     private _plan() {
-        //this._timer = setTimeout(this._triggerFnPtr, this._tickT);
+        this._timer = setTimeout(this._triggerFnPtr, this._tickT);
     }
     
     private _tpsAvg = [];

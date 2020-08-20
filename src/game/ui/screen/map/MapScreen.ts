@@ -1,4 +1,4 @@
-import { PK2Context } from '@game/PK2Context';
+import { PekkaContext } from '@game/PekkaContext';
 import { TX } from '@game/texts';
 import { UIPlainText } from '@game/ui/component/UIPlainText';
 import { UIText } from '@game/ui/component/UIText';
@@ -10,7 +10,7 @@ import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { RESOURCES_PATH } from '@sp/constants';
 
 export class MapScreen extends Screen {
-    public static async create(ctx: PK2Context): Promise<MapScreen> {
+    public static async create(ctx: PekkaContext): Promise<MapScreen> {
         const self = new MapScreen(ctx);
         return await self.inialize();
     }
@@ -38,10 +38,10 @@ export class MapScreen extends Screen {
     private layout(): void {
         let txt: UIText;
         
-        const context = this._context;
-        const font1 = this._context.font1;
-        const font2 = this._context.font2;
-        const font4 = this._context.font4;
+        const context = this.context;
+        const font1 = this.context.font1;
+        const font2 = this.context.font2;
+        const font4 = this.context.font4;
         
         this.clean();
         

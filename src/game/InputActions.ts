@@ -1,11 +1,11 @@
-import { Key } from 'ts-key-enum';
-
 export enum InputAction {
     UI_LEFT = 'UI_LEFT',
     UI_RIGHT = 'UI_RIGHT',
     UI_UP = 'UI_UP',
     UI_DOWN = 'UI_DOWN',
-    UI_OK = 'UI_OK',
+    UI_PREV = 'UI_TAB_PREV',
+    UI_NEXT = 'UI_TAB_NEXT',
+    UI_ACTUATE = 'UI_ACTUATE',
     ESCAPE = 'ESCAPE',
     GAME_LEFT = 'GAME_LEFT',
     GAME_RIGHT = 'GAME_RIGHT',
@@ -17,6 +17,6 @@ export enum InputAction {
     GAME_GIFT_NEXT = 'GAME_GIFT_NEXT',
     GAME_GIFT_USE = 'GAME_GIFT_USE',
     GAME_SUICIDE = 'GAME_SUICIDE',
-    GAME_PAUSE = 'GAME_PAUSE'
+    GAME_PAUSE = 'GAME_PAUSE',
 }
 

@@ -20,7 +20,7 @@ import {
     ILMA_LUMISADE
 } from '@game/map/PK2Map';
 import { EParticle } from '@game/particle/Particle';
-import { PK2Context } from '@game/PK2Context';
+import { PekkaContext } from '@game/PekkaContext';
 import { Sprite } from '@game/sprite/Sprite';
 import { SpriteFuture } from '@game/sprite/SpriteFuture';
 import { SpriteManager, EAi } from '@game/sprite/SpriteManager';
@@ -30,6 +30,7 @@ import { BLOCK_SIZE } from '@game/tile/BlockConstants';
 import { BlockManager } from '@game/tile/BlockManager';
 import { DwTilingSprite } from '@ng/drawable/object/DwTilingSprite';
 import { ResourceNotFoundError } from '@ng/error/ResourceNotFoundError';
+import { PkAssetCache } from '@ng/PkAssetCache';
 import { Log } from '@ng/support/log/LoggerImpl';
 import { pathJoin, floor, minmax } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
@@ -105,7 +106,7 @@ export class Game extends GameContext {
     /** player invisible timeout */
     private nakymattomyys: number;
     
-    public constructor(context: PK2Context, map: PK2Map) {
+    public constructor(context: PekkaContext, map: PK2Map) {
         super(context, map);
         
         // In debug, game is available globally
@@ -116,7 +117,6 @@ export class Game extends GameContext {
         this._blocks = new BlockManager(this);
         
         this._paused = false;
-        this.composition.getDrawable().renderable = false;
         
         this._sprites.onSpriteCreated((sprite) => {
             if (sprite.proto.type === ESpriteType.TYYPPI_TAUSTA) {
@@ -144,7 +144,7 @@ export class Game extends GameContext {
             await this.loadBgImage(this.map.fpath, this.map.bgImageFilename);
             
             // TODO: Temporal location
-            this._stuff = await PkAssetTk.getBitmap(pathJoin(RESOURCES_PATH, 'gfx/pk2stuff.bmp'));
+            this._stuff = await PkAssetTk.getImage(pathJoin(RESOURCES_PATH, 'gfx/pk2stuff.bmp'));
             //this._stuff.removeTransparentPixel();
             
             // PND	PK_New_Save();
@@ -216,7 +216,7 @@ export class Game extends GameContext {
         }
         
         // Start rendering the game composition
-        this.composition.getDrawable().renderable = true;
+        this.composition.show();
     }
     
     /**
@@ -781,7 +781,8 @@ export class Game extends GameContext {
             this._camera.y = Math.floor(PK2KARTTA_KARTTA_KORKEUS - this.device.screenHeight / 32) * 32;
         
         // Apply
-        this.composition.getDrawable().setPosition(-this.cameraX, -this.cameraY);
+        //this.composition.getDrawable().setPosition(-this.cameraX, -this.cameraY);
+        this.camera.setPosition(this.cameraX, this.cameraY);
     }
     
     /**
@@ -1366,7 +1367,6 @@ export class Game extends GameContext {
             
             sprite.causeDamage(0, EDamageType.VAHINKO_EI);
             
-            
             /*****************************************************************************************/
             /* If the sprite is destroyed                                                            */
             /*****************************************************************************************/
@@ -1390,6 +1390,7 @@ export class Game extends GameContext {
                     else
                         sprite.discard();
                     
+                    // Effect on sprite disapears
                     Effects.destruction(this, tuhoutuminen, Math.floor(sprite.x), Math.floor(sprite.y));
                     this.playSound(sprite.proto.getSound(ESound.AANI_TUHOUTUMINEN), 100, sprite.x, sprite.y, sprite.proto.soundFreq, sprite.proto.soundRandomFreq);
                     

@@ -1,7 +1,12 @@
+import { InputAction } from '@game/InputActions';
+import { PkInputEvent } from '@ng/core/input/PkInputEvent';
+import { PkInput } from '@ng/core/PkInput';
 import { Log } from '@ng/support/log/LoggerImpl';
+import { PkEasing } from '@ng/support/PkEasing';
 import { mod } from '@ng/support/utils';
 import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
 import { PkUIComponentContainer } from '@ng/ui/component/PkUIComponentContainer';
+import { PkUIEffectDelay } from '@ng/ui/effect/PkUIEffectDelay';
 import { PkUIEffectFadeIn } from '@ng/ui/effect/PkUIEffectFadeIn';
 import { PkUIEffectFadeOut } from '@ng/ui/effect/PkUIEffectFadeOut';
 import { PkUIContext } from '@ng/ui/PkUIContext';
@@ -23,11 +28,22 @@ export abstract class PkScreen<T extends PkUIContext = PkUIContext> extends PkUI
     protected constructor(context: T) {
         super(context);
         
-        this._creationTime = this._context.time.now();
+        this._creationTime = this.context.time.now();
         
         this._status = PkScreenLCS.SUSPENDED;
         this.renderable = false;
         this.setActive(false);
+        
+        this.on(PkInput.EV_KEYDOWN, (ev: PkInputEvent) => {
+            if (ev.gameActns.includes(InputAction.UI_NEXT)) {
+                this.focusNext();
+            }
+        });
+        this.on(PkInput.EV_KEYDOWN, (ev: PkInputEvent) => {
+            if (ev.gameActns.includes(InputAction.UI_PREV)) {
+                this.focusPrevious();
+            }
+        });
     }
     
     
@@ -57,45 +73,64 @@ export abstract class PkScreen<T extends PkUIContext = PkUIContext> extends PkUI
         return this;
     }
     
-    public resume(ms: number = 0) {
-        if (this.isOperating() || this.isResuming()) {
-            return;
-        }
-        
-        Log.d('[Screen] Resuming "', this.constructor.name, '"');
-        
-        //this._lastResumeTime = this._context.time.now();
-        this._status = PkScreenLCS.RESUMING;
-        this.renderable = true;
-        if (ms > 0) {
-            this.alpha = 0;
-            this.applyEffect(PkUIEffectFadeIn.for(ms)
-                .thenDo(() => this._resume()));
-        }
-        
+    public resume(ms: number = 0): Promise<this> {
+        return new Promise((resolve) => {
+            if (this.isOperating() || this.isResuming()) {
+                resolve(this);
+            }
+            
+            Log.d('[Screen] Resuming "', this.constructor.name, '"');
+            
+            //this._lastResumeTime = this._context.time.now();
+            
+            this._status = PkScreenLCS.RESUMING;
+            this.emit(PkScreen.EV_RESUMING);
+            
+            this.renderable = true;
+            
+            if (ms > 0) {
+                this.getDrawable().globalAlpha = 0;
+                this.applyEffect(PkUIEffectFadeIn.for(ms, PkEasing.outCubic)
+                    .thenDo(() => {
+                        this._resume();
+                        Log.d('[Screen] Done');
+                        
+                        resolve(this);
+                    }));
+            } else {
+                this._resume();
+                resolve(this);
+            }
+        });
     }
     private _resume(): void {
-        this.renderable = true;
-        
         this._status = PkScreenLCS.OPERATING;
         this.emit(PkScreen.EV_RESUMED);
     }
     
-    public suspend(ms: number = 0): this {
-        if (this.isSuspended() || this.isSuspending()) {
-            return this;
-        }
-        
-        Log.d('[Screen] Suspending "', this.constructor.name, '"');
-        
-        this._status = PkScreenLCS.SUSPENDING;
-        this.setActive(false);
-        
-        if (ms > 0) {
-            this.applyEffect(PkUIEffectFadeOut.for(ms)
-                .thenDo(() => this._suspend()));
-        }
-        this.emit(PkScreen.EV_SUSPENDING);
+    public suspend(ms: number = 0): Promise<this> {
+        return new Promise((resolve) => {
+            if (this.isSuspended() || this.isSuspending()) {
+                resolve(this);
+            }
+            
+            Log.d('[Screen] Suspending "', this.constructor.name, '"');
+            
+            this.setActive(false);
+            this._status = PkScreenLCS.SUSPENDING;
+            this.emit(PkScreen.EV_SUSPENDING);
+            
+            if (ms > 0) {
+                this.applyEffect(PkUIEffectFadeOut.for(ms)
+                    .thenDo(() => {
+                        this._suspend();
+                        resolve();
+                    }));
+            } else {
+                this._suspend();
+                resolve();
+            }
+        });
     }
     private _suspend(): void {
         this.renderable = false;
@@ -120,18 +155,53 @@ export abstract class PkScreen<T extends PkUIContext = PkUIContext> extends PkUI
     
     ///  Focus  ///
     
-    public isFocused(component?: PkUIComponent): boolean {
-        // Screen is never focused
-        if (component == null)
-            return false;
+    /**
+     * Returns the focused component in the screen, if any.
+     */
+    public get focusedComponent(): PkUIComponent {
+        return this._focusedComponent;
+    }
+    
+    // Screen can't be focused.
+    public setFocusable(focusable: false): this { return this; }
+    // Screen can't be focused.
+    public isFocused(): boolean { return false; }
+    // Screen can't be focused.
+    public canBeFocused(): boolean { return false; }
+    
+    /**
+     * Called by a children component that demands be the new focused element in the screen.
+     * @internal
+     */
+    public _demandsFocus(component: PkUIComponent): void {
+        // Screen must be active
+        if (!this._active)
+            return;
+        // Component mustn't be already focused
+        if (this._focusedComponent === component)
+            return;
+        // Component is required and must be focusable
+        if (component == null || !component.canBeFocused())
+            return;
+        // Component must be child
+        if (component.screen !== this)
+            return;
         
-        return this._focusedComponent === component;
+        const old = this._focusedComponent;
+        if (old != null) {
+            old.blur();
+        }
+        
+        this._focusedComponent = component;
+        
+        component.emit(PkUIComponent.EV_FOCUS, component);
+        this.emit(PkScreen.EV_FOCUS_CHANGED, old, component);
     }
     
     /**
-     * Removes focus from the currently focused component.
+     * Removes focus from the currently focused component, if any.
      */
-    public blur(): void {
+    public blur(): this {
         const old = this._focusedComponent;
         if (old != null) {
             this._focusedComponent = null;
@@ -139,86 +209,83 @@ export abstract class PkScreen<T extends PkUIContext = PkUIContext> extends PkUI
             old.emit(PkUIComponent.EV_BLUR, old);
             this.emit(PkScreen.EV_FOCUS_CHANGED, old, null);
         }
+        return this;
     }
     
     /**
-     * Puts focus on the specified component.
+     * If none of the elements on the screen have focus, it focuses the first focusable element available.<br>
      */
-    public focus(component?: PkUIComponent): void {
-        // Component mustn't be already focused
-        if (this._focusedComponent === component)
-            return;
-        
-        // Component is required and must be focusable
-        if (component == null || !component.focusable)
-            return;
-        
-        // Component must be child
-        if (component.screen !== this)
-            return;
-        
-        const old = this._focusedComponent;
-        
-        this._focusedComponent = component;
-        
-        component.emit(PkUIComponent.EV_BLUR, old);
-        component.emit(PkUIComponent.EV_FOCUS, component);
-        this.emit(PkScreen.EV_FOCUS_CHANGED, old, null);
+    public focus(): this {
+        if ((this.isOperating() || this.isResuming()) && this._active && this._focusedComponent != null) {
+            this.focusNext();
+        }
+        return this;
     }
     
     /**
-     * Change focus to the previous visible-focusable component.
+     * Focuses the specified element of the screen.
+     */
+    public focusChild(component: PkUIComponent): void {
+        if (component.screen === this) {
+            component.focus();
+        }
+    }
+    
+    /**
+     * Change focus to the previous focusable component.<br>
+     * If there is no element currently focused, it focuses the first focusable element available.
      */
     protected focusPrevious() {
-        let candidateIdx: number;
-        let candidate: PkUIComponentImpl;
-        const oldIdx = (this._focusedIdx != null) ? this._focusedIdx : this._components.length;
+        // Get ordered list of focusable elements
+        const list = [...this].filter(cmp => cmp.canBeFocused());
         
-        this.blur();
-        
-        for (let i = 1; i < this._components.length; i++) {
-            candidateIdx = mod(oldIdx - i, this._components.length);
-            candidate = this._components[candidateIdx];
-            
-            if (candidate.isFocusable() && candidate.isVisible()) {
-                this._focusedIdx = candidateIdx;
-                candidate.focus();
-                console.debug(`PK M   - Focused: ${ this._focusedIdx }`);
-                break;
+        if (this._focusedComponent == null) {
+            list[0].focus();
+        } else {
+            const i = list.indexOf(this._focusedComponent);
+            if (i < 0) {
+                list[0].focus();
+            } else {
+                list[mod(i - 1, list.length)].focus();
             }
         }
     }
     
     /**
-     * Change focus to the next visible-focusable component.
+     * Change focus to the next focusable component.
+     * If there is no element currently focused, it focuses the first focusable element available.
      */
     protected focusNext() {
-        // let candidateIdx: number;
-        // let candidate: PkUIComponentImpl;
-        // const oldIdx = (this._focusedIdx != null) ? this._focusedIdx : -1;
-        //
-        // this.blur();
-        //
-        // for (let i = 1; i < this._components.length; i++) {
-        //     candidateIdx = mod(oldIdx + i, this._components.length);
-        //     candidate = this._components[candidateIdx];
-        //
-        //     if (candidate.isFocusable() && candidate.isVisible()) {
-        //         this._focusedIdx = candidateIdx;
-        //         candidate.focus();
-        //         console.debug(`PK M   - Focused: ${ this._focusedIdx }`);
-        //         break;
-        //     }
-        // }
+        const list = [...this].filter(cmp => cmp.canBeFocused());
+        
+        // If there aren't focusable elements, any element can have the focus currently
+        if (list.length === 0) {
+            if (this._focusedComponent == null) {
+                this.blur();
+            }
+            return;
+        }
+        
+        if (this._focusedComponent == null) {
+            list[0].focus();
+        } else {
+            const i = list.indexOf(this._focusedComponent);
+            if (i < 0) {
+                list[0].focus();
+            } else {
+                list[mod(i + 1, list.length)].focus();
+            }
+        }
     }
     
     
     ///  Events  ///
     
-    public static readonly EV_SUSPENDED = 'suspended.screen.ev';
-    public static readonly EV_SUSPENDING = 'suspending.screen.ev';
-    public static readonly EV_RESUMED = 'resumed.screen.ev';
-    public static readonly EV_FOCUS_CHANGED = 'changed.focus.screen.ev';
+    public static readonly EV_SUSPENDED = Symbol('suspended.screen.ev');
+    public static readonly EV_SUSPENDING = Symbol('suspending.screen.ev');
+    public static readonly EV_RESUMED = Symbol('resumed.screen.ev');
+    public static readonly EV_RESUMING = Symbol('resuming.screen.ev');
+    public static readonly EV_FOCUS_CHANGED = Symbol('changed.focus.screen.ev');
 }
 
 enum PkScreenLCS {

@@ -3,20 +3,23 @@ import { GameComposition } from '@game/display/GameComposition';
 import { TextureCache } from '@game/game/TextureCache';
 import { PK2Map } from '@game/map/PK2Map';
 import { ParticleSystem } from '@game/particle/ParticleSystem';
-import { PK2Context } from '@game/PK2Context';
+import { PekkaContext } from '@game/PekkaContext';
 import { PkDevice } from '@ng/core/PkDevice';
 import { PKSound } from '@ng/core/PKSound';
+import { PkAssetCache } from '@ng/PkAssetCache';
+import { PkCamera } from '@ng/render/PkCamera';
 import { PkImage } from '@ng/types/PkImage';
 
 /**
  * The game environment is shared with all game related elements.
  */
 export abstract class GameContext {
-    protected readonly context: PK2Context;
+    protected readonly context: PekkaContext;
     
     public readonly map: PK2Map;
     public readonly textureCache: TextureCache;
     public readonly composition: GameComposition;
+    public readonly camera: PkCamera;
     public readonly particles: ParticleSystem;
     protected _camera: { x: number, y: number };
     protected _sound: PKSound;
@@ -27,12 +30,13 @@ export abstract class GameContext {
     
     public _stuff: PkImage;
     
-    protected constructor(context: PK2Context, map: PK2Map) {
+    protected constructor(context: PekkaContext, map: PK2Map) {
         this.context = context;
         this.map = map;
         
         this.textureCache = new TextureCache();
         this.composition = new GameComposition();
+        this.camera = new PkCamera(this.composition.getDrawable());
         this.particles = new ParticleSystem(this);
         this._camera = { x: 0, y: 0 };
         this._sound = new PKSound();
@@ -55,8 +59,8 @@ export abstract class GameContext {
     
     public get device(): PkDevice { return this.context.device; };
     
-    public get stuff(): PkImage {
-        return this._stuff;
+    public get stuff(): PkAssetCache {
+        return this.context.stuff;
     }
     public get sound(): PKSound { return this._sound; }
     

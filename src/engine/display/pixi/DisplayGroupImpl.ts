@@ -6,6 +6,7 @@ export class DisplayGroupImpl extends DisplayObject<PIXI.Container> {
     private _renderContext: RenderContext;
     private _children: DisplayObject<any>[];
     
+    
     public constructor(context?: RenderContext) {
         super(new PIXI.Container);
         

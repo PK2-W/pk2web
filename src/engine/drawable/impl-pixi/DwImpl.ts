@@ -1,6 +1,10 @@
 import { DwHelper } from '@ng/drawable/DwHelper';
 import type { Dw } from '@ng/drawable/skeleton/Dw';
 import type { DwContainer } from '@ng/drawable/skeleton/DwContainer';
+import { minmax } from '@ng/support/utils';
+import { PkRectangleImpl } from '@ng/types/pixi/PkRectangleImpl';
+import { PkRectangle } from '@ng/types/PkRectangle';
+import { PkUIComponentContainer } from '@ng/ui/component/PkUIComponentContainer';
 import { ListenerFn, EventEmitter } from 'eventemitter3';
 import * as PIXI from 'pixi.js';
 
@@ -14,7 +18,7 @@ export abstract class DwImpl<T extends PIXI.DisplayObject> extends EventEmitter 
     protected readonly _pixi: T;
     
     // Visibility
-    //private readonly _alphaFilter: PIXI.filters.AlphaFilter;
+    private readonly _alphaFilter: PIXI.filters.AlphaFilter;
     
     private readonly _dbgCanvas: PIXI.Graphics;
     private _dbgBorder: boolean;
@@ -33,9 +37,10 @@ export abstract class DwImpl<T extends PIXI.DisplayObject> extends EventEmitter 
         this._pixiBox['__pk__'] = this;
         
         this._pixi = native;
-        //this._alphaFilter = new PIXI.filters.AlphaFilter(1);
-        // this._pixi.filters = [this._alphaFilter];
         this._pixiBox.addChild(this._pixi);
+        
+        this._alphaFilter = new PIXI.filters.AlphaFilter(1);
+        this.pixi.filters = [];
         
         // this._pixiDbg = new PIXI.Graphics();
         // this._pixiDbg.beginFill(0xFF0000);
@@ -83,6 +88,7 @@ export abstract class DwImpl<T extends PIXI.DisplayObject> extends EventEmitter 
     public get x(): number { return this.pixi.x; }
     public set x(x: number) {
         this.pixi.x = x;
+        this._updateTransforms();
     }
     public setX(x: number): this {
         this.x = x;
@@ -92,6 +98,7 @@ export abstract class DwImpl<T extends PIXI.DisplayObject> extends EventEmitter 
     public get y(): number { return this.pixi.y; }
     public set y(y: number) {
         this.pixi.y = y;
+        this._updateTransforms();
     }
     public setY(y: number): this {
         this.y = y;
@@ -101,16 +108,36 @@ export abstract class DwImpl<T extends PIXI.DisplayObject> extends EventEmitter 
     public setPosition(x: number, y: number): this {
         this.pixi.x = x;
         this.pixi.y = y;
+        this._updateTransforms();
         return this;
     }
     
     public get alpha(): number { return this.pixi.alpha; }
-    public set alpha(v: number) {
-        //this._alphaFilter.alpha = minmax(v, 0, 1);
-        this.pixi.alpha = v;
+    public set alpha(alpha: number) {
+        this.pixi.alpha = minmax(alpha, 0, 1);
     }
-    public setAlpha(value: number): this {
-        this.alpha = value;
+    public setAlpha(alpha: number): this {
+        this.alpha = alpha;
+        return this;
+    }
+    
+    public get globalAlpha(): number { return this._alphaFilter.alpha; }
+    public set globalAlpha(alpha: number) {
+        this._alphaFilter.alpha = minmax(alpha, 0, 1);
+        if (alpha >= 1) {
+            const i = this.pixi.filters.indexOf(this._alphaFilter);
+            if (i > -1) {
+                this.pixi.filters.splice(i, 1);
+            }
+        } else {
+            if (!this.pixi.filters.includes(this._alphaFilter)) {
+                this._pixi.filters.push(this._alphaFilter);
+            }
+        }
+        this._alphaFilter.alpha = minmax(alpha, 0, 1);
+    }
+    public setGlobalAlpha(alpha: number): this {
+        this.globalAlpha = alpha;
         return this;
     }
     
@@ -132,12 +159,31 @@ export abstract class DwImpl<T extends PIXI.DisplayObject> extends EventEmitter 
         return this;
     }
     
+    public get hitArea(): PkRectangle { return null; }
+    public set hitArea(hitArea: PkRectangle) { this.setHitArea(hitArea); }
+    public setHitArea(hitArea: PkRectangle): this {
+        this.pixi.hitArea = (hitArea as PkRectangleImpl).getNative();
+        return this;
+    }
+    
+    public getBounds(): PkRectangle {
+        const bounds = this.pixi.getLocalBounds();
+        return PkRectangleImpl.$(bounds.x, bounds.y, bounds.width, bounds.height);
+    }
+    
     
     ///  ~Container  ///
     
-    public addTo(parent: DwContainer): this {
-        parent.add(this);
-        this._parent = parent;
+    public addTo(container: DwContainer): this;
+    public addTo(container: DwContainer, x: number, y: number): this;
+    public addTo(container: DwContainer, x?: number, y?: number): this {
+        container.add(this);
+        this._parent = container;
+        
+        if (x != null && y != null) {
+            this.setPosition(x, y);
+        }
+        
         return this;
     }
     
@@ -148,6 +194,15 @@ export abstract class DwImpl<T extends PIXI.DisplayObject> extends EventEmitter 
      */
     protected _childOf(parent: DwContainer) {
         this._parent = parent;
+    }
+    
+    
+    ///  PIXI Optimizations  ///
+    
+    protected _updateTransforms(): void {
+        if (this.renderable && this.pixi.parent != null) {
+            this.pixi.updateTransform();
+        }
     }
     
     

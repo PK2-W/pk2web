@@ -55,9 +55,9 @@ export class PkEngine {
         this._gameTimer = new GameTimer(PK2GAMELOOP); // Windows "system timer" has a resolution of 10~16 ms = 62.5 tps
         this._language = new PkLanguage();
         this._resources = new PkResources(RESOURCES_PATH);
-        this._rendr = new PkRenderer(this);
         this._input = new PkInput(this);
         this._audio = new PK2wSound(this);
+        this._rendr = new PkRenderer(this);
         
         this._screens = new Map<SCREENID, PkScreen>();
     }

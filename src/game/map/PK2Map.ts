@@ -1,6 +1,6 @@
 import { EBgImageMovement } from '@game/enum/EBgImageMovement';
 import { EBlockPrototype } from '@game/enum/EBlockPrototype';
-import { PK2Context } from '@game/PK2Context';
+import { PekkaContext } from '@game/PekkaContext';
 import { TSpriteProtoCode } from '@game/sprite/SpritePrototype';
 import { TBlockProtoCode } from '@game/tile/BlockPrototype';
 import { Log } from '@ng/support/log/LoggerImpl';
@@ -15,7 +15,7 @@ export abstract class PK2MapInfo {
 }
 
 export class PK2Map extends PK2MapInfo {
-    private _context: PK2Context;
+    private _context: PekkaContext;
     private _fpath: string;
     private _fname: string;
     private _raw: PkBinary;
@@ -74,13 +74,13 @@ export class PK2Map extends PK2MapInfo {
      * @param ctx
      * @param fname - Resource URI (from source "polku + nimi").
      */
-    public static loadFromFile(ctx: PK2Context, fpath: string, fname: string): Promise<PK2Map> {
+    public static loadFromFile(ctx: PekkaContext, fpath: string, fname: string): Promise<PK2Map> {
         return new PK2Map(ctx).loadFromFile(fpath, fname);
     }
     
     ///
     
-    private constructor(ctx: PK2Context) {
+    private constructor(ctx: PekkaContext) {
         super();
         
         this._context = ctx;

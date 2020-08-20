@@ -3,6 +3,7 @@ import { Particle } from '@game/particle/Particle';
 import { ParticleContext } from '@game/particle/ParticleContext';
 import { Log } from '@ng/support/log/LoggerImpl';
 import { PkImage } from '@ng/types/PkImage';
+import { STUFF_CKEY } from '@sp/constants';
 import { int, rand } from '../support/types';
 
 /**
@@ -17,6 +18,7 @@ export class ParticleSystem implements ParticleContext {
     private _debug_report = 0;
     
     //private readonly  int nof_bg_particles = 300;
+    
     
     public constructor(context: GameContext) {
         this._context = context;
@@ -41,7 +43,8 @@ export class ParticleSystem implements ParticleContext {
             
             if (particle.time_over()) {
                 this.Particles.splice(i--, 1);
-                particle.getDrawable().renderable = false;
+                //particle.getDrawable().renderable = false;
+                this._context.composition.removeFgParticle(particle);
             }
         }
         
@@ -54,7 +57,8 @@ export class ParticleSystem implements ParticleContext {
             
             if (particle.time_over()) {
                 this.BGParticles.splice(i--, 1);
-                particle.getDrawable().renderable = false;
+                //particle.getDrawable().renderable = false;
+                this._context.composition.removeBgParticle(particle);
             }
         }
         
@@ -153,7 +157,7 @@ export class ParticleSystem implements ParticleContext {
     //     }
     // }
     
-    public get stuff(): PkImage {
-        return this._context.stuff;
+    public get stuffSheet(): PkImage {
+        return this._context.stuff.getImageByKey(STUFF_CKEY);
     }
 }

@@ -93,8 +93,8 @@ export abstract class PkUIComponentContainer<T extends PkUIContext = PkUIContext
         super.tick(delta, time);
         
         // Tick children
-        for (let effect of this._children) {
-            effect.tick(delta, time);
+        for (let child of this._children) {
+            child.tick(delta, time);
         }
     }
     
@@ -114,6 +114,7 @@ export class PkUITreeIterator implements Iterator<PkUIComponent> {
     private _aux: PkUIComponent[];
     
     public constructor(component: PkUIComponentContainer) {
+        this._aux = [];
         this._aux.push(...component.getChildren());
     }
     

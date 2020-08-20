@@ -1,6 +1,6 @@
 import { DwContainerImpl } from '@ng/drawable/impl-pixi/DwContainerImpl';
-import { DwSpriteImpl } from '@ng/drawable/impl-pixi/DwSpriteImpl';
 import { DwContainer } from '@ng/drawable/skeleton/DwContainer';
+import { DwFactory } from '@ng/drawable/skeleton/DwFactory';
 import { DwSprite } from '@ng/drawable/skeleton/DwSprite';
 import { pathJoin } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
@@ -109,7 +109,7 @@ export class PkFontAsset implements PkFont {
         return character;
     }
     
-    public writeText(text: string, target?: DwContainer): DwContainer {
+    public writeText(text: string, target?: DwContainer, x: number = 0, y: number = 0): DwContainer {
         if (target == null) {
             target = (new DwContainerImpl() as DwContainer);
         }
@@ -121,14 +121,16 @@ export class PkFontAsset implements PkFont {
         let i;
         for (i = 0; i < text.length; i++) {
             char = text[i];
-            texture = this.getCharTexture(char);
             
+            // Every character is an individual drawable
+            sprite = DwFactory.new.sprite()
+                .setPosition(i * this._charW + x, y)
+                .addTo(target);
+            
+            // A texture is assigned only if it exists (spaces for example are exceptions)
+            texture = this.getCharTexture(char);
             if (texture != null) {
-                sprite = (new DwSpriteImpl() as DwSprite)
-                    .setTexture(texture)
-                    .setX(i * this._charW);
-                
-                target.add(sprite);
+                sprite.setTexture(texture);
             }
         }
         

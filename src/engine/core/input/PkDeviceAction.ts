@@ -6,6 +6,7 @@ export class PkDeviceAction {
     protected readonly _device: PkInputDevices;
     protected readonly _key: string;
     
+    
     public constructor(device: PkInputDevices, key: string) {
         this._device = device;
         this._key = key;

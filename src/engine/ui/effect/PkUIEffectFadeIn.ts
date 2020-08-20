@@ -1,21 +1,30 @@
+import { PkEasing, TEasingFunction } from '@ng/support/PkEasing';
 import { PkUiEffect } from '@ng/ui/effect/PkUiEffect';
 
 export class PkUIEffectFadeIn extends PkUiEffect {
     private readonly _duration: number;
     
-    public static for(ms: number): PkUIEffectFadeIn {
-        return new PkUIEffectFadeIn(ms);
+    public static for(ms: number, easingFn?: TEasingFunction): PkUIEffectFadeIn {
+        return new PkUIEffectFadeIn(ms, easingFn);
     }
     
-    public constructor(ms: number) {
+    public constructor(ms: number, easingFn?: TEasingFunction) {
         super();
         
         this._duration = ms;
+        this._easingFn = easingFn ?? PkEasing.linear;
+    }
+    
+    protected _started(): void {
+        super._started();
+        
+        this.component.globalAlpha = 0;
+        this.component.show();
     }
     
     public tick(delta: number, time: number) {
         super.tick(delta, time);
-        this.component.alpha = this._elapsed / this._duration;
+        this.component.globalAlpha = this._easingFn(this._elapsed / this._duration);
         
         if (this._elapsed >= this._duration) {
             this._finished();

@@ -6,6 +6,7 @@ import type { PkImageTextureImpl } from '@ng/types/pixi/PkImageTextureImpl';
 export class DwSpriteImpl extends DwImpl<PIXI.Sprite> implements DwSprite {
     private _texture: PkImageTextureImpl;
     
+    
     public constructor() {
         super(new PIXI.Sprite());
     }

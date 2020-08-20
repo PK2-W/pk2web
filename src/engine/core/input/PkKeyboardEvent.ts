@@ -8,6 +8,7 @@ export class PkKeyboardEvent extends PkDeviceEvent {
     protected _deviceAction: PkKeyboardAction;
     protected _eventType: PkInputEventType;
     
+    
     public constructor(keyboardEvent: KeyboardEvent) {
         super();
         

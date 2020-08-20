@@ -44,7 +44,7 @@ export class Block extends DwObjectBase<DwSprite> {
         this._yOffset = 0;
         
         this.relayout();
-    
+        
         this.dw.x = this.x;
         this.dw.y = this.y;
     }
@@ -70,6 +70,37 @@ export class Block extends DwObjectBase<DwSprite> {
     public get bottom(): number { return this.y + BLOCK_SIZE + this._proto.bottom; }
     public get left(): number { return this.x + this._proto.left; }
     
+    
+    ///  Modifiers  ///
+    
+    public setOffset(xOffset: number, yOffset: number) {
+        if (xOffset === this._xOffset && yOffset === this._yOffset)
+            return;
+        
+        this._xOffset = xOffset;
+        this._yOffset = yOffset;
+        
+        this.dw.x = this.x;
+        this.dw.y = this.y;
+    }
+    
+    public get visible(): boolean { return this.dw.visible; }
+    public set visible(visible: boolean) { this.setVisible(visible); }
+    /** Sets the {@link visible} property. */
+    public setVisible(visible: boolean): this {
+        this.dw.visible = visible === true;
+        return this;
+    }
+    
+    public get renderable(): boolean { return this._drawable.renderable; }
+    public set renderable(renderable: boolean) { this.setRenderable(renderable); }
+    /** Sets the {@link renderable} property. */
+    public setRenderable(renderable: boolean): this {
+        this.dw.renderable = renderable === true;
+        return this;
+    }
+    
+    
     // Never used
     // public get toTheTop(): EBlocks { return this._ylos != null ? this._ylos : this._proto.toTheTop; }
     // public get toTheRight(): EBlocks { return this._oikealle != null ? this._oikealle : this._proto.toTheRight; }
@@ -81,7 +112,7 @@ export class Block extends DwObjectBase<DwSprite> {
     public isWater(): boolean { return this._proto.isWater() === true; }
     
     
-    ///  Graphics  ///
+    ///  Drawing  ///
     
     //private tmpSpr = DwFactory.new.sprite();
     public relayout(): void {
@@ -147,19 +178,7 @@ export class Block extends DwObjectBase<DwSprite> {
         };
     }
     
-    public setOffset(xOffset: number, yOffset: number) {
-        if (xOffset === this._xOffset && yOffset === this._yOffset)
-            return;
-        
-        this._xOffset = xOffset;
-        this._yOffset = yOffset;
-        
-        this.dw.x = this.x;
-        this.dw.y = this.y;
-        
-        // if (this.code === EBlockProtoCode.BLOCK_KYTKIN1 || this.code === EBlockProtoCode.BLOCK_KYTKIN2 || this.code === EBlockProtoCode.BLOCK_KYTKIN3)
-        //     Log.d(`[!Switch] Switch ${ this.code } offset set to ${ this.tmpSpr }`);
-    }
+    
 }
 
 /**

@@ -11,6 +11,7 @@ export class PkResources {
     
     private _dirMapping: Map<string, VFsDirMapping>;
     
+    
     public constructor(root: string) {
         this._root = root;
     }

@@ -27,7 +27,13 @@ export abstract class DwObjectBase<T extends Dw> extends EventEmitter implements
     /** Y coordinate of the drawable object. */
     public get y(): number { return this.dw.y; };
     
+    /**
+     * Opacity of the elements in the drawable object.<br>
+     * This property sets the alpha property of all the descendants individually;
+     * To achieve a global opacity effect across all the descentents as a whole, use {@link globalAlpha} instead.
+     */
     public get alpha(): number { return this.dw.alpha; };
+    public get globalAlpha(): number { return this.dw.globalAlpha; };
     public get visible(): boolean { return this.dw.visible; }
     public get renderable(): boolean { return this.dw.renderable; }
 }

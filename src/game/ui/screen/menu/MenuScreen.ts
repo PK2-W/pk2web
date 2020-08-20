@@ -1,11 +1,14 @@
-import { FONT } from '@game/PK2';
-import { PK2Context } from '@game/PK2Context';
+import { FONT } from '@game/Pekka';
+import { PekkaContext } from '@game/PekkaContext';
 import { TX } from '@game/texts';
 import { UIPlainText } from '@game/ui/component/UIPlainText';
 import { UIWaveText } from '@game/ui/component/UIWaveText';
-import { AudioMenuGroup } from '@game/ui/screen/menu/submenu/AudioMenuGroup';
+import { EpisodesMenuGroup } from '@game/ui/screen/menu/submenu/EpisodesMenuGroup';
+import { GraphicsMenuGroup } from '@game/ui/screen/menu/submenu/GraphicsMenuGroup';
 import { MainMenuGroup } from '@game/ui/screen/menu/submenu/MainMenuGroup';
 import { NameMenuGroup } from '@game/ui/screen/menu/submenu/NameMenuGroup';
+import { SoundsMenuGroup } from '@game/ui/screen/menu/submenu/SoundsMenuGroup';
+import { UIMenuSquare } from '@game/ui/screen/menu/UIMenuSquare';
 import { Screen } from '@game/ui/screen/Screen';
 import { DwSpriteImpl } from '@ng/drawable/impl-pixi/DwSpriteImpl';
 import { DwSprite } from '@ng/drawable/skeleton/DwSprite';
@@ -13,13 +16,9 @@ import { Log } from '@ng/support/log/LoggerImpl';
 import { pathJoin } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { PkBitmap } from '@ng/types/PkBitmap';
-import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
 import { PkUIEffectDelay } from '@ng/ui/effect/PkUIEffectDelay';
 import { PkUIEffectFadeIn } from '@ng/ui/effect/PkUIEffectFadeIn';
-import { PkUIEffectFadeOut } from '@ng/ui/effect/PkUIEffectFadeOut';
-import { PkUIComponentImpl } from '@ng/ui/PkUIComponentImpl';
 import { RESOURCES_PATH } from '@sp/constants';
-import { MenuSquare } from './MenuSquare';
 
 //Menu ID
 enum MENU {
@@ -41,7 +40,7 @@ export class MenuScreen extends Screen {
     private _bgImage: PkBitmap;
     private _bgDrawable: DwSprite;
     
-    private _square: MenuSquare;
+    private _square: UIMenuSquare;
     
     private _19obj = [];
     
@@ -50,10 +49,11 @@ export class MenuScreen extends Screen {
     //private _menu: TMenuCache = { main: {}, name: {}, episodes: {}, controls: {}, graphics: {}, sounds: {} };
     private _mainMenu: MainMenuGroup;
     private _nameMenu: NameMenuGroup;
-    private _audioMenu: AudioMenuGroup;
+    private _episodesMenu: EpisodesMenuGroup;
+    private _graphicsMenu: GraphicsMenuGroup;
+    private _soundsMenu: SoundsMenuGroup;
     
-    
-    public static async create(context: PK2Context): Promise<MenuScreen> {
+    public static async create(context: PekkaContext): Promise<MenuScreen> {
         const tmp = new MenuScreen(context);
         return await tmp.inialize();
     }
@@ -68,29 +68,24 @@ export class MenuScreen extends Screen {
         this._drawable.add(this._bgDrawable);
         
         // Prepare square
-        this._square = new MenuSquare(this._context, 160, 200, 640 - 180, 410,
+        this._square = new UIMenuSquare(this.context, 147, 195, 640 - 180, 415,
             [0x00004f, 0x000053, 0x070757, 0x0b0b5b, 0x13135f, 0x171763, 0x1f1f67, 0x27276b, 0x2f2f6f, 0x3b3377, 0x4b377f]
         );
         this.add(this._square);
         
-        this._mainMenu = new MainMenuGroup(this._context)
-            .addTo(this)
-            .hide();
-        this._nameMenu = new NameMenuGroup(this._context)
-            .addTo(this)
-            .hide();
-        this._audioMenu = new AudioMenuGroup(this._context)
-            .addTo(this)
-            .hide();
-        // this.layoutNameMenu();
-        // this.layoutEpisodesMenu();
+        this._mainMenu = new MainMenuGroup(this.context, this)
+            .hide().addTo(this);
+        this._nameMenu = new NameMenuGroup(this.context, this)
+            .hide().addTo(this);
+        this._episodesMenu = new EpisodesMenuGroup(this.context, this)
+            .hide().addTo(this);
+        this._graphicsMenu = new GraphicsMenuGroup(this.context, this)
+            .hide().addTo(this);
+        this._soundsMenu = new SoundsMenuGroup(this.context, this)
+            .hide().addTo(this);
         // this.layoutControlsMenu();
-        // this.layoutSoundsMenu();
         
-        this._mainMenu.on(MainMenuGroup.EV_ACTION_NEWGAME, this._acNewGameStep1, this);
-        this._mainMenu.on(MainMenuGroup.EV_ACTION_AUDIO, this._acGoToAudioMenu, this);
-        this._nameMenu.on(NameMenuGroup.EV_ACTION_BACK, this._acBackToMain, this);
-        this._audioMenu.on(AudioMenuGroup.EV_ACTION_BACK, this._acBackToMain, this);
+        // this._mainMenu.on(MainMenuGroup.EV_ACTION_AUDIO, this._acGoToAudioMenu, this);
         
         // this.context.input.listenKeys('right,down', () => {
         //     console.debug(`PK M   - Changing focus to next...`);
@@ -102,8 +97,9 @@ export class MenuScreen extends Screen {
         //     this.focusPrevious();
         // });
         
-        this._mainMenu.show();
-    
+        //this._mainMenu.show();
+        this.acBackToMain();
+        
         // let abb = await PkAssetTk.getArrayBuffer('/pk2w/res/music/song09.xm');
         // XMPlayer.init();
         // XMPlayer.load(abb);
@@ -112,63 +108,23 @@ export class MenuScreen extends Screen {
         return this;
     }
     
-    public showMainMenu(ms?: number): void {
-        this._acBackToMain();
-        this.resume(ms);
+    public async showMainMenu(ms?: number): Promise<void> {
+        //this.acBackToMain();
+        await this.resume(ms);
     }
     
     private playMusic() {
-        this._context.audio.playXM('music/song09.xm');
+        this.context.audio.playXM('music/song09.xm');
     }
     
     ///  Episodes Menu  ///
     
     private layoutEpisodesMenu(): void {
-        const ctx = this._context;
+        const ctx = this.context;
         const fontFg = FONT.F2;
         const fontBg = FONT.F4;
         let y = TITLE_Y + 40;
         
-        this._menu.episodes.titleLabel = new UIPlainText(ctx, TX.EPISODES_CHOOSE_EPISODE, fontFg, TITLE_X, TITLE_Y)
-            .addTo(this)
-            .setVisible(false);
-        
-        this._menu.episodes.cmEpisodesLabel = new UIPlainText(ctx, 'game episodes', fontFg, TITLE_X + 42, y)
-            .addTo(this)
-            .setVisible(false);
-        y += 27;
-        
-        this._menu.episodes.gagaga = new UIWaveText(ctx, 'hola que ase', fontFg, TITLE_X + 84, y)
-            .addTo(this)
-            .setVisible(true)
-            .setFocusable();
-        y += 22;
-        this._menu.episodes.gagaga = new UIWaveText(ctx, 'hola que ase 2', fontFg, TITLE_X + 84, y)
-            .addTo(this)
-            .setVisible(true)
-            .setFocusable();
-        y += 42;
-        
-        this._menu.episodes.gmEpisodesLabel = new UIPlainText(ctx, 'community episodes', fontFg, TITLE_X + 42, y)
-            .addTo(this)
-            .setVisible(false);
-        y += 27;
-        
-        this._menu.episodes.gagaga = new UIWaveText(ctx, 'hola que ase', fontFg, TITLE_X + 84, y)
-            .addTo(this)
-            .setVisible(true)
-            .setFocusable();
-        y += 22;
-        this._menu.episodes.gagaga = new UIWaveText(ctx, 'hola que ase 2', fontFg, TITLE_X + 84, y)
-            .addTo(this)
-            .setVisible(true)
-            .setFocusable();
-        y += 22;
-        this._menu.episodes.gagaga = new UIWaveText(ctx, 'segundo episodio', fontFg, TITLE_X + 84, y)
-            .addTo(this)
-            .setVisible(true)
-            .setFocusable();
-        y += 42;
         
         // PAGINATION
         // if (episodi_lkm-2 > 10) {
@@ -206,37 +162,9 @@ export class MenuScreen extends Screen {
         //     }
         // }
         
-        /* TODO: Moar, pagination or something */
-        
-        this._menu.episodes.exitActn = new UIWaveText(ctx, TX.MAINMENU_RETURN, fontFg, 180, 400)
-            .addTo(this)
-            .setVisible(false)
-            .setFocusable()
-            .on(PkUIComponentImpl.EV_ACTION, () => {
-                this.showMainMenu();
-            });
         
         //PisteDraw2_Font_Write(fontti1,tekstit->hae_Teksti(PK_txt.episodes_get_more),140,440);
     }
-    
-    public showEpisodesMenu(ms?: number): void {
-        //  this.preShowMenu();
-        
-        this._square.setTarget(58, 68, 640 - 58, 416);
-        this._square.setPalette([0x00004f, 0x000053, 0x070757, 0x0b0b5b, 0x13135f, 0x171763, 0x1f1f67, 0x27276b, 0x2f2f6f, 0x3b3377, 0x4b377f]);
-        
-        this._menu.episodes.titleLabel.show();
-        this._menu.episodes.exitActn.show();
-        
-        this._menu.episodes.gmEpisodesLabel.show();
-        this._menu.episodes.cmEpisodesLabel.show();
-        
-        
-        //this.focusNext();
-        
-        this.resume(ms);
-    }
-    
     
     ///  Controls Menu  ///
     
@@ -298,13 +226,10 @@ export class MenuScreen extends Screen {
     }
     
     
-    ///  Sounds Menu  ///
-    
-    private layoutSoundsMenu(): void {
-    }
-    
     public tick(delta: number, time: number) {
         super.tick(delta, time);
+        
+        //console.log('!')
         // const _degree = 200;
         
         // if (time > 10000)
@@ -329,35 +254,61 @@ export class MenuScreen extends Screen {
     
     ///  Actions  ///
     
-    private _acNewGameStep1(): void {
-        this._mainMenu
-            .applyEffect(PkUIEffectFadeOut.for(120)
-                .thenDo(cmp => cmp.hide()));
+    public acNewGame(): void {
+        this._mainMenu.hide();
         
         this._square.setTarget(90, 150, 640 - 90, 480 - 100);
         this._square.setPalette([0x00004f, 0x000053, 0x070757, 0x0b0b5b, 0x13135f, 0x171763, 0x1f1f67, 0x27276b, 0x2f2f6f, 0x3b3377, 0x4b377f]);
         this._nameMenu
             .reset()
-            .setAlpha(0)
-            .show()
             .applyEffect(PkUIEffectDelay.for(60)
-                .then(PkUIEffectFadeIn.for(120)));
+                .then(PkUIEffectFadeIn.for(200)));
     }
     
-    private _acGoToAudioMenu(): void {
+    public acNewGameNameSelected(name: string): void {
+        this._nameMenu.hide();
+        
+        this._square.setTarget(40, 62, 640 - 40, 408);
+        this._episodesMenu
+            .applyEffect(PkUIEffectDelay.for(60)
+                .then(PkUIEffectFadeIn.for(200)));
+    }
+    
+    public acGoToGraphicsMenu(): void {
         this._mainMenu.hide();
         
-        this._square.setTarget(40, 70, 640 - 40, 410);
-        this._audioMenu.show();
+        this._square.setTarget(40, 62, 640 - 40, 408);
+        this._graphicsMenu
+            .applyEffect(PkUIEffectDelay.for(60)
+                .then(PkUIEffectFadeIn.for(200)));
     }
     
-    private _acBackToMain(): void {
-        this._nameMenu.hide();
-        this._audioMenu.hide();
+    public acGoToSoundsMenu(): void {
+        this._mainMenu.hide();
         
-        this._square.setTarget(160, 200, 640 - 180, 410);
+        this._square.setTarget(40, 62, 640 - 40, 408);
+        this._soundsMenu
+            .applyEffect(PkUIEffectDelay.for(60)
+                .then(PkUIEffectFadeIn.for(200)));
+    }
+    
+    public acBackToMain(): void {
+        this._hideAny();
+        
+        this._square.setTarget(147, 195, 640 - 180, 415);
         this._square.setPalette([0x00004f, 0x000053, 0x070757, 0x0b0b5b, 0x13135f, 0x171763, 0x1f1f67, 0x27276b, 0x2f2f6f, 0x3b3377, 0x4b377f]);
-        this._mainMenu.show();
+        
+        this._mainMenu
+            .applyEffect(PkUIEffectDelay.for(60)
+                .then(PkUIEffectFadeIn.for(200)));
+    }
+    
+    public _hideAny(): void {
+        this._mainMenu.hide();
+        this._nameMenu.hide();
+        this._episodesMenu.hide();
+        this._soundsMenu.hide();
+        this._graphicsMenu.hide();
     }
     
     

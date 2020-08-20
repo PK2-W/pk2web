@@ -1,9 +1,10 @@
-import { EInputAction } from '@game/enum/EInputAction';
 import { PkDeviceAction } from '@ng/core/input/PkDeviceAction';
+import { PkInputEvent } from '@ng/core/input/PkInputEvent';
 import { PkKeyboardAction } from '@ng/core/input/PkKeyboardAction';
 import { PkKeyboardEvent } from '@ng/core/input/PkKeyboardEvent';
 import type { PkEngine } from '@ng/core/PkEngine';
 import { Log } from '@ng/support/log/LoggerImpl';
+import { EventEmitter } from 'eventemitter3';
 import { Key } from 'ts-key-enum';
 
 export { Key } from 'ts-key-enum';
@@ -12,7 +13,7 @@ export { Key } from 'ts-key-enum';
  * PkInput is the service in charge of linking the physical keys of a device with the virtual controls
  * required by the game.
  */
-export class PkInput {
+export class PkInput extends EventEmitter {
     private readonly _engine: PkEngine;
     
     private readonly _actingDeviceKeys: Set<string>;
@@ -22,7 +23,10 @@ export class PkInput {
     
     private _relations: DeviceGameActionRelation[];
     
+    
     public constructor(engine: PkEngine) {
+        super();
+        
         this._engine = engine;
         
         this._actingDeviceKeys = new Set;
@@ -144,17 +148,21 @@ export class PkInput {
         }
         
         const deviceEvnt = new PkKeyboardEvent(ev);
-        const gameActns = this.getGameActionsByDeviceActn(deviceEvnt.action);
         
-        Log.v('[~Input] Device DOWN: "', deviceEvnt.action.id, '"');
-        Log.v('         Triggers actions: [', gameActns.join(', '), ']');
-   
         if (!this._actingDeviceKeys.has(deviceEvnt.action.keyId)) {
             this._actingDeviceKeys.add(deviceEvnt.action.keyId);
             this._updateActiveGameActions();
             
             Log.v('         Added to active (', this._actingDeviceKeys.size, ')');
         }
+        
+        const gameActns = this.getGameActionsByDeviceActn(deviceEvnt.action);
+        const inputEvent = new PkInputEvent(deviceEvnt, gameActns);
+        
+        Log.v('[~Input] Device DOWN: "', deviceEvnt.action.id, '"');
+        Log.v('         Triggers actions: [', gameActns.join(', '), ']');
+        
+        this.emit(PkInput.EV_KEYDOWN, inputEvent);
     }
     
     private onKeyUp(ev: KeyboardEvent): void {
