@@ -1,3 +1,5 @@
+import { Log } from '@ng/support/log/LoggerImpl';
+
 export class PkSound {
     private readonly _audioCtx: AudioContext;
     private _native: AudioBuffer;
@@ -23,16 +25,41 @@ export class PkSound {
                     resolve();
                 },
                 (msg) => {
-                    reject(new Error(`Sound source could't be decoded: ${ msg }.`));
+                    reject(new Error(`Sound source couldn't be decoded: ${ msg }.`));
                 });
         });
     }
     
-    public play(): void {
+    public play(volume: number = 1, pan: number = 0, freq: number = 1): void {
         const source = this._audioCtx.createBufferSource();
         source.buffer = this._native;
-        source.connect(this._audioCtx.destination);
-        // source.detune.value = // value of pitch
+        
+        // Volume
+        const volNode = this._audioCtx.createGain();
+        if (typeof volume !== 'number' || volume < 0 || volume > 1) {
+            Log.w('[~Sound] Invalid volume value to play the sound: ', volume);
+        } else {
+            volNode.gain.value = volume;
+        }
+        
+        // Pan
+        const panNode = this._audioCtx.createStereoPanner();
+        if (typeof pan !== 'number' || pan < -1 || pan > 1) {
+            Log.w('[~Sound] Invalid pan value to play the sound: ', pan);
+        } else {
+            panNode.pan.value = pan;
+        }
+        
+        // Frequency
+        if (typeof freq !== 'number' || freq < 0) {
+            Log.w('[~Sound] Invalid frequency value to play the sound: ', freq);
+        } else {
+            source.playbackRate.value = freq;
+        }
+        
+        source.connect(panNode);
+        panNode.connect(volNode);
+        volNode.connect(this._audioCtx.destination);
         source.start(0);
     }
 }

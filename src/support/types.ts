@@ -1,7 +1,6 @@
 /** Signed int (4 bytes). */
 export type int = number;
 export type uint = uint8;
-export type bool = boolean;
 
 /** Unsigned int 1 byte (uint8). */
 export type uint8 = number;

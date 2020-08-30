@@ -102,10 +102,10 @@ export abstract class PkUIComponentContainer<T extends PkUIContext = PkUIContext
     /// Interaction  ///
     
     public get propagatePointerEvents(): boolean {
-        return this.dw.propagatePointerEvents;
+        return this.dw.interactiveChildren;
     }
     public set propagatePointerEvents(value: boolean) {
-        this.dw.propagatePointerEvents = value;
+        this.dw.interactiveChildren = value;
     }
     
 }

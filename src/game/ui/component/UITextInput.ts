@@ -1,8 +1,7 @@
 import type { PekkaContext } from '@game/PekkaContext';
 import { rand } from '@game/support/types';
 import { UIWaveText } from '@game/ui/component/UIWaveText';
-import type { DwCanvas } from '@ng/drawable/skeleton/DwCanvas';
-import { DwFactory } from '@ng/drawable/skeleton/DwFactory';
+import { DwCanvas } from '@ng/drawable/dw/DwCanvas';
 import { Log } from '@ng/support/log/LoggerImpl';
 import { PkColor } from '@ng/types/PkColor';
 import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
@@ -20,7 +19,7 @@ export class UITextInput extends PkUIComponent<PekkaContext> {
         
         this._native = new NativeTextInput();
         
-        this._dwShape = DwFactory.new.canvas();
+        this._dwShape = new DwCanvas();
         this._dwShape.addTo(this.dw);
         
         this._uiText = new UIWaveText(this.context, initialText, context.font2)

@@ -91,7 +91,11 @@ export class PkRectangleImpl extends PkRectangle {
         return typeof n === 'number';
     }
     
+    public toString(): string {
+        return this.pack(', ');
+    }
+    
     public inspect(): string {
-        return `{ ${ this.pack(', ') } }`;
+        return `{ ${ this.toString() } }`;
     }
 }

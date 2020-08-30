@@ -4,16 +4,12 @@ import { TTextId } from '@game/support/types';
 import { UIWaveText } from '@game/ui/component/UIWaveText';
 import { PkInputEvent } from '@ng/core/input/PkInputEvent';
 import { PkInput } from '@ng/core/PkInput';
-import { DwContainer } from '@ng/drawable/skeleton/DwContainer';
-import { DwFactory } from '@ng/drawable/skeleton/DwFactory';
-import { DwSprite } from '@ng/drawable/skeleton/DwSprite';
-import { pathJoin } from '@ng/support/utils';
+import { DwSprite } from '@ng/drawable/dw/DwSprite';
 import { PkFont } from '@ng/types/font/PkFont';
-import { PkRectangleImpl } from '@ng/types/pixi/PkRectangleImpl';
-import { PkImageTexture } from '@ng/types/PkImageTexture';
 import { PkRectangle } from '@ng/types/PkRectangle';
+import { PkTexture } from '@ng/types/PkTexture';
 import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
-import { RESOURCES_PATH } from '@sp/constants';
+import { STUFF_CKEY } from '@sp/constants';
 
 export class UICheckbox extends PkUIComponent<PekkaContext> {
     private _value: boolean;
@@ -23,8 +19,8 @@ export class UICheckbox extends PkUIComponent<PekkaContext> {
     private _uiText: UIWaveText;
     
     private _dwCheckbox: DwSprite;
-    private _trueTx: PkImageTexture;
-    private _falseTx: PkImageTexture;
+    private _trueTx: PkTexture;
+    private _falseTx: PkTexture;
     
     
     public constructor(context: PekkaContext, trueText: TTextId | string, falseText: TTextId | string, font: PkFont, translatable: boolean = false) {
@@ -37,9 +33,9 @@ export class UICheckbox extends PkUIComponent<PekkaContext> {
         this._uiText = new UIWaveText(context, '', font, translatable);
         this._uiText.getDrawable().addTo(this.dw, 80, 5);
         
-        this._trueTx = context.stuff.getTextureByKey('STUFF', 504, 124, 31, 31);
-        this._falseTx = context.stuff.getTextureByKey('STUFF', 473, 124, 31, 31);
-        this._dwCheckbox = DwFactory.new.sprite().addTo(this.dw);
+        this._trueTx = context.stuff.getBitmap(STUFF_CKEY).getTexture(PkRectangle.$(504, 124, 31, 31));
+        this._falseTx = context.stuff.getBitmap(STUFF_CKEY).getTexture(PkRectangle.$(473, 124, 31, 31));
+        this._dwCheckbox = new DwSprite().addTo(this.dw);
         
         this.setChecked(false);
         
@@ -66,11 +62,11 @@ export class UICheckbox extends PkUIComponent<PekkaContext> {
         
         this._uiText.setText(this._value ? this._trueText : this._falseText);
         this._dwCheckbox.setTexture(this._value ? this._trueTx : this._falseTx);
-    
-        const bounds: PkRectangle = this.dw.getBounds();
-        this.dw.hitArea = PkRectangleImpl.$(bounds.x - 2, bounds.y - 2, bounds.width + 4, bounds.height + 4);
         
-      //  this.context.stuff.getSoundByUrl(pathJoin(RESOURCES_PATH, 'sfx/menu2.wav')).play();
+        const bounds: PkRectangle = this.dw.getLocalBounds();
+        this.dw.hitArea = PkRectangle.$(bounds.x - 2, bounds.y - 2, bounds.width + 4, bounds.height + 4);
+        
+        //  this.context.stuff.getSoundByUrl(pathJoin(RESOURCES_PATH, 'sfx/menu2.wav')).play();
         
         this.emit(UICheckbox.EV_CHANGED, this);
     }

@@ -1,10 +1,9 @@
 import { Particle } from '@game/particle/Particle';
 import { Sprite } from '@game/sprite/Sprite';
 import { Block } from '@game/tile/Block';
-import { DwObject } from '@ng/drawable/object/DwObject';
-import { DwObjectBase } from '@ng/drawable/object/DwObjectBase';
-import { DwContainer } from '@ng/drawable/skeleton/DwContainer';
-import { DwFactory } from '@ng/drawable/skeleton/DwFactory';
+import { DwContainer } from '@ng/drawable/dw/DwContainer';
+import { DwObject } from '@ng/drawable/dwo/DwObject';
+import { DwObjectBase } from '@ng/drawable/dwo/DwObjectBase';
 import { Log } from '@ng/support/log/LoggerImpl';
 
 export class GameComposition extends DwObjectBase<DwContainer> {
@@ -18,19 +17,19 @@ export class GameComposition extends DwObjectBase<DwContainer> {
     private readonly _lyFgBlocks: DwContainer;
     
     public constructor() {
-        super(DwFactory.new.container());
+        super(new DwContainer);
         
         // It's born not renderable
         this.dw.renderable = false;
         
-        this._lyBgImage = DwFactory.new.container().addTo(this._drawable);
-        this._lyBgSprites = DwFactory.new.container().addTo(this._drawable);
-        this._lyBgParticles = DwFactory.new.container().addTo(this._drawable);
-        this._lyBgBlocks = DwFactory.new.container().addTo(this._drawable);
+        this._lyBgImage = new DwContainer().addTo(this._drawable);
+        this._lyBgSprites = new DwContainer().addTo(this._drawable);
+        this._lyBgParticles = new DwContainer().addTo(this._drawable);
+        this._lyBgBlocks = new DwContainer().addTo(this._drawable);
         
-        this._lyFgSprites = DwFactory.new.container().addTo(this._drawable);
-        this._lyFgParticles = DwFactory.new.container().addTo(this._drawable);
-        this._lyFgBlocks = DwFactory.new.container().addTo(this._drawable);
+        this._lyFgSprites = new DwContainer().addTo(this._drawable);
+        this._lyFgParticles = new DwContainer().addTo(this._drawable);
+        this._lyFgBlocks = new DwContainer().addTo(this._drawable);
     }
     
     public show(): void {

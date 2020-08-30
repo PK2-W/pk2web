@@ -20,12 +20,13 @@
 //#########################
 
 import { Entropy } from '@game/Entropy';
+import { Episode } from '@game/episodes/Episode';
 import { Game } from '@game/game/Game';
 import { InputAction } from '@game/InputActions';
-import { PK2Map } from '@game/map/PK2Map';
+import { LevelMap } from '@game/map/LevelMap';
 import { PekkaContext } from '@game/PekkaContext';
 import { PK2Settings } from '@game/settings/PK2Settings';
-import { int, bool, CBYTE, uint, str, cvect, CVect, FONTID } from '@game/support/types';
+import { int, CBYTE, uint, str, cvect, CVect } from '@game/support/types';
 import { TX } from '@game/texts';
 import { GameScreen } from '@game/ui/screen/game/GameScreen';
 import { IntroScreen } from '@game/ui/screen/intro/IntroScreen';
@@ -45,11 +46,22 @@ import { PkTickable } from '@ng/support/PkTickable';
 import { pathJoin } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { PkFont } from '@ng/types/font/PkFont';
-import { PkFontAsset } from '@ng/types/font/PkFontAsset';
 import { PkFontHolder } from '@ng/types/font/PkFontHolder';
 import { PkParameters } from '@ng/types/PkParameters';
 import { PkScreen } from '@ng/ui/PkScreen';
-import { RESOURCES_PATH, STUFF_CKEY } from '@sp/constants';
+import {
+    RESOURCES_PATH,
+    STUFF_CKEY,
+    SWITCH_SOUND_CKEY,
+    JUMP_SOUND_CKEY,
+    SPLASH_SOUND_CKEY,
+    LOCK_OPEN_SOUND_CKEY,
+    MENU_SOUND_CKEY,
+    ammuu_SOUND_CKEY,
+    kieku_SOUND_CKEY,
+    LAND_SOUND_CKEY,
+    pistelaskuri_SOUND_CKEY
+} from '@sp/constants';
 import { i18nSchema } from '@sp/i18nSchema';
 import { RECT } from './Map_';
 
@@ -136,8 +148,6 @@ export enum FONT {
     F5,
 }
 
-//Sound
-const SOUND_SAMPLERATE: int = 22050;
 
 //#### Structs
 type PK2LEVEL = {
@@ -157,14 +167,14 @@ class PK2FADETEXT {
     public x: int;
     public y: int;
     public ajastin: int;
-    public ui: bool;
+    public ui: boolean;
 }
 
 type PK2SAVE = {
     jakso: int;
     // 	char  episodi[PE_PATH_SIZE];
     // 	char  nimi[20];
-    kaytossa: bool;
+    kaytossa: boolean;
     // 	bool  jakso_lapaisty[EPISODI_MAX_LEVELS];
     // 	uint pisteet;
 };
@@ -213,20 +223,20 @@ let pistelaskudelay: int = 0;
 
 export class Pekka implements PkTickable, PekkaContext {
     //#### Global Variables
-    private test_level: bool = false;
-    private dev_mode: bool = false;
+    private test_level: boolean = false;
+    private dev_mode: boolean = false;
     
-    private PK2_error: bool = false;
+    private PK2_error: boolean = false;
     // const char* PK2_error_msg = NULL;
     
-    private unload: bool = false;
+    private unload: boolean = false;
     
     // Sound
     private music_volume: int = 64;
     private music_volume_now: int = 64;
     
     // Debug info
-    private draw_dubug_info: bool = false;
+    private draw_dubug_info: boolean = false;
     private debug_sprites: int = 0;
     private debug_drawn_sprites: int = 0;
     private debug_active_sprites: int = 0;
@@ -259,9 +269,9 @@ export class Pekka implements PkTickable, PekkaContext {
     private tyohakemisto: string;
     private game_screen: int = SCREEN.SCREEN_NOT_SET;
     private game_next_screen: int = SCREEN.SCREEN_BASIC_FORMAT;
-    private episode_started: bool = false;
-    private going_to_game: bool = false;
-    private siirry_pistelaskusta_karttaan: bool = false;
+    private episode_started: boolean = false;
+    private going_to_game: boolean = false;
+    private siirry_pistelaskusta_karttaan: boolean = false;
     
     //Fade Text
     private fadetekstit: CVect<PK2FADETEXT> = cvect(MAX_FADETEKSTEJA, () => new PK2FADETEXT());
@@ -289,7 +299,7 @@ export class Pekka implements PkTickable, PekkaContext {
     private episodisivu: int = 0;
     // PK2LEVEL jaksot[EPISODI_MAX_LEVELS];
     //private jakso_lapaisty: bool = false;
-    private uusinta: bool = false;
+    private uusinta: boolean = false;
     private lopetusajastin: uint = 0;
     private jakso_pisteet: uint = 0;
     private fake_pisteet: uint = 0;
@@ -298,7 +308,7 @@ export class Pekka implements PkTickable, PekkaContext {
     private pisteet: uint = 0;
     private pelaajan_nimi: str<20> = ' ';
     
-    private nimiedit: bool = false;
+    private nimiedit: boolean = false;
     
     // Screens
     private readonly _screens: Map<int, PkScreen>;
@@ -307,16 +317,16 @@ export class Pekka implements PkTickable, PekkaContext {
     
     // Intro counter
     private introCounter: uint = 0;
-    private siirry_introsta_menuun: bool = false;
+    private siirry_introsta_menuun: boolean = false;
     
     //LOPPURUUTU
     private loppulaskuri: uint = 0;
-    private siirry_lopusta_menuun: bool = false;
+    private siirry_lopusta_menuun: boolean = false;
     
     // GRAPHICS
     
-    private doublespeed: bool = false;
-    private skip_frame: bool = false;
+    private doublespeed: boolean = false;
+    private skip_frame: boolean = false;
     
     // Menus
     private menu_nyt: int = MENU.MENU_MAIN;
@@ -329,7 +339,7 @@ export class Pekka implements PkTickable, PekkaContext {
     
     // Framerate
     private fps: number = 0;
-    private show_fps: bool = false;
+    private show_fps: boolean = false;
     
     // LANGUAGE AND TEXTS OF THE GAME
     
@@ -364,7 +374,8 @@ export class Pekka implements PkTickable, PekkaContext {
     private _engine: PkEngine;
     // User interface (TODO move)
     private renderer: PkRenderer;
-    // Current game
+    // Current episode and game
+    private _episode: Episode;
     private _game: Game;
     
     
@@ -508,7 +519,7 @@ export class Pekka implements PkTickable, PekkaContext {
         
         await this.loadFonts();
     }
-
+    
     private PK_Draw_Menu_Square(vasen: int, yla: int, oikea: int, ala: int, pvari: CBYTE) {
         //	if (this.episode_started)
         // 		return 0;
@@ -590,7 +601,7 @@ export class Pekka implements PkTickable, PekkaContext {
         // 	PisteDraw2_ScreenFill(oikea-1,yla,oikea,ala,138);
     }
     
-    private PK_Draw_Menu_Text(active: bool, teksti: string, x: int, y: int): boolean {
+    private PK_Draw_Menu_Text(active: boolean, teksti: string, x: int, y: int): boolean {
         // 	if(!active){
         // 		PK_WavetextSlow_Draw(teksti, fontti2, x, y);
         // 		return false;
@@ -1270,7 +1281,7 @@ export class Pekka implements PkTickable, PekkaContext {
         
         this.jakso = 1;
         
- 
+        
         // TODO
         // PK2Kartta_Aseta_Ruudun_Mitat(screen_width, screen_height);
         
@@ -1424,7 +1435,7 @@ export class Pekka implements PkTickable, PekkaContext {
         }
         
         // Update music volume
-        let update: bool = false;
+        let update: boolean = false;
         if (this.music_volume !== this.music_volume_now)
             update = true;
         
@@ -1455,7 +1466,7 @@ export class Pekka implements PkTickable, PekkaContext {
         
         // static bool wasPressed = false;
         
-        let skipped: bool = !this.skip_frame && this.doublespeed; // If is in double speed and don't skip this frame, so the last frame was skipped, and it wasn't drawn
+        let skipped: boolean = !this.skip_frame && this.doublespeed; // If is in double speed and don't skip this frame, so the last frame was skipped, and it wasn't drawn
         // if (PisteInput_Keydown(PI_ESCAPE) && key_delay === 0 && !skipped) { //Don't activate menu whith a not drawn screen
         //     if (test_level)
         //         PK_Fade_Quit();
@@ -1538,18 +1549,20 @@ export class Pekka implements PkTickable, PekkaContext {
      */
     private async _loadStuff(): Promise<void> {
         Log.d('[Pekka] Preparing game\'s stuff bitmap');
-        await this._stuff.fetchBitmap(pathJoin(RESOURCES_PATH, 'gfx/pk2stuff.bmp'), STUFF_CKEY);
+        const stuffBmp = await PkAssetTk.getBitmap(pathJoin(RESOURCES_PATH, 'gfx/pk2stuff.bmp'));
+        stuffBmp.makeColorTransparent();
+        await this._stuff.addBitmap(STUFF_CKEY, stuffBmp);
         
         Log.d('[Pekka] Loading basic sound fx');
-        await this._stuff.fetchSound(pathJoin(RESOURCES_PATH, 'sfx/switch3.wav'));
-        await this._stuff.fetchSound(pathJoin(RESOURCES_PATH, 'sfx/jump4.wav'));
-        await this._stuff.fetchSound(pathJoin(RESOURCES_PATH, 'sfx/splash.wav'));
-        await this._stuff.fetchSound(pathJoin(RESOURCES_PATH, 'sfx/openlock.wav'));
-        await this._stuff.fetchSound(pathJoin(RESOURCES_PATH, 'sfx/menu2.wav'));
-        await this._stuff.fetchSound(pathJoin(RESOURCES_PATH, 'sfx/moo.wav'));
-        await this._stuff.fetchSound(pathJoin(RESOURCES_PATH, 'sfx/doodle.wav'));
-        await this._stuff.fetchSound(pathJoin(RESOURCES_PATH, 'sfx/pump.wav'));
-        await this._stuff.fetchSound(pathJoin(RESOURCES_PATH, 'sfx/counter.wav'));
+        await this._stuff.addSound(SWITCH_SOUND_CKEY, await PkAssetTk.getSound(pathJoin(RESOURCES_PATH, 'sfx/switch3.wav')));
+        await this._stuff.addSound(JUMP_SOUND_CKEY, await PkAssetTk.getSound(pathJoin(RESOURCES_PATH, 'sfx/jump4.wav')));
+        await this._stuff.addSound(SPLASH_SOUND_CKEY, await PkAssetTk.getSound(pathJoin(RESOURCES_PATH, 'sfx/splash.wav')));
+        await this._stuff.addSound(LOCK_OPEN_SOUND_CKEY, await PkAssetTk.getSound(pathJoin(RESOURCES_PATH, 'sfx/openlock.wav')));
+        await this._stuff.addSound(MENU_SOUND_CKEY, await PkAssetTk.getSound(pathJoin(RESOURCES_PATH, 'sfx/menu2.wav')));
+        await this._stuff.addSound(ammuu_SOUND_CKEY, await PkAssetTk.getSound(pathJoin(RESOURCES_PATH, 'sfx/moo.wav')));
+        await this._stuff.addSound(kieku_SOUND_CKEY, await PkAssetTk.getSound(pathJoin(RESOURCES_PATH, 'sfx/doodle.wav')));
+        await this._stuff.addSound(LAND_SOUND_CKEY, await PkAssetTk.getSound(pathJoin(RESOURCES_PATH, 'sfx/pump.wav')));
+        await this._stuff.addSound(pistelaskuri_SOUND_CKEY, await PkAssetTk.getSound(pathJoin(RESOURCES_PATH, 'sfx/counter.wav')));
     }
     
     
@@ -1669,9 +1682,9 @@ export class Pekka implements PkTickable, PekkaContext {
         
         //console.log('RENDER IS DISABLED');
         //this.changeToIntro();
-        this.changeToMenu();
+        //this.changeToMenu();
         
-        // this.uiActionNewGame();
+        this.uiActionNewGame();
         
         // Open the requested map
         // const tmpEpisodeName = 'rooster island 1';
@@ -1729,11 +1742,17 @@ export class Pekka implements PkTickable, PekkaContext {
     }
     
     public async _prepareNewGame(): Promise<Game> {
-        const tmpEpisodeName = 'rooster island 2';
-        const map = await PK2Map.loadFromFile(this, /*seuraava_kartta*/ pathJoin('episodes', tmpEpisodeName), 'level1.map');
+        Log.l('[Pekka] Preparing new game');
+        
+        this._episode = new Episode('rooster island 1', {
+            community: null//'skypark2'
+        });
+        
+        const map = await LevelMap.loadFromFile(this, pathJoin(this._episode.homePath, 'episodes', this._episode.name), 'level002.map');
         // TODO try catch
         // 		printf("PK2    - Error loading map '%s' at '%s'\n", this.seuraava_kartta, polku);
         // 		return 1;
-        return new Game(this, map);
+        
+        return new Game(this, this._episode, map);
     }
 }

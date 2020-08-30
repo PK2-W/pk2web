@@ -1,38 +1,37 @@
-import { PkRectangleImpl } from '@ng/types/pixi/PkRectangleImpl';
-import { PkImage } from '@ng/types/PkImage';
-import { PkImageTexture } from '@ng/types/PkImageTexture';
+import { PkBaseTexture } from '@ng/types/image/PkBaseTexture';
 import { PkRectangle } from '@ng/types/PkRectangle';
+import { PkTexture } from '@ng/types/PkTexture';
 
 export class TextureCache {
-    private _baseTextures: Map<string, PkImage>;
-    private _textures: Map<string, PkImageTexture>;
+    private _baseTextures: Map<string, PkBaseTexture>;
+    private _textures: Map<string, PkTexture>;
     
     public constructor() {
         this._baseTextures = new Map();
         this._textures = new Map();
     }
     
-    public add(id: string, baseTexture: PkImage): this {
+    public add(id: string, baseTexture: PkBaseTexture): this {
         this._baseTextures.set(id, baseTexture);
         return this;
     }
     
-    public getBaseTexture(id: string): PkImage {
+    public getBaseTexture(id: string): PkBaseTexture {
         const bt = this._baseTextures.get(id);
         return bt != null ? bt : null;
     }
     
-    public getTexture(id: string): PkImageTexture;
-    public getTexture(id: string, rectangle: PkRectangle): PkImageTexture;
-    public getTexture(id: string, x: number, y: number, w: number, h: number): PkImageTexture;
-    public getTexture(id: string, a?: number | PkRectangle, y?: number, w?: number, h?: number): PkImageTexture {
+    public getTexture(id: string): PkTexture;
+    public getTexture(id: string, rectangle: PkRectangle): PkTexture;
+    public getTexture(id: string, x: number, y: number, w: number, h: number): PkTexture;
+    public getTexture(id: string, a?: number | PkRectangle, y?: number, w?: number, h?: number): PkTexture {
         let key = '';
         let extension = '';
         let frame: PkRectangle;
-        let texture: PkImageTexture;
+        let texture: PkTexture;
         
         if (a != null) {
-            frame = (typeof a !== 'number') ? a : PkRectangleImpl.$(a, y, w, h);
+            frame = (typeof a !== 'number') ? a : PkRectangle.$(a, y, w, h);
             extension = '::' + frame.x + ':' + frame.y + ':' + frame.width + ':' + frame.height;
         }
         

@@ -3,8 +3,7 @@ import { TX } from '@game/texts';
 import { UIPlainText } from '@game/ui/component/UIPlainText';
 import { UIText } from '@game/ui/component/UIText';
 import { Screen } from '@game/ui/screen/Screen';
-import { DwSpriteImpl } from '@ng/drawable/impl-pixi/DwSpriteImpl';
-import { DwSprite } from '@ng/drawable/skeleton/DwSprite';
+import { DwSprite } from '@ng/drawable/dw/DwSprite';
 import { pathJoin } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { RESOURCES_PATH } from '@sp/constants';
@@ -17,7 +16,7 @@ export class MapScreen extends Screen {
     
     private async inialize(): Promise<MapScreen> {
         const bgImage = await PkAssetTk.getImage(pathJoin(RESOURCES_PATH, 'gfx/map.bmp'));
-        const bgDrawable = (new DwSpriteImpl() as DwSprite)
+        const bgDrawable = new DwSprite()
             .setTexture(bgImage.getTexture());
         this._drawable.add(bgDrawable);
     

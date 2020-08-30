@@ -1,4 +1,4 @@
-import { DwContainer } from '@ng/drawable/skeleton/DwContainer';
+import { DwContainer } from '@ng/drawable/dw/DwContainer';
 import { PkFont } from '@ng/types/font/PkFont';
 import { PkFontAsset } from '@ng/types/font/PkFontAsset';
 import * as EventEmitter from 'eventemitter3';

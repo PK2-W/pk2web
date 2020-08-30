@@ -1,17 +1,14 @@
 import { EAnimation } from '@game/enum/EAnimation';
+import { EAi } from '@game/enum/EBehavior';
 import { EDamageType } from '@game/enum/EDamageType';
 import { SpriteAnimation } from '@game/sprite/SpriteAnimation';
 import { SpriteFuture } from '@game/sprite/SpriteFuture';
-import { EAi } from '@game/sprite/SpriteManager';
 import { SpritePrototype } from '@game/sprite/SpritePrototype';
 import { int, CBYTE, rand } from '@game/support/types';
 import { BlockCollider } from '@game/tile/BlockCollider';
 import { BLOCK_SIZE } from '@game/tile/BlockConstants';
-import { DwHelper } from '@ng/drawable/DwHelper';
-import { DwObjectBase } from '@ng/drawable/object/DwObjectBase';
-import { DwContainer } from '@ng/drawable/skeleton/DwContainer';
-import { DwFactory } from '@ng/drawable/skeleton/DwFactory';
-import { DwSprite } from '@ng/drawable/skeleton/DwSprite';
+import { DwSprite } from '@ng/drawable/dw/DwSprite';
+import { DwObjectBase } from '@ng/drawable/dwo/DwObjectBase';
 import { VAHINKO_AIKA } from '@sp/constants';
 
 /**
@@ -127,7 +124,7 @@ export class Sprite extends DwObjectBase<DwSprite> {
      */
     public constructor(proto: SpritePrototype, isPlayer: boolean, discarded: boolean, x: number, y: number);
     public constructor(proto?: SpritePrototype, isPlayer?: boolean, discarded?: boolean, x?: number, y?: number) {
-        super(DwFactory.new.sprite());
+        super(new DwSprite());
         
         this.iid = Sprite.IDD++;
         

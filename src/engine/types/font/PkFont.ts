@@ -1,4 +1,4 @@
-import type { DwContainer } from '@ng/drawable/skeleton/DwContainer';
+import { DwContainer } from '@ng/drawable/dw/DwContainer';
 
 export interface PkFont {
     

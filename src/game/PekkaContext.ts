@@ -11,7 +11,6 @@ import { PkUIContext } from '@ng/ui/PkUIContext';
 
 export interface PekkaContext extends PkUIContext {
     readonly entropy: Entropy;
-    readonly ng: PkEngine;
     
     readonly device: PkDevice;
     

@@ -1,11 +1,27 @@
+import { uint } from '@sp/types';
+
 export const WEB_CANVAS_QS = '#pk-canvas';
 
 export const GAME_NAME = 'Pekka Kana 2';
 export const PK2_VERSION = 'r3';
 
-export const RESOURCES_PATH = './pk2w/res/';
+export const RESOURCES_PATH = './pk2w/resources/';
+export const COMMUNITY_PATH = './pk2w/community/';
 
-export const STUFF_CKEY = 'STUFF';
+export const STUFF_CKEY = 'STUFF_CKEY';
+export const SWITCH_SOUND_CKEY = 'SWITCH_SOUND_CKEY';
+export const JUMP_SOUND_CKEY = 'JUMP_SOUND_CKEY';
+export const SPLASH_SOUND_CKEY = 'SPLASH_SOUND_CKEY';
+export const LOCK_OPEN_SOUND_CKEY = 'LOCK_OPEN_SOUND_CKEY';
+export const MENU_SOUND_CKEY = 'MENU_SOUND_CKEY';
+export const ammuu_SOUND_CKEY = 'ammuu_SOUND_CKEY';
+export const kieku_SOUND_CKEY = 'kieku_SOUND_CKEY';
+export const LAND_SOUND_CKEY = 'LAND_SOUND_CKEY';
+export const pistelaskuri_SOUND_CKEY = 'pistelaskuri_SOUND_CKEY';
+/**
+ * PK2 assumes that all SFX has this frequency.
+ */
+export const SOUND_SAMPLERATE: uint = 22050;
 
 export const INTRO_DURATION = 10000;
 

@@ -1,5 +1,7 @@
 /**
  */
+import { Log } from '@ng/support/log/LoggerImpl';
+
 export class GameTimer {
     // Contador nativo utilizado (setTimeout o requestAnimationFrame)
     private _timer: number;
@@ -45,7 +47,7 @@ export class GameTimer {
         if (this._timer != null)
             return;
         
-       // this._timer = setTimeout(this._trigger.bind(this), 1);
+        // this._timer = setTimeout(this._trigger.bind(this), 1);
         this._timer = setTimeout(this._trigger.bind(this), this._tickT);
     }
     
@@ -130,7 +132,7 @@ export class GameTimer {
         if (this._tpsAvgDisplay > 500) {
             this._tpsAvgDisplay = 0;
             const avg = this._tpsAvg.reduce((p, c) => p + c, 0) / (this._tpsAvg.length);
-            document.querySelector('#tps').innerHTML = Math.round(avg) + 'tps (~' + (Math.round(avg / this._tps * 10) / 10) + ')';
+            Log.fast('Tick rate', Math.round(avg) + 'tps (~' + (Math.round(avg / this._tps * 10) / 10) + ')');
         }
     }
     

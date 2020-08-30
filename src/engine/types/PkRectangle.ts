@@ -1,10 +1,66 @@
 import { EventEmitter } from 'eventemitter3';
+import * as PIXI from 'pixi.js';
 
-export abstract class PkRectangle extends EventEmitter {
-    public abstract x: number;
-    public abstract y: number;
-    public abstract width: number;
-    public abstract height: number;
+export class PkRectangle extends EventEmitter implements PIXI.Rectangle {
+    private _rect: PIXI.Rectangle;
+    public readonly type = PIXI.SHAPES.RECT;
+    
+    public static $(x: number, y: number, width: number, height: number): PkRectangle {
+        return new PkRectangle(x, y, width, height);
+    }
+    
+    public static fromRectangle(rect: PIXI.Rectangle): PkRectangle {
+        if (rect == null) {
+            return null;
+        } else {
+            return new PkRectangle(rect.x, rect.y, rect.width, rect.height);
+        }
+    }
+    
+    public static asRectangle(rect: PIXI.Rectangle): PkRectangle {
+        if (rect == null) {
+            return null;
+        } else if (rect instanceof PkRectangle) {
+            return rect;
+        } else {
+            return new PkRectangle(rect.x, rect.y, rect.width, rect.height);
+        }
+    }
+    
+    private static checkInput(n: unknown): boolean {
+        return typeof n === 'number';
+    }
+    
+    public constructor(x: number, y: number, width: number, height: number) {
+        super();
+        
+        if (!PkRectangle.checkInput(x) || !PkRectangle.checkInput(y) || !PkRectangle.checkInput(width) || !PkRectangle.checkInput(height)) {
+            throw new TypeError('Trying to create a Rectangle with a non numeric or null coordinate.');
+        }
+        
+        this._rect = new PIXI.Rectangle(x, y, width, height);
+    }
+    
+    public get x(): number { return this._rect.x; }
+    public set x(x: number) {
+        this._rect.x = x;
+        this.emit(PkRectangle.EV_CHANGE, this);
+    }
+    public get y(): number { return this._rect.y; }
+    public set y(y: number) {
+        this._rect.y = y;
+        this.emit(PkRectangle.EV_CHANGE, this);
+    }
+    public get width(): number { return this._rect.width; }
+    public set width(width: number) {
+        this._rect.width = width;
+        this.emit(PkRectangle.EV_CHANGE, this);
+    }
+    public get height(): number { return this._rect.height; }
+    public set height(height: number) {
+        this._rect.height = height;
+        this.emit(PkRectangle.EV_CHANGE, this);
+    }
     
     public get x1(): number { return this.x; }
     public set x1(x: number) { this.x = x; }
@@ -26,14 +82,73 @@ export abstract class PkRectangle extends EventEmitter {
     public get bottom(): number { return this.y2; }
     public set bottom(r: number) { this.height = r - this.y1; }
     
-    public abstract change(x: number, y: number, width: number, height: number): void;
+    public change(x: number, y: number, width: number, height: number): void {
+        this._rect.x = x;
+        this._rect.y = y;
+        this._rect.width = width;
+        this._rect.height = height;
+        
+        this.emit(PkRectangle.EV_CHANGE, this);
+    }
     
-    public abstract pack(separator: string): string;
+    public ceil(resolution?: number, eps?: number): PIXI.Rectangle {
+        return this._rect.ceil(resolution, eps);
+    }
     
-    public abstract equals(other: PkRectangle): boolean;
+    public copyFrom(rectangle: PIXI.Rectangle): PIXI.Rectangle {
+        return this._rect.copyFrom(rectangle);
+    }
     
-    /** @deprecated */
-    public abstract getNative(): unknown;
+    public clone(): PkRectangle {
+        return PkRectangle.fromRectangle(this);
+    }
+    
+    public copyTo<T extends PIXI.Rectangle>(rectangle: T): T {
+        rectangle.x = this.x;
+        rectangle.y = this.y;
+        rectangle.width = this.width;
+        rectangle.height = this.height;
+        return rectangle;
+    }
+    
+    public contains(x: number, y: number): boolean {
+        return this._rect.contains(x, y);
+    }
+    
+    public enlarge(rectangle: PIXI.Rectangle): this {
+        this._rect.enlarge(rectangle);
+        return this;
+    }
+    
+    public pad(paddingX?: number, paddingY?: number): this {
+        this._rect.pad(paddingX, paddingY);
+        return this;
+    }
+    
+    public fit(rectangle: PIXI.Rectangle): PkRectangle {
+        this._rect.fit(rectangle);
+        return this;
+    }
+    
+    // TODO: Cachear
+    public pack(separator: string = ''): string {
+        return this.x + separator + this.y + separator + this.width + separator + this.height;
+    }
+    
+    public equals(other: PIXI.Rectangle): boolean {
+        return this.x == other.x
+            && this.y == other.y
+            && this.width == other.width
+            && this.height == other.height;
+    }
+    
+    public toString(): string {
+        return this.pack(', ');
+    }
+    
+    public inspect(): string {
+        return `{ ${ this.toString() } }`;
+    }
     
     
     ///  Eventos  ///

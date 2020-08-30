@@ -13,6 +13,9 @@ class LoggerImpl implements Logger {
     public static VERBOSE = false;
     public static VVERBOSE = false;
     
+    // Fast logs
+    private readonly _$fastLogs: HTMLDivElement;
+    
     /**
      * Devuelve el color y el método nativo para cada nivel de log.
      *
@@ -23,7 +26,7 @@ class LoggerImpl implements Logger {
             case 'e':
                 return { c: '#e74c3c', m: 'log' };
             case 'w':
-                return { c: '#f1c40f', m: 'log' };
+                return { c: '#eeb31e', m: 'log' };
             case 's':
                 return { c: '#2ecc71', m: 'log' };
             case 'v':
@@ -61,7 +64,7 @@ class LoggerImpl implements Logger {
         const style = LoggerImpl.color(level);
         
         // Aplicar color
-        if (style.c != null && typeof args[0] === 'string') {
+        if (style.c != null && (typeof args[0] === 'string')) {
             args[0] = '%c' + args[0];
             args.splice(1, 0, 'color: ' + style.c);
         }
@@ -88,13 +91,35 @@ class LoggerImpl implements Logger {
             return;
         }
         
-        // Si hay un solo argumento, es error, y el nivel es W o E
-        if (args.length === 1 && (level === 'e' || level === 'w') && args[0] instanceof Error) {
-            LoggerImpl.apply([args[0].message], level, false);
-            if (Log.isDebug())
-                throw args[0];
-            return;
+        // Si alguno de los argumentos es una excepción, pintar la pila solo cuando W o E
+        if (!(level === 'e' || level === 'w')) {
+            args = args.map((arg) => {
+                if (arg instanceof Error) {
+                    arg = ' ' + arg.constructor.name + ': ' + arg.message;
+                }
+                return arg;
+            });
         }
+        
+        /* // Si hay un solo argumento, es error, y el nivel es W o E
+         if (args.length === 1 && (level === 'e' || level === 'w') && args[0] instanceof Error) {
+         if (Log.isDebug()) {
+         LoggerImpl.apply(['[Logger] Logged error:', args[0]], level, false);
+         } else {
+         LoggerImpl.apply([args[0].message], level, false);
+         }
+         return;
+         }
+         
+         // Si hay dos argumentos, el segundo es error, y el nivel es W o E
+         if (args.length === 2 && (level === 'e' || level === 'w') && args[1] instanceof Error) {
+         if (Log.isDebug()) {
+         LoggerImpl.apply([args[0] + ' Logged error:', args[1]], level, false);
+         } else {
+         LoggerImpl.apply([args[0], '\n', args[1].message], level, false);
+         }
+         return;
+         }*/
         
         // Para cada uno de los argumentos
         for (const arg of args) {
@@ -128,6 +153,24 @@ class LoggerImpl implements Logger {
         // Finalizar
         LoggerImpl.apply(currArgs, level, group);
     }
+    
+    public constructor() {
+        this._$fastLogs = document.createElement('div');
+        this._$fastLogs.id = '__logger_fastlogs__';
+        this._$fastLogs.setAttribute('style', `
+            font-family: monospace;
+            font-size: 10px;
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(255,255,255,0.4);
+            padding: 3px 6px;
+            border-radius: 1px;
+            display: none;
+            backdrop-filter: blur(5px);`);
+        document.body.appendChild(this._$fastLogs);
+    }
+    
     
     /** @inheritDoc */
     public vv(...args): void {
@@ -202,6 +245,18 @@ class LoggerImpl implements Logger {
             }
         }
         console.groupEnd();
+    }
+    
+    public fast(key: string, msg: string | number): void {
+        const xkey = key.replace(/[^a-zA-Z0-9_]/g, '_');
+        let fld: HTMLDivElement = this._$fastLogs.querySelector('#__log_fl__' + xkey);
+        if (fld == null) {
+            fld = document.createElement('div');
+            fld.id = '__log_fl__' + xkey;
+            this._$fastLogs.appendChild(fld);
+            this._$fastLogs.style.display = 'block';
+        }
+        fld.innerHTML = `<b>${ key }:</b> ${ msg }`;
     }
     
     public isDebug(): boolean {

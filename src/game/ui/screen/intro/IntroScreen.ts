@@ -3,13 +3,13 @@ import { int } from '@game/support/types';
 import { TX } from '@game/texts';
 import { IntroText } from '@game/ui/screen/intro/IntroText';
 import { Screen } from '@game/ui/screen/Screen';
-import { DwSpriteImpl } from '@ng/drawable/impl-pixi/DwSpriteImpl';
-import { DwSprite } from '@ng/drawable/skeleton/DwSprite';
+import { DwSprite } from '@ng/drawable/dw/DwSprite';
 import { Log } from '@ng/support/log/LoggerImpl';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { PkFont } from '@ng/types/font/PkFont';
-import { PkRectangleImpl } from '@ng/types/pixi/PkRectangleImpl';
-import { PkImageTexture } from '@ng/types/PkImageTexture';
+import { PkBaseTexture } from '@ng/types/image/PkBaseTexture';
+import { PkRectangle } from '@ng/types/PkRectangle';
+import { PkTexture } from '@ng/types/PkTexture';
 import { PkUIEffectDelay } from '@ng/ui/effect/PkUIEffectDelay';
 import { PkUIEffectFadeIn } from '@ng/ui/effect/PkUIEffectFadeIn';
 import { PkUIEffectFadeOut } from '@ng/ui/effect/PkUIEffectFadeOut';
@@ -28,7 +28,7 @@ const TRANSLATOR_END = TRANSLATOR_INI + 3000;
 export class IntroScreen extends Screen {
     private startTime: number;
     
-    private _bgBaseTexture: PkImageTexture;
+    private _bgBaseTexture: PkTexture<PkBaseTexture>;
     
     
     private _tmpObjs = [];
@@ -53,7 +53,7 @@ export class IntroScreen extends Screen {
         // 		kuva_tausta = PisteDraw2_Image_Load("gfx/intro.bmp", true);
         // const ld = await PK2wImageLoader.load('gfx/intro.bmp');
         const image = await PkAssetTk.getImage(RESOURCES_PATH + 'gfx/intro.bmp');
-        this._bgBaseTexture = image.getTexture(PkRectangleImpl.$(280, 80, 640 - 280, 480 - 80));
+        this._bgBaseTexture = image.getTexture(PkRectangle.$(280, 80, 640 - 280, 480 - 80));
         
         //Log.d(`[${ IntroScreen.name }] Loading music: music/INTRO.XM`);
         
@@ -105,7 +105,7 @@ export class IntroScreen extends Screen {
         
         // 	PisteDraw2_Image_CutClip(kuva_tausta, 280, 80, 280, 80, 640, 480);
         // const island = clipTSprite(this._bgBaseTexture, 280, 80, 640, 480);
-        const spr: DwSprite = (new DwSpriteImpl() as DwSprite)
+        const spr: DwSprite = new DwSprite()
             .setPosition(280, 80)
             .setTexture(this._bgBaseTexture);
         this._drawable.add(spr);

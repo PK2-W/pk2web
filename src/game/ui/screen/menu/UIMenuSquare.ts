@@ -1,6 +1,5 @@
 import { PekkaContext } from '@game/PekkaContext';
-import { DwCanvas } from '@ng/drawable/skeleton/DwCanvas';
-import { DwCanvasImpl } from '@ng/drawable/impl-pixi/DwCanvasImpl';
+import { DwCanvas } from '@ng/drawable/dw/DwCanvas';
 import { PkTickable } from '@ng/support/PkTickable';
 import { TColor } from '@ng/types/PkColor';
 import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
@@ -24,7 +23,7 @@ export class UIMenuSquare extends PkUIComponent implements PkTickable {
         
         this._palette = palette;
         
-        this._canvas = (new DwCanvasImpl() as DwCanvas);
+        this._canvas = new DwCanvas();
         this._drawable.add(this._canvas);
         this.setPosition(x1, y1);
         

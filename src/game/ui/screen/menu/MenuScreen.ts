@@ -10,12 +10,11 @@ import { NameMenuGroup } from '@game/ui/screen/menu/submenu/NameMenuGroup';
 import { SoundsMenuGroup } from '@game/ui/screen/menu/submenu/SoundsMenuGroup';
 import { UIMenuSquare } from '@game/ui/screen/menu/UIMenuSquare';
 import { Screen } from '@game/ui/screen/Screen';
-import { DwSpriteImpl } from '@ng/drawable/impl-pixi/DwSpriteImpl';
-import { DwSprite } from '@ng/drawable/skeleton/DwSprite';
+import { DwSprite } from '@ng/drawable/dw/DwSprite';
 import { Log } from '@ng/support/log/LoggerImpl';
 import { pathJoin } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
-import { PkBitmap } from '@ng/types/PkBitmap';
+import { PkBitmapBT } from '@ng/types/image/PkBitmapBT';
 import { PkUIEffectDelay } from '@ng/ui/effect/PkUIEffectDelay';
 import { PkUIEffectFadeIn } from '@ng/ui/effect/PkUIEffectFadeIn';
 import { RESOURCES_PATH } from '@sp/constants';
@@ -37,7 +36,7 @@ const TITLE_X = 79;
 const TITLE_Y = 90;
 
 export class MenuScreen extends Screen {
-    private _bgImage: PkBitmap;
+    private _bgImage: PkBitmapBT;
     private _bgDrawable: DwSprite;
     
     private _square: UIMenuSquare;
@@ -63,7 +62,7 @@ export class MenuScreen extends Screen {
         
         // Load and prepare background
         this._bgImage = await PkAssetTk.getBitmap(pathJoin(RESOURCES_PATH, 'gfx/menu.bmp'));
-        this._bgDrawable = (new DwSpriteImpl() as DwSprite)
+        this._bgDrawable = new DwSprite()
             .setTexture(this._bgImage.getTexture());
         this._drawable.add(this._bgDrawable);
         

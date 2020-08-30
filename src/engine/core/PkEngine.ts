@@ -3,16 +3,15 @@
 //by Janne Kivilahti from Piste Gamez
 //#########################
 
-import { int, bool, SCREENID } from '@game/support/types';
+import { int, SCREENID } from '@game/support/types';
 import { PkDevice } from '@ng/core/PkDevice';
 import { PkInput } from '@ng/core/PkInput';
-import { PkResources } from '@ng/PkResources';
-import { RESOURCES_PATH, PK2GAMELOOP } from '../../support/constants';
-import { PK2wSound } from './PK2wSound';
+import { PK2GAMELOOP } from '@sp/constants';
 import { PkLanguage } from '../PkLanguage';
 import { PkRenderer } from '../render/PkRenderer';
 import { PkScreen } from '../ui/PkScreen';
 import { GameTimer } from './GameTimer';
+import { PK2wSound } from './PK2wSound';
 
 export class PkEngine {
     private readonly _device: PkDevice;
@@ -23,12 +22,12 @@ export class PkEngine {
     private gameLogicFnPtr: () => void;
     
     // private ready :bool= false;
-    private running: bool = false;
+    private running: boolean = false;
     
     private avrg_fps: number = 0;
     
-    private debug: bool = false;
-    private draw: bool = true;
+    private debug: boolean = false;
+    private draw: boolean = true;
     
     private last_time: int = 0;
     // Count how much frames elapsed without draw
@@ -37,7 +36,6 @@ export class PkEngine {
     
     private readonly _gameTimer: GameTimer;
     private readonly _language: PkLanguage;
-    private readonly _resources: PkResources;
     private readonly _rendr: PkRenderer;
     private readonly _input: PkInput;
     private readonly _audio: PK2wSound;
@@ -54,7 +52,6 @@ export class PkEngine {
         
         this._gameTimer = new GameTimer(PK2GAMELOOP); // Windows "system timer" has a resolution of 10~16 ms = 62.5 tps
         this._language = new PkLanguage();
-        this._resources = new PkResources(RESOURCES_PATH);
         this._input = new PkInput(this);
         this._audio = new PK2wSound(this);
         this._rendr = new PkRenderer(this);
@@ -186,10 +183,6 @@ export class PkEngine {
         return this._audio;
     }
     
-    public get resources(): PkResources {
-        return this._resources;
-    }
-    
     public getRenderer(): PkRenderer {
         return this._rendr;
     }
@@ -203,7 +196,7 @@ export class PkEngine {
         return this._language;
     }
     
-    public setDebug(value: bool) {
+    public setDebug(value: boolean) {
         this.debug = value;
     }
     

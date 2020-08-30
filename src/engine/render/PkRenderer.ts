@@ -1,7 +1,6 @@
 import { PkInputEvent } from '@ng/core/input/PkInputEvent';
 import { PkEngine } from '@ng/core/PkEngine';
 import { PkInput } from '@ng/core/PkInput';
-import { DwImpl } from '@ng/drawable/impl-pixi/DwImpl';
 import { PkTickable } from '@ng/support/PkTickable';
 import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
 import { WEB_CANVAS_QS } from '@sp/constants';
@@ -74,8 +73,8 @@ export class PkRenderer implements PkTickable {
     
     public tick(delta: number, time: number): void {
         /*if (this._activeScreen != null) {
-            this._activeScreen.tick(delta, time);
-        }*/
+         this._activeScreen.tick(delta, time);
+         }*/
         
         for (let scr of this._screenIndex.values()) {
             if (!scr.isSuspended()) {
@@ -97,7 +96,7 @@ export class PkRenderer implements PkTickable {
     
     public add(screenId: string, screen: PkScreen) {
         this._screenIndex.set(screenId, screen);
-        this._stage.addChild((screen.getDrawable() as DwImpl<PIXI.DisplayObject>).pixi);
+        this._stage.addChild(screen.getDrawable().pixi);
     }
     
     public setActive(screenId: string) {

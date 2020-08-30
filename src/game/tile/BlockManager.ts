@@ -2,26 +2,28 @@ import { Effects } from '@game/effects/Effects';
 import { EBlockPrototype } from '@game/enum/EBlockPrototype';
 import { TEXTURE_ID_BLOCKS } from '@game/game/Game';
 import { GameContext } from '@game/game/GameContext';
-import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, KYTKIN_ALOITUSARVO } from '@game/map/PK2Map';
+import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, KYTKIN_ALOITUSARVO } from '@game/map/LevelMap';
 import { int, CVect, cvect } from '@game/support/types';
 import { Block } from '@game/tile/Block';
 import { BlockCollider } from '@game/tile/BlockCollider';
 import { BLOCK_SIZE } from '@game/tile/BlockConstants';
 import { BlockContext } from '@game/tile/BlockContext';
 import { BlockPrototype, TBlockProtoCode } from '@game/tile/BlockPrototype';
-import { ResourceNotFoundError } from '@ng/error/ResourceNotFoundError';
+import { AssetNotFoundError } from '@ng/error/AssetNotFoundError';
 import { Log } from '@ng/support/log/LoggerImpl';
 import { pathJoin } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
-import { PkImage } from '@ng/types/PkImage';
+import { PkBitmapBT } from '@ng/types/image/PkBitmapBT';
 import { RESOURCES_PATH } from '@sp/constants';
+import { uint } from '@sp/types';
 
 export class BlockManager {
     // Game Environment
     private readonly _context: GameContext;
     
-    private _prevCamera: { x: number, y: number };
     private _prevCulling: { ax: number, ay: number, bx: number, by: number };
+    
+    private _spritesheet: PkBitmapBT;
     
     //PALIKAT JA MASKIT
     private _palikat: CVect<Block> = cvect(300);
@@ -39,7 +41,7 @@ export class BlockManager {
     
     /** SRC: animaatio */
     private _animatedBlocks: Set<Block>;
-    private _blockAnimTicker: number;
+    private _animFrame: number;
     
     public constructor(ctx: GameContext) {
         this._context = ctx;
@@ -50,60 +52,9 @@ export class BlockManager {
         this._edges = new Array(PK2KARTTA_KARTTA_LEVEYS * PK2KARTTA_KARTTA_KORKEUS).fill(null);
         
         this._animatedBlocks = new Set();
+        this._animFrame = 1 / 7;
     }
     
-    public placeBgBlocks(): void {
-        let code: number;
-        let proto: BlockPrototype;
-        let block: Block;
-        
-        for (let i = 0; i < PK2KARTTA_KARTTA_LEVEYS; i++) {
-            for (let j = 0; j < PK2KARTTA_KARTTA_KORKEUS; j++) {
-                // Get prototype from map
-                code = this._context.map.getBgBlockCode(i, j);
-                
-                if (code < 255) {
-                    proto = this.getProto(code);
-                    
-                    // Create the block at the correct position
-                    block = new Block(this._blockCtx, proto, i, j, TEXTURE_ID_BLOCKS);
-                    
-                    // Add to the game
-                    this.setBgBlock(block);
-                }
-            }
-        }
-        
-        Log.d('[BlockManager] Background blocks placed');
-    }
-    
-    /**
-     * SDL: PK2Kartta::Piirra_Seinat.
-     */
-    public placeFgBlocks(): void {
-        let code: number;
-        let proto: BlockPrototype;
-        let block: Block;
-        
-        for (let i = 0; i < PK2KARTTA_KARTTA_LEVEYS; i++) {
-            for (let j = 0; j < PK2KARTTA_KARTTA_KORKEUS; j++) {
-                // Get prototype from map
-                code = this._context.map.getFgBlockCode(i, j);
-                
-                if (code < 255) {
-                    proto = this.getProto(code);
-                    
-                    // Create the block at the correct position
-                    block = new Block(this._blockCtx, proto, i, j, TEXTURE_ID_BLOCKS);
-                    
-                    // Add to the game
-                    this.setFgBlock(block);
-                }
-            }
-        }
-        
-        Log.d('[BlockManager] Foreground blocks placed');
-    }
     
     /**
      * SDL: PK2Kartta::Calculate_Edges.
@@ -286,33 +237,243 @@ export class BlockManager {
         // }
     }
     
+    
+    ///  Prototypes  ///
+    
     /**
      * Performs the procedural generation of the block prototypes.<br>
      * SDL: PK_Calculate_Tiles.
      */
     public generatePrototypes(): void {
-        const xx = BlockPrototype.generatePrototypes(this._blockCtx); //TODO SAVE
+        const xx = BlockPrototype.generatePrototypes(this._spritesheet); //TODO SAVE
         for (let i = 0; i < 150; i++) {
             this._prototypes[i] = xx[i];
         }
         
-        this.calculateMovableBlocksPosition();
+        this.updateMovement();
+    }
+    
+    /**
+     * Returns the prototype for blocks of the specified type.
+     *
+     * @param code - Block type identification code.
+     */
+    private getProto(code: TBlockProtoCode): BlockPrototype {
+        return this._prototypes[code];
+    }
+    
+    
+    ///  Content  ///
+    
+    public placeBgBlocks(): void {
+        let code: number;
+        let proto: BlockPrototype;
+        let block: Block;
+        
+        for (let i = 0; i < PK2KARTTA_KARTTA_LEVEYS; i++) {
+            for (let j = 0; j < PK2KARTTA_KARTTA_KORKEUS; j++) {
+                // Get prototype from map
+                code = this._context.map.getBgBlockCode(i, j);
+                // Add to the game
+                this.addBlock(code, i, j, true);
+            }
+        }
+        
+        Log.d('[BlockManager] Background blocks placed');
+    }
+    
+    /**
+     * SDL: PK2Kartta::Piirra_Seinat.
+     */
+    public placeFgBlocks(): void {
+        let code: number;
+        let proto: BlockPrototype;
+        let block: Block;
+        
+        for (let i = 0; i < PK2KARTTA_KARTTA_LEVEYS; i++) {
+            for (let j = 0; j < PK2KARTTA_KARTTA_KORKEUS; j++) {
+                // Get prototype from map
+                code = this._context.map.getFgBlockCode(i, j);
+                // Add to the game
+                this.addBlock(code, i, j);
+            }
+        }
+        
+        Log.d('[BlockManager] Foreground blocks placed');
+    }
+    
+    public addBlock(code: uint, i: uint, j: uint, bg: boolean = false) {
+        if (code >= 255)
+            return;
+        
+        const proto = this.getProto(code);
+        
+        if (proto == null)
+            return;
+        
+        // Create the block at the correct position
+        const block = new Block(this._blockCtx, proto, i, j, TEXTURE_ID_BLOCKS);
+        
+        // Add to the game
+        if (bg) {
+            this.setBgBlock(block);
+        } else {
+            this.setFgBlock(block);
+        }
+    }
+    
+    /**
+     * Returns the prototype code for the background block at the specified position.<br>
+     * If the block doesn't exist, it returns 255.
+     * SRC: PK2Kartta::taustat
+     *
+     * @param i - Coordinate i.
+     * @param j - Coordinate j.
+     */
+    public getBgBlockCode(i: number, j: number): TBlockProtoCode {
+        const block = this._bgBlocks[BlockManager.get1DIdx(i, j)];
+        return (block != null) ? block.code : 255;
+    }
+    /**
+     * Returns the background block at the specified position in the map.<br>
+     * If there's no block, it returns NULL.
+     *
+     * @param i - Block x coordinate in the matrix.
+     * @param j - Block y coordinate in the matrix.
+     */
+    public getBgBlock(i: number, j: number): Block {
+        return this._bgBlocks[BlockManager.get1DIdx(i, j)];
+    }
+    public setBgBlock(block: Block): void {
+        this.removeBg(block.i, block.j);
+        
+        // Save in position
+        this._bgBlocks[BlockManager.get1DIdx(block.i, block.j)] = block;
+        
+        // If it's an animated block type, save for later update
+        if (this.isAnimated(block)) {
+            this._animatedBlocks.add(block);
+        }
+        
+        // Add to the scene;
+        // Blocks are added as not visible to help the initial culling
+        //    block.renderable = false;
+        this.ctx.composition.addBgBlock(block);
+    }
+    
+    /**
+     * Returns the prototype code for the foreground block at the specified position.<br>
+     * If the block doesn't exist, it returns 255.
+     * SRC: PK2Kartta::palikat
+     *
+     * @param i - Coordinate i.
+     * @param j - Coordinate j.
+     */
+    public getFgBlockCode(i: number, j: number): TBlockProtoCode {
+        const block = this._fgBlocks[BlockManager.get1DIdx(i, j)];
+        return (block != null) ? block.code : 255;
+    }
+    /**
+     * Returns the foreground block at the specified position in the map.<br>
+     * If there's no block, it returns NULL.
+     *
+     * @param i - Block x coordinate in the matrix.
+     * @param j - Block y coordinate in the matrix.
+     */
+    public getFgBlock(i: number, j: number): Block {
+        return this._fgBlocks[BlockManager.get1DIdx(i, j)];
+    }
+    public setFgBlock(block: Block): void {
+        this.removeFg(block.i, block.j);
+        
+        // Save in position
+        this._fgBlocks[BlockManager.get1DIdx(block.i, block.j)] = block;
+        
+        // If it's an animated block type, save for later update
+        if (this.isAnimated(block)) {
+            this._animatedBlocks.add(block);
+        }
+        
+        // Add to the scene;
+        // Blocks are added as not visible to help the initial culling
+        //   block.renderable = false;
+        // Add to the scene
+        this.ctx.composition.addFgBlock(block);
+    }
+    
+    public removeBg(i: number, j: number): void {
+        const block = this.getBgBlock(i, j);
+        
+        if (block != null) {
+            // Remove
+            this._bgBlocks[BlockManager.get1DIdx(i, j)] = null;
+            
+            // Remove from animated
+            if (this.isAnimated(block)) {
+                this._animatedBlocks.delete(block);
+            }
+            
+            // Remove from draw
+            this.ctx.composition.removeBgBlock(block);
+        }
+    }
+    
+    public removeFg(i: number, j: number): void {
+        const block = this.getFgBlock(i, j);
+        
+        if (block != null) {
+            // Remove
+            this._fgBlocks[BlockManager.get1DIdx(i, j)] = null;
+            
+            // Remove from animated
+            if (this.isAnimated(block)) {
+                this._animatedBlocks.add(block);
+            }
+            
+            // Remove from draw
+            this.ctx.composition.removeFgBlock(block);
+        }
     }
     
     
     ///  Animation  ///
     
     /**
-     * Animates the blocks that require it.
+     * Updates texture for blocks that consist on more than one frame.
+     * SRC: Piirra_Taustat
      */
-    public animate(oscillators: unknown): void {
-    
+    public updateAnimations(coef: number = 1): void {
+        // Compact animation; adapted from:
+        // SRC: ~ PK2Kartta_Animoi
+        const oldFrame = Math.floor(this._animFrame);
+        // The standard range from the original game is [1/7..34/7] = [0.142..4.867]
+        // The increment can be scaled with "coef"
+        this._animFrame = (coef / 7) + (this._animFrame % (34 / 7));
+        const frame = Math.floor(this._animFrame);
+        // Optimization: If frame is kept, do nothing
+        if (oldFrame === frame) {
+            return;
+        }
+        
+        let count = 0;
+        
+        for (let block of this._animatedBlocks) {
+            if (this.isInCamera(block) && this.isAnimated(block)) {
+                block.setTextureOffset(frame);
+                count++;
+            }
+        }
+        
+        if (count > 0) {
+            Log.fast('Animated blocks', count);
+        }
     }
     
     /**
+     * Updates position offset for blocks that can move.
      * SDL: PK_Calculate_MovableBlocks_Position.
      */
-    public calculateMovableBlocksPosition(): void {
+    public updateMovement(): void {
         this._prototypes[EBlockPrototype.BLOCK_ELEVATOR_H].vasen = Math.floor(this._context.entropy.cos(this._context.entropy.degree % 360));
         this._prototypes[EBlockPrototype.BLOCK_ELEVATOR_H].oikea = Math.floor(this._context.entropy.cos(this._context.entropy.degree % 360));
         
@@ -381,68 +542,51 @@ export class BlockManager {
         this._prototypes[EBlockPrototype.BLOCK_SWITCH3].yla = kytkin3_x;
     }
     
+    /**
+     * Returns if the block is of an animated type.
+     */
+    public isAnimated(block: Block): boolean {
+        return block.code === EBlockPrototype.BLOCK_ANIM1
+            || block.code === EBlockPrototype.BLOCK_ANIM2
+            || block.code === EBlockPrototype.BLOCK_ANIM3
+            || block.code === EBlockPrototype.BLOCK_ANIM4;
+    }
+    
     
     ///  Graphics  ///
     
     /**
      * SDL: PK2Kartta::Lataa_PalikkaPaletti.
      *
-     * @throws ResourceNotFoundError
+     * @throws AssetNotFoundError
      * @throws ResourceFetchError
      */
     public async loadTextures(fpath: string, fname: string): Promise<void> {
-        let uri: string;
-        let found: boolean;
-        let image: PkImage;
-        let baseTexture: PIXI.BaseTexture;
+        Log.d('[BlockManager] Loading blocks textures');
         
-        // First, try to fetch the resource from provided location
-        uri = pathJoin(fpath, fname);
-        try {
-            image = await PkAssetTk.getBitmap(uri);
-            found = true;
-        } catch (err) {
-            if (!(err instanceof ResourceNotFoundError)) {
-                // TODO: Improve
-                throw err;
-            }
-        }
-        
-        // If not found, try to fetch the resource from default location
-        if (!found) {
-            uri = pathJoin(RESOURCES_PATH, 'gfx/tiles/', fname);
-            
-            try {
-                image = await PkAssetTk.getBitmap(uri);
-            } catch (err) {
-                throw err;
-            }
-        }
-        
-        // Remove transparent pixel and create the base texture
-        //image.removeTransparentPixel();
-        
-        this.ctx.textureCache.add(TEXTURE_ID_BLOCKS, image);
-        
-        Log.d('Blocks textures loaded');
+        this._spritesheet = await PkAssetTk.getBitmap(
+            //> 🧍/episodeid/gfx/tiles/
+            ...(this._context.episode.isCommunity() ? [pathJoin(this._context.episode.homePath, 'gfx/tiles/', fname)] : []),
+            //> Next to the map file
+            pathJoin(fpath, fname),
+            //> 🏠/gfx/tiles/
+            pathJoin(RESOURCES_PATH, 'gfx/tiles/', fname));
+        this._spritesheet.makeColorTransparent();
         
         // Crop final textures
         /*for (let i = 0; i < 150; i++) {
-            const x = (i % 10) * BLOCK_RAW_SIZE;
-            const y = (Math.floor(i / 10)) * BLOCK_RAW_SIZE;
-            
-            this._textures.push(
-                PkTextureTk.textureFromBaseTexture(baseTexture, x, y, BLOCK_RAW_SIZE));
-        }*/
-        
+         const x = (i % 10) * BLOCK_RAW_SIZE;
+         const y = (Math.floor(i / 10)) * BLOCK_RAW_SIZE;
+         
+         this._textures.push(
+         PkTextureTk.textureFromBaseTexture(baseTexture, x, y, BLOCK_RAW_SIZE));
+         }*/
         
         //console.log('Blocks textures cropped.');
         
         // TODO -> post-treat
         // PisteDraw2_Image_Delete(this->palikat_vesi_buffer); //Delete last water buffer
         // this->palikat_vesi_buffer = PisteDraw2_Image_Cut(this->palikat_buffer,0,416,320,32);
-        
-        // strcpy(this->palikka_bmp,filename);
     }
     
     
@@ -455,110 +599,11 @@ export class BlockManager {
         return this._context;
     }
     
-    /**
-     * Returns the prototype for blocks of the specified type.
-     *
-     * @param code - Block type identification code.
-     */
-    private getProto(code: TBlockProtoCode): BlockPrototype {
-        return this._prototypes[code];
-    }
     
     private static get1DIdx(i: number, j: number): number {
         return j * PK2KARTTA_KARTTA_LEVEYS + i;
     }
     
-    /**
-     * Returns the prototype code for the background block at the specified position.<br>
-     * If the block doesn't exist, it returns 255.
-     * SRC: PK2Kartta::taustat
-     *
-     * @param i - Coordinate i.
-     * @param j - Coordinate j.
-     */
-    public getBgBlockCode(i: number, j: number): TBlockProtoCode {
-        const block = this._bgBlocks[BlockManager.get1DIdx(i, j)];
-        return (block != null) ? block.code : 255;
-    }
-    /**
-     * Returns the background block at the specified position in the map.<br>
-     * If there's no block, it returns NULL.
-     *
-     * @param i - Block x coordinate in the matrix.
-     * @param j - Block y coordinate in the matrix.
-     */
-    public getBgBlock(i: number, j: number): Block {
-        return this._bgBlocks[BlockManager.get1DIdx(i, j)];
-    }
-    public setBgBlock(block: Block): void {
-        // Save in position
-        this._bgBlocks[BlockManager.get1DIdx(block.i, block.j)] = block;
-        
-        // If it's an animated block type, save for later update
-        if (this.isAnimated(block)) {
-            this._animatedBlocks.add(block);
-        }
-        
-        // Add to the scene;
-        // Blocks are added as not visible to help the initial culling
-        block.renderable = false;
-        this.ctx.composition.addBgBlock(block);
-    }
-    
-    /**
-     * Returns the prototype code for the foreground block at the specified position.<br>
-     * If the block doesn't exist, it returns 255.
-     * SRC: PK2Kartta::palikat
-     *
-     * @param i - Coordinate i.
-     * @param j - Coordinate j.
-     */
-    public getFgBlockCode(i: number, j: number): TBlockProtoCode {
-        const block = this._fgBlocks[BlockManager.get1DIdx(i, j)];
-        return (block != null) ? block.code : 255;
-    }
-    /**
-     * Returns the foreground block at the specified position in the map.<br>
-     * If there's no block, it returns NULL.
-     *
-     * @param i - Block x coordinate in the matrix.
-     * @param j - Block y coordinate in the matrix.
-     */
-    public getFgBlock(i: number, j: number): Block {
-        return this._fgBlocks[BlockManager.get1DIdx(i, j)];
-    }
-    public setFgBlock(block: Block): void {
-        // Save in position
-        this._fgBlocks[BlockManager.get1DIdx(block.i, block.j)] = block;
-        
-        // If it's an animated block type, save for later update
-        if (this.isAnimated(block)) {
-            this._animatedBlocks.add(block);
-        }
-        
-        // Add to the scene;
-        // Blocks are added as not visible to help the initial culling
-        block.renderable = false;
-        // Add to the scene
-        this.ctx.composition.addFgBlock(block);
-    }
-    
-    public removeFg(i: number, j: number): void {
-        const block = this.getFgBlock(i, j);
-        
-        if (block != null) {
-            // Remove
-            this._fgBlocks[BlockManager.get1DIdx(i, j)] = null;
-            
-            // Remove from animated
-            if (this.isAnimated(block)) {
-                this._animatedBlocks.add(block);
-            }
-            
-            // Remove from draw
-            this.ctx.composition.removeFgBlock(block);
-        }
-    }
     
     private setEdge(i: number, j: number, edge: boolean = true): void {
         this._edges[BlockManager.get1DIdx(i, j)] = (edge === true);
@@ -634,25 +679,6 @@ export class BlockManager {
         return plain;
     }
     
-    /**
-     * SRC: Piirra_Taustat
-     */
-    public updateAnimations(): void {
-        let count = 0;
-        
-        for (let block of this._animatedBlocks) {
-            if (this.isInCamera(block) && this.isAnimated(block)) {
-                block.setTextureOffset(Math.floor(this._blockAnimTicker));
-            }
-        }
-        
-        if (count > 0)
-            Log.d(`[BlockManager] ${ count } animated blocks updated`);
-    }
-    
-    /** @deprecated Use _blockAnimTicker */
-    public get animaatio(): number { return this._blockAnimTicker;}
-    
     public isInCamera(block: Block): boolean {
         return block.x < this.ctx.cameraX + this.ctx.device.screenWidth
             && block.y < this.ctx.cameraY + this.ctx.device.screenHeight
@@ -660,17 +686,8 @@ export class BlockManager {
             && block.y + BLOCK_SIZE > this.ctx.cameraY;
     }
     
-    /**
-     * Returns if the block is of an animated type.
-     */
-    public isAnimated(block: Block): boolean {
-        return block.code === EBlockPrototype.BLOCK_ANIM1
-            || block.code === EBlockPrototype.BLOCK_ANIM2
-            || block.code === EBlockPrototype.BLOCK_ANIM3
-            || block.code === EBlockPrototype.BLOCK_ANIM4;
-    }
-    
     public updateCulling(): void {
+        return;
         if (this._prevCulling == null ||
             this.ctx.cameraX < this._prevCulling.ax ||
             this.ctx.cameraY < this._prevCulling.ay ||

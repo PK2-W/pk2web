@@ -1,7 +1,6 @@
-import { DwHelper } from '@ng/drawable/DwHelper';
-import { DwObjectBase } from '@ng/drawable/object/DwObjectBase';
-import { DwContainer } from '@ng/drawable/skeleton/DwContainer';
-import { DwFactory } from '@ng/drawable/skeleton/DwFactory';
+import { Dw } from '@ng/drawable/dw/Dw';
+import { DwContainer } from '@ng/drawable/dw/DwContainer';
+import { DwObjectBase } from '@ng/drawable/dwo/DwObjectBase';
 import type { PkTickable } from '@ng/support/PkTickable';
 import { minmax } from '@ng/support/utils';
 import type { PkUIComponentContainer } from '@ng/ui/component/PkUIComponentContainer';
@@ -20,17 +19,17 @@ export abstract class PkUIComponent<T extends PkUIContext = PkUIContext>
     private _parent: PkUIComponentContainer;
     
     protected constructor(context: T) {
-        super(DwFactory.new.container());
+        super(new DwContainer());
         
         this.context = context;
         this._effects = new Set();
         this._focusable = false;
         
         // Mouse events
-        this._drawable.on(DwHelper.EV_POINTEROVER, () => this.emit(PkUIComponent.EV_POINTEROVER));
-        this._drawable.on(DwHelper.EV_POINTERMOVE, () => this.emit(PkUIComponent.EV_POINTERMOVE));
-        this._drawable.on(DwHelper.EV_POINTEROUT, () => this.emit(PkUIComponent.EV_POINTEROUT));
-        this._drawable.on(DwHelper.EV_POINTERTAP, () => this.emit(PkUIComponent.EV_POINTERTAP));
+        this._drawable.on(Dw.EV_POINTEROVER, () => this.emit(PkUIComponent.EV_POINTEROVER));
+        this._drawable.on(Dw.EV_POINTERMOVE, () => this.emit(PkUIComponent.EV_POINTERMOVE));
+        this._drawable.on(Dw.EV_POINTEROUT, () => this.emit(PkUIComponent.EV_POINTEROUT));
+        this._drawable.on(Dw.EV_POINTERTAP, () => this.emit(PkUIComponent.EV_POINTERTAP));
     }
     
     /**

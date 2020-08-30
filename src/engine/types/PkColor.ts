@@ -60,6 +60,10 @@ export class PkColor {
     public toRGBInt(): number {
         return ((1 << 24) + (this.r << 16) + (this.g << 8) + this.b);
     }
+    
+    public clone(): PkColor {
+        return PkColor.rgba(this.r, this.g, this.b, this.a255);
+    }
 }
 
 export type TColor = number;

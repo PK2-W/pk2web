@@ -3,6 +3,7 @@ import { ANIMAATIO_MAX_SEKVENSSEJA } from '../../support/constants';
 import { CVect, CBYTE, cvect, uint } from '../support/types';
 
 /**
+ * Bytesize: 12
  * SRC: PK2SPRITE_ANIMAATIO.
  */
 export class SpriteAnimation {
@@ -16,7 +17,7 @@ export class SpriteAnimation {
         for (let i = 0; i < ANIMAATIO_MAX_SEKVENSSEJA; i++) {
             obj._frames[i] = stream.streamReadByte();
         }
-        obj._frameCount = stream.streamReadUint(1);
+        obj._frameCount = stream.streamReadUint8();
         obj._loop = stream.streamReadBool();
         
         return obj;

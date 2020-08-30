@@ -1,21 +1,20 @@
-import { DwContainerImpl } from '@ng/drawable/impl-pixi/DwContainerImpl';
-import { DwContainer } from '@ng/drawable/skeleton/DwContainer';
-import { DwFactory } from '@ng/drawable/skeleton/DwFactory';
-import { DwSprite } from '@ng/drawable/skeleton/DwSprite';
+import { DwContainer } from '@ng/drawable/dw/DwContainer';
+import { DwSprite } from '@ng/drawable/dw/DwSprite';
 import { pathJoin } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { PkFont } from '@ng/types/font/PkFont';
-import { PkRectangleImpl } from '@ng/types/pixi/PkRectangleImpl';
-import { PkImage } from '@ng/types/PkImage';
-import { PkImageTexture } from '@ng/types/PkImageTexture';
+import { PkBaseTexture } from '@ng/types/image/PkBaseTexture';
+import { PkBitmapBT } from '@ng/types/image/PkBitmapBT';
 import { PkParameters } from '@ng/types/PkParameters';
+import { PkRectangle } from '@ng/types/PkRectangle';
+import { PkTexture } from '@ng/types/PkTexture';
 
 export class PkFontAsset implements PkFont {
     private readonly _url: string;
     private _parameters: PkParameters;
     
-    private _baseTexture: PkImage;
-    private readonly _textureCache: { [char: string]: PkImageTexture };
+    private _bitmap: PkBitmapBT;
+    private readonly _textureCache: { [char: string]: PkTexture<PkBaseTexture> };
     private readonly _charIndex: { [char: string]: number };
     
     private _sourceX: number;
@@ -74,8 +73,8 @@ export class PkFontAsset implements PkFont {
         const path = this._url.substring(0, this._url.lastIndexOf('/')) + '/';
         const imagePath = this._parameters.get('image');
         
-        this._baseTexture = await PkAssetTk.getBitmap(pathJoin(path, imagePath));
-        this._baseTexture.removeTransparentPixel();
+        this._bitmap = await PkAssetTk.getBitmap(pathJoin(path, imagePath));
+        this._bitmap.makeColorTransparent();
         // TODO: Control error
         //	temp_image = PisteDraw2_Image_Load(_uri,false);
         //	if (temp_image == -1) return -1;
@@ -89,7 +88,7 @@ export class PkFontAsset implements PkFont {
         return this;
     }
     
-    private getCharTexture(char: string): PkImageTexture {
+    private getCharTexture(char: string): PkTexture<PkBaseTexture> {
         let character = this._textureCache[char];
         
         if (typeof character === 'undefined') {
@@ -98,7 +97,7 @@ export class PkFontAsset implements PkFont {
             if (index != null) {
                 // In-atlas x => char position * char width
                 const x = this._charIndex[char] * this._charW;
-                character = this._baseTexture.getTexture(PkRectangleImpl.$(this._sourceX + x, this._sourceY, this._charW, this._charH));
+                character = this._bitmap.getTexture(PkRectangle.$(this._sourceX + x, this._sourceY, this._charW, this._charH));
             } else {
                 character = null;
             }
@@ -111,11 +110,11 @@ export class PkFontAsset implements PkFont {
     
     public writeText(text: string, target?: DwContainer, x: number = 0, y: number = 0): DwContainer {
         if (target == null) {
-            target = (new DwContainerImpl() as DwContainer);
+            target = (new DwContainer() as DwContainer);
         }
         
         let char: string;
-        let texture: PkImageTexture;
+        let texture: PkTexture<PkBaseTexture>;
         let sprite: DwSprite;
         
         let i;
@@ -123,7 +122,7 @@ export class PkFontAsset implements PkFont {
             char = text[i];
             
             // Every character is an individual drawable
-            sprite = DwFactory.new.sprite()
+            sprite = new DwSprite()
                 .setPosition(i * this._charW + x, y)
                 .addTo(target);
             

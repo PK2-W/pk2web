@@ -1,9 +1,10 @@
-import { DwImpl } from '@ng/drawable/impl-pixi/DwImpl';
+import { Dw } from '@ng/drawable/dw/Dw';
+import { DwContainer } from '@ng/drawable/dw/DwContainer';
 
-export class PkCamera extends DwImpl<WorldContainer> {
-    protected _child: DwImpl<PIXI.DisplayObject>;
+export class PkCamera extends Dw<WorldContainer> {
+    protected _child: DwContainer;
     
-    public constructor(child: DwImpl<PIXI.DisplayObject>) {
+    public constructor(child: DwContainer) {
         super(new WorldContainer(child.pixi));
         
         this._child = child;
@@ -39,13 +40,13 @@ export class PkCamera extends DwImpl<WorldContainer> {
 class WorldContainer extends PIXI.Container {
     private static readonly _emptyParent = new PIXI.Container();
     
-    private readonly _content: PIXI.DisplayObject;
+    private readonly _content: PIXI.Container;
     private readonly _projectionTransform: PIXI.Matrix;
     public _sourceFrame: PIXI.Rectangle;
     private _destinationFrame: PIXI.Rectangle;
     
     
-    public constructor(content: PIXI.DisplayObject) {
+    public constructor(content: PIXI.Container) {
         super();
         this._content = content;
         this._projectionTransform = new PIXI.Matrix();

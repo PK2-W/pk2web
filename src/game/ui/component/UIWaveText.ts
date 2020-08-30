@@ -4,10 +4,8 @@ import { TTextId } from '@game/support/types';
 import { UIText } from '@game/ui/component/UIText';
 import { PkInputEvent } from '@ng/core/input/PkInputEvent';
 import { PkInput } from '@ng/core/PkInput';
-import { DwContainer } from '@ng/drawable/skeleton/DwContainer';
-import { DwFactory } from '@ng/drawable/skeleton/DwFactory';
+import { DwContainer } from '@ng/drawable/dw/DwContainer';
 import { PkFont } from '@ng/types/font/PkFont';
-import { PkRectangleImpl } from '@ng/types/pixi/PkRectangleImpl';
 import { PkRectangle } from '@ng/types/PkRectangle';
 import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
 
@@ -25,8 +23,8 @@ export class UIWaveText extends UIText {
         this._fast = false;
         this._shadow = true;
         
-        this._dwShadow = DwFactory.new.container().addTo(this.dw);
-        this._dwFront = DwFactory.new.container().addTo(this.dw);
+        this._dwShadow = new DwContainer().addTo(this.dw);
+        this._dwFront = new DwContainer().addTo(this.dw);
         
         this._refreshText();
         
@@ -34,7 +32,7 @@ export class UIWaveText extends UIText {
         //     this.emit(PkUIComponentImpl.EV_ACTION);
         // });
         
-
+        
         //this.dw.pixi.interactiveChildren = false;
         
         // Special
@@ -66,9 +64,9 @@ export class UIWaveText extends UIText {
             this.context.font4.writeText(text, this._dwShadow.clear());
         }
         this._getFont().writeText(text, this._dwFront.clear());
-    
-        const bounds: PkRectangle = this.dw.getBounds();
-        this.dw.hitArea = PkRectangleImpl.$(bounds.x - 2, bounds.y - 2, bounds.width + 4, bounds.height + 4);
+        
+        const bounds: PkRectangle = this.dw.getLocalBounds();
+        this.dw.hitArea = PkRectangle.$(bounds.x - 2, bounds.y - 2, bounds.width + 4, bounds.height + 4);
         
         this.arrange();
     }
@@ -79,7 +77,7 @@ export class UIWaveText extends UIText {
         let shadowOffset;
         
         // For every letter....
-        for (let i = 0; i < this._dwFront.children; i++) {
+        for (let i = 0; i < this._dwFront.length; i++) {
             if (this._fast || this.isFocused()) {
                 ymov = this.context.entropy.sin(((i + this.context.entropy.degree) * 8) % 360) / 7;
                 xmov = this.context.entropy.cos(((i + this.context.entropy.degree) * 8) % 360) / 9;

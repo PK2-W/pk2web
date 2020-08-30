@@ -29,6 +29,10 @@ export function minmax(n: number, min: number, max: number): number {
     return n;
 }
 
+export function ndecs(n: number, ndecs: number = 2) {
+    return Math.round(n / Math.pow(10, ndecs)) * Math.pow(10, ndecs);
+}
+
 export function ifnul<T>(nullable: T | null, replacement: T = null): T {
     return nullable != null ? nullable : replacement;
 }
@@ -43,6 +47,10 @@ export function trim(str: string) {
 
 export function cloneStruct(object: any) {
     return JSON.parse(JSON.stringify(object));
+}
+
+export function allInstanceOf(objects: any[], type: new () => any): boolean {
+    return objects.every(obj => obj instanceof type);
 }
 
 export function pathJoin(...segments: string[]): string {
@@ -79,4 +87,10 @@ export function generate2DMatrix<T>(width: number, height: number, fillFn?: () =
         .map(() => fillFn != null
             ? new Array(width).fill(null).map(() => fillFn())
             : new Array(width).fill(null));
+}
+
+export function cloneArrayBuffer(src: ArrayBuffer): ArrayBuffer {
+    const dst = new ArrayBuffer(src.byteLength);
+    new Uint8Array(dst).set(new Uint8Array(src));
+    return dst;
 }

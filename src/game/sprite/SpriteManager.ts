@@ -1,13 +1,15 @@
+import { EAi } from '@game/enum/EBehavior';
 import { ESpriteType } from '@game/enum/ESpriteType';
 import { GameContext } from '@game/game/GameContext';
-import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, PK2Map } from '@game/map/PK2Map';
+import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, LevelMap } from '@game/map/LevelMap';
 import { Sprite } from '@game/sprite/Sprite';
-import { SpritePrototype, TSpriteProtoCode } from '@game/sprite/SpritePrototype';
+import { SpritePrototype, TSpriteProtoCode, SpritePrototypeLoadError } from '@game/sprite/SpritePrototype';
 import { int, CVect, cvect, rand } from '@game/support/types';
+import { AssetFetchError } from '@ng/error/AssetFetchError';
+import { PkError } from '@ng/error/PkError';
 import { Log } from '@ng/support/log/LoggerImpl';
 import { pathJoin, ifnul, floor } from '@ng/support/utils';
-import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
-import { MAX_SPRITES, MAX_SPRITE_TYPES, MAX_AANIA, RESOURCES_PATH } from '@sp/constants';
+import { MAX_SPRITES, MAX_SPRITE_TYPES, RESOURCES_PATH } from '@sp/constants';
 import { OutOfBoundsError } from '@sp/error/OutOfBoundsError';
 import { EventEmitter } from '@vendor/eventemitter3';
 
@@ -95,8 +97,7 @@ export class SpriteManager extends EventEmitter {
      * @param map
      * @param tmpEpidoseName
      */
-    public async loadPrototypes(map: PK2Map, tmpEpidoseName: string) {
-        //     char polku[PE_PATH_SIZE];
+    public async loadPrototypes(map: LevelMap, tmpEpidoseName: string) {
         let lastProtoIndex: int;
         
         for (let i = 0; i < MAX_SPRITE_TYPES; i++) {
@@ -105,25 +106,41 @@ export class SpriteManager extends EventEmitter {
             
             if (protoName !== '') {
                 lastProtoIndex = i;
-                // 🏠/episodes/episodename/protoname
-                let path = pathJoin('episodes', tmpEpidoseName);
                 
-                try {
-                    proto = await this.loadProto(path, protoName);
+                // Possible locations
+                const fpaths = [
+                    // If community episode...
+                    ...(this._context.episode.isCommunity() ? [
+                        //> 🧍/episodeid/episodes/episodename/
+                        pathJoin(this._context.episode.homePath, 'episodes', this._context.episode.name),
+                        //> 🧍/episodeid/sprites/
+                        pathJoin(this._context.episode.homePath, 'sprites')] : []),
+                    //> 🏠/sprites/
+                    pathJoin(RESOURCES_PATH, 'sprites')];
+                
+                // Try to load the sprite prototipe from each possible location
+                const calls = fpaths.map(fpath => this.loadPrototype.bind(this, fpath, protoName));
+                const errors = [];
+                for (let call of calls) {
+                    try {
+                        proto = await call();
+                    } catch (err) {
+                        // Problems loading
+                        if (err instanceof SpritePrototypeLoadError) {
+                            errors.push(err);
+                        } else {
+                            throw new PkError(`Couldn't load sprite prototype for {${ protoName }}.`, err);
+                        }
+                    }
+                }
+                
+                if (proto != null) {
+                    // TODO: Review this procedure
                     proto.assignIndex(this._nextFreeProtoIndex);
                     this._protot[this._nextFreeProtoIndex] = proto;
-                } catch (err) {
-                    // TODO specify error
-                    try {
-                        // 🏠/sprites/protoname
-                        proto = await this.loadProto('sprites', protoName);
-                        proto.assignIndex(this._nextFreeProtoIndex);
-                        this._protot[this._nextFreeProtoIndex] = proto;
-                        
-                    } catch (err) {
-                        Log.w(`[SpriteManager] Can't load sprite ${ protoName }. It will not appear.`);
-                        Log.w(err);
-                    }
+                } else {
+                    throw new Error(`Couldn't load the sprite prototype for {${ protoName }} from any of the provided locations:\n`
+                        + errors.map((e: SpritePrototypeLoadError) => ' · ' + e.cause.message).join('\n'));
                 }
             }
             
@@ -145,7 +162,7 @@ export class SpriteManager extends EventEmitter {
     /**
      * SDL: PK2::SpriteSystem::protot_get
      */
-    private async loadProto(fpath: string, fname: string): Promise<SpritePrototype> {
+    private async loadPrototype(fpath: string, fname: string): Promise<SpritePrototype> {
         let proto: SpritePrototype;
         //     char aanipolku[255];
         //     char testipolku[255];
@@ -157,36 +174,6 @@ export class SpriteManager extends EventEmitter {
         
         // Check if it can be loaded, else error is elevated
         proto = await SpritePrototype.loadFromFile(this._context, fpath, fname);
-        
-        //Load sounds
-        for (let i = 0; i < MAX_AANIA; i++) {
-            //     if (strcmp(protot[_nextFreeProtoIndex].aanitiedostot[i],"")!=0){
-            
-            // Log.l(fpath + '/' + proto.getSoundName(i));
-            // Log.l(pathJoin(RESOURCES_PATH, 'sprites', proto.getSoundName(i));
-            
-            // debugger;
-            
-            //     if (PK_Check_File(testipolku))
-            //     protot[_nextFreeProtoIndex].aanet[i] = protot_get_sound(aanipolku,protot[_nextFreeProtoIndex].aanitiedostot[i]);
-            const fname = proto.getSoundName(i);
-            if (fname != null) {
-                proto._aanet[i] = await PkAssetTk.getSound(pathJoin(RESOURCES_PATH, fpath, fname));
-                
-                //     else{
-                //     getcwd(aanipolku, PE_PATH_SIZE);
-                //     strcat(aanipolku,"/sprites/");
-                //
-                //     strcpy(testipolku,aanipolku);
-                //     strcat(testipolku,"/");
-                //     strcat(testipolku,protot[_nextFreeProtoIndex].aanitiedostot[i]);
-                //
-                //     if (PK_Check_File(testipolku))
-                //     protot[_nextFreeProtoIndex].aanet[i] = protot_get_sound(aanipolku,protot[_nextFreeProtoIndex].aanitiedostot[i]);
-                // }
-                // }
-            }
-        }
         
         return proto;
     }
@@ -316,7 +303,7 @@ export class SpriteManager extends EventEmitter {
      * Adds the sprites from the specified map to the sprite system.
      * SDL: PK2Kartta::Place_Sprites.
      */
-    public addMapSprites(map: PK2Map) {
+    public addMapSprites(map: LevelMap) {
         this.clear();
         const playerId = map.getPlayerSprite();
         const playerProto = this.getPrototypeAt(playerId);
@@ -599,133 +586,4 @@ export class SpriteManager extends EventEmitter {
 
 enum Ev {
     SPRITE_CREATED = 'EV_SPRITE_CREATED'
-}
-
-export enum EAi { //AI
-    AI_EI,
-    AI_KANA,
-    AI_MUNA,
-    AI_PIKKUKANA,
-    AI_BONUS,
-    AI_HYPPIJA,
-    AI_PERUS,
-    AI_KAANTYY_ESTEESTA_HORI,
-    AI_VAROO_KUOPPAA,
-    AI_RANDOM_SUUNNANVAIHTO_HORI,
-    AI_RANDOM_HYPPY,
-    AI_SEURAA_PELAAJAA,
-    AI_RANDOM_ALOITUSSUUNTA_HORI,
-    AI_SEURAA_PELAAJAA_JOS_NAKEE,
-    AI_MUUTOS_JOS_ENERGIAA_ALLE_2,
-    AI_MUUTOS_JOS_ENERGIAA_YLI_1,
-    AI_ALOITUSSUUNTA_PELAAJAA_KOHTI,
-    AI_AMMUS,
-    AI_NONSTOP,
-    AI_HYOKKAYS_1_JOS_OSUTTU,
-    AI_POMMI,
-    AI_HYOKKAYS_1_JOS_PELAAJA_EDESSA,
-    AI_HYOKKAYS_1_JOS_PELAAJA_ALAPUOLELLA,
-    AI_VAHINGOITTUU_VEDESTA,
-    AI_HYOKKAYS_2_JOS_PELAAJA_EDESSA,
-    AI_TAPA_KAIKKI,
-    AI_KITKA_VAIKUTTAA,
-    AI_PIILOUTUU,
-    AI_PALAA_ALKUUN_X,
-    AI_PALAA_ALKUUN_Y,
-    AI_TELEPORTTI,
-    
-    AI_HEITTOASE = 35,
-    AI_TIPPUU_TARINASTA,
-    AI_VAIHDA_KALLOT_JOS_TYRMATTY,
-    AI_VAIHDA_KALLOT_JOS_OSUTTU,
-    AI_TUHOUTUU_JOS_EMO_TUHOUTUU,
-    
-    AI_LIIKKUU_X_COS = 41,
-    AI_LIIKKUU_Y_COS,
-    AI_LIIKKUU_X_SIN,
-    AI_LIIKKUU_Y_SIN,
-    AI_LIIKKUU_X_COS_NOPEA,
-    AI_LIIKKUU_Y_SIN_NOPEA,
-    AI_LIIKKUU_X_COS_HIDAS,
-    AI_LIIKKUU_Y_SIN_HIDAS,
-    AI_LIIKKUU_Y_SIN_VAPAA,
-    
-    AI_RANDOM_KAANTYMINEN,
-    AI_HYPPY_JOS_PELAAJA_YLAPUOLELLA,
-    AI_MUUTOS_AJASTIN,
-    
-    AI_TIPPUU_JOS_KYTKIN1_PAINETTU,
-    AI_TIPPUU_JOS_KYTKIN2_PAINETTU,
-    AI_TIPPUU_JOS_KYTKIN3_PAINETTU,
-    
-    AI_LIIKKUU_ALAS_JOS_KYTKIN1_PAINETTU,
-    AI_LIIKKUU_YLOS_JOS_KYTKIN1_PAINETTU,
-    AI_LIIKKUU_VASEMMALLE_JOS_KYTKIN1_PAINETTU,
-    AI_LIIKKUU_OIKEALLE_JOS_KYTKIN1_PAINETTU,
-    AI_LIIKKUU_ALAS_JOS_KYTKIN2_PAINETTU,
-    AI_LIIKKUU_YLOS_JOS_KYTKIN2_PAINETTU,
-    AI_LIIKKUU_VASEMMALLE_JOS_KYTKIN2_PAINETTU,
-    AI_LIIKKUU_OIKEALLE_JOS_KYTKIN2_PAINETTU,
-    AI_LIIKKUU_ALAS_JOS_KYTKIN3_PAINETTU,
-    AI_LIIKKUU_YLOS_JOS_KYTKIN3_PAINETTU,
-    AI_LIIKKUU_VASEMMALLE_JOS_KYTKIN3_PAINETTU,
-    AI_LIIKKUU_OIKEALLE_JOS_KYTKIN3_PAINETTU,
-    
-    AI_KAANTYY_ESTEESTA_VERT = 70,
-    AI_RANDOM_ALOITUSSUUNTA_VERT,
-    AI_ALOITUSSUUNTA_PELAAJAA_KOHTI_VERT,
-    AI_KIIPEILIJA,
-    AI_KIIPEILIJA2,
-    AI_PAKENEE_PELAAJAA_JOS_NAKEE,
-    /** New if destroyed. */
-    AI_UUSI_JOS_TUHOUTUU,
-    
-    AI_NUOLI_VASEMMALLE,
-    AI_NUOLI_OIKEALLE,
-    AI_NUOLI_YLOS,
-    AI_NUOLI_ALAS,
-    AI_NUOLET_VAIKUTTAVAT,
-    
-    AI_TAUSTA_KUU = 101,
-    AI_TAUSTA_LIIKKUU_VASEMMALLE,
-    AI_TAUSTA_LIIKKUU_OIKEALLE,
-    
-    AI_BONUS_AIKA = 120,
-    AI_BONUS_NAKYMATTOMYYS,
-    AI_BONUS_SUPERHYPPY,
-    AI_BONUS_SUPERTULITUS,
-    AI_BONUS_SUPERVAUHTI,
-    
-    AI_MUUTOS_JOS_OSUTTU = 129,
-    AI_SEURAA_PELAAJAA_VERT_HORI,
-    AI_SEURAA_PELAAJAA_JOS_NAKEE_VERT_HORI,
-    AI_RANDOM_LIIKAHDUS_VERT_HORI,
-    AI_SAMMAKKO1,
-    AI_SAMMAKKO2,
-    AI_SAMMAKKO3,
-    AI_HYOKKAYS_2_JOS_OSUTTU,
-    AI_HYOKKAYS_1_NONSTOP,
-    AI_HYOKKAYS_2_NONSTOP,
-    AI_KAANTYY_JOS_OSUTTU,
-    AI_EVIL_ONE,
-    
-    AI_INFO1 = 201,
-    AI_INFO2,
-    AI_INFO3,
-    AI_INFO4,
-    AI_INFO5,
-    AI_INFO6,
-    AI_INFO7,
-    AI_INFO8,
-    AI_INFO9,
-    AI_INFO10,
-    AI_INFO11,
-    AI_INFO12,
-    AI_INFO13,
-    AI_INFO14,
-    AI_INFO15,
-    AI_INFO16,
-    AI_INFO17,
-    AI_INFO18,
-    AI_INFO19
 }

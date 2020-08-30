@@ -2,48 +2,55 @@
 import { Effects } from '@game/effects/Effects';
 import { ESound } from '@game/enum';
 import { EAnimation } from '@game/enum/EAnimation';
+import { EAi } from '@game/enum/EBehavior';
 import { EBgImageMovement } from '@game/enum/EBgImageMovement';
 import { EBlockPrototype } from '@game/enum/EBlockPrototype';
 import { EDamageType } from '@game/enum/EDamageType';
 import { EDestructionType } from '@game/enum/EDestructionType';
 import { ESpriteType } from '@game/enum/ESpriteType';
+import { Episode } from '@game/episodes/Episode';
 import { GameContext } from '@game/game/GameContext';
 import { GiftManager } from '@game/gift/GiftManager';
 import { InputAction } from '@game/InputActions';
 import {
     PK2KARTTA_KARTTA_LEVEYS,
     PK2KARTTA_KARTTA_KORKEUS,
-    PK2Map,
+    LevelMap,
     KYTKIN_ALOITUSARVO,
     ILMA_SADE,
     ILMA_SADEMETSA,
     ILMA_LUMISADE
-} from '@game/map/PK2Map';
+} from '@game/map/LevelMap';
 import { EParticle } from '@game/particle/Particle';
 import { PekkaContext } from '@game/PekkaContext';
 import { Sprite } from '@game/sprite/Sprite';
 import { SpriteFuture } from '@game/sprite/SpriteFuture';
-import { SpriteManager, EAi } from '@game/sprite/SpriteManager';
+import { SpriteManager } from '@game/sprite/SpriteManager';
 import { TX } from '@game/texts';
 import { BlockCollider } from '@game/tile/BlockCollider';
 import { BLOCK_SIZE } from '@game/tile/BlockConstants';
 import { BlockManager } from '@game/tile/BlockManager';
-import { DwTilingSprite } from '@ng/drawable/object/DwTilingSprite';
-import { ResourceNotFoundError } from '@ng/error/ResourceNotFoundError';
-import { PkAssetCache } from '@ng/PkAssetCache';
+import { DwTilingSprite } from '@ng/drawable/dwo/DwTilingSprite';
 import { Log } from '@ng/support/log/LoggerImpl';
-import { pathJoin, floor, minmax } from '@ng/support/utils';
+import { pathJoin, minmax } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
-import { PkImage } from '@ng/types/PkImage';
-import { PkSound } from '@ng/types/PkSound';
-import { MAX_SPRITES, RESOURCES_PATH, SPRITE_MAX_AI, VAHINKO_AIKA } from '@sp/constants';
-import * as PIXI from 'pixi.js';
-import { EInputAction } from '../enum/EInputAction';
-import { int, rand, uint, DWORD } from '../support/types';
+import { PkTexture } from '@ng/types/PkTexture';
+import {
+    MAX_SPRITES,
+    RESOURCES_PATH,
+    SPRITE_MAX_AI,
+    VAHINKO_AIKA,
+    SWITCH_SOUND_CKEY,
+    JUMP_SOUND_CKEY,
+    LOCK_OPEN_SOUND_CKEY,
+    LAND_SOUND_CKEY
+} from '@sp/constants';
+import { int, rand, DWORD } from '../support/types';
 
 export class Game extends GameContext {
     private _episodeName: string;
     
+    private _bgTexture: PkTexture;
     private _bgImage: DwTilingSprite;
     // PK2BLOCKMASKI palikkamaskit[BLOCK_MAX_MASKEJA];
     private _sprites: SpriteManager;
@@ -99,15 +106,14 @@ export class Game extends GameContext {
     
     private _kytkin_tarina: int = 0; // "shaking switch", here for now
     private _nakymattomyys: int = 0;
-    private _palikka_animaatio: number = 0;
     
     /** ++ timeout */
     private increase_time: number;
     /** player invisible timeout */
     private nakymattomyys: number;
     
-    public constructor(context: PekkaContext, map: PK2Map) {
-        super(context, map);
+    public constructor(context: PekkaContext, episode: Episode, map: LevelMap) {
+        super(context, episode, map);
         
         // In debug, game is available globally
         if (Log.isDebug()) window['game'] = this;
@@ -131,6 +137,8 @@ export class Game extends GameContext {
      * SDL: PK_MainScreen_Change -> if (game_next_screen == SCREEN_GAME)
      */
     public async start() {  // "start game"
+        Log.d('[Game] Starting game');
+        
         // PND if (jaksot[jakso_indeksi_nyt].lapaisty)
         // PND     uusinta = true;   ""is replaying""
         // PND else
@@ -141,11 +149,12 @@ export class Game extends GameContext {
             
             /////  Source: PK_Map_Open --------
             
-            await this.loadBgImage(this.map.fpath, this.map.bgImageFilename);
-            
-            // TODO: Temporal location
-            this._stuff = await PkAssetTk.getImage(pathJoin(RESOURCES_PATH, 'gfx/pk2stuff.bmp'));
-            //this._stuff.removeTransparentPixel();
+            try {
+                await this.loadBgImage(this.map.fpath, this.map.bgImageFilename);
+            } catch (err) {
+                Log.w(`[Game] The background image for the game could not be loaded.`);
+                Log.d(err.message);
+            }
             
             // PND	PK_New_Save();
             
@@ -227,9 +236,6 @@ export class Game extends GameContext {
      */
     public gameLoop(): void {
         
-        // ~ PK2Kartta_Animoi(_degree, palikka_animaatio/7 √, kytkin1 √, kytkin2 √, kytkin3 √, false);
-        this._blocks._blockAnimTicker = this._palikka_animaatio / 7;
-        
         this.updateCamera();
         
         this.particles.update();
@@ -261,7 +267,7 @@ export class Game extends GameContext {
         
         // ~ kartta->Piirra_Taustat(Game::camera_x,Game::camera_y,false);
         // TODO: Hay algo más
-        this._blocks.updateAnimations();
+        this._blocks.updateAnimations(1);
         this._blocks.updateCulling();
         
         // ~ PK_Draw_InGame_Sprites()
@@ -320,11 +326,9 @@ export class Game extends GameContext {
         // if (doublespeed) skip_frame = !skip_frame;
         // else skip_frame = false;
         
-        this._palikka_animaatio = 1 + this._palikka_animaatio % 34;
-        
         // END	PK_Draw_InGame();
         
-        this._blocks.calculateMovableBlocksPosition();
+        this._blocks.updateMovement();
         
         if (!this._paused) {
             // Increment degreee
@@ -681,46 +685,11 @@ export class Game extends GameContext {
     }
     
     private async loadBgImage(fpath: string, fname: string): Promise<void> {
-        let uri: string;
-        let found: boolean;
-        let image: PkImage;
-        let baseTexture: PIXI.BaseTexture;
-        
-        // First, try to fetch the resource from provided location
-        uri = pathJoin(pathJoin(RESOURCES_PATH, fpath), fname);
-        try {
-            image = await PkAssetTk.getImage(uri);
-            found = true;
-        } catch (err) {
-            if (!(err instanceof ResourceNotFoundError)) {
-                // TODO: Improve
-                throw err;
-            }
-        }
-        
-        // If not found, try to fetch the resource from default location
-        if (!found) {
-            uri = pathJoin(pathJoin(RESOURCES_PATH, 'gfx/scenery/'), fname);
-            
-            try {
-                image = await PkAssetTk.getImage(uri);
-            } catch (err) {
-                throw err;
-            }
-        }
-        
-        // for (x=0;x<640;x++)
-        //     for (y=0;y<480;y++)
-        //     {
-        //         color = buffer[x+y*leveys];
-        //
-        //         if (color == 255)
-        //             color--;
-        //
-        //         buffer[x+y*leveys] = color;
-        //     }
-        
-        this.textureCache.add(TEXTURE_ID_BGIMAGE, image);
+        const bt = await PkAssetTk.getImage(
+            ...(this.episode.isCommunity() ? [pathJoin(this.episode.homePath, 'gfx/scenery/', fname)] : []),
+            pathJoin(fpath, fname),
+            pathJoin(RESOURCES_PATH, 'gfx/scenery/', fname));
+        this._bgTexture = bt.getTexture();
     }
     
     /**
@@ -929,9 +898,10 @@ export class Game extends GameContext {
             if (sprite.proto.weight > 0) {
                 if (this.context.input.isActing(InputAction.GAME_JUMP)) {
                     if (!sprite.isCrouched()) {
-                        //if (sprite.jumpTimer == 0)
-                        // 						PK_Play_Sound(hyppy_aani, 100, (int)future.x, (int)sprite_y,
-                        // 									  sprite.tyyppi->aani_frq, sprite.tyyppi->random_frq);
+                        if (sprite.jumpTimer == 0) {
+                            this.playSound(this.stuff.getSound(JUMP_SOUND_CKEY),
+                                1, future.x, future.y, sprite.proto.soundFreq, sprite.proto.soundRandomFreq);
+                        }
                         
                         if (sprite.jumpTimer <= 0)
                             sprite.jumpTimer = 1; //10;
@@ -1128,10 +1098,10 @@ export class Game extends GameContext {
         if (sprite.inWater) {
             if (!sprite.proto.canSwim() || sprite.energy < 1) {
                 /*
-                if (future.b > 0)
-                   future.b /= 2.0;
-
-                sprite_b -= (1.5-sprite.weight)/10;*/
+                 if (future.b > 0)
+                 future.b /= 2.0;
+                 
+                 sprite_b -= (1.5-sprite.weight)/10;*/
                 future.b /= 2.0;
                 future.a /= 1.05;
                 
@@ -1265,10 +1235,10 @@ export class Game extends GameContext {
                     
                     /* spritet voivat vaihtaa tietoa pelaajan olinpaikasta */
                     /*			if (sprite.pelaaja_x != -1 && sprite2->pelaaja_x == -1)
-                             {
-                                sprite2->pelaaja_x = sprite.pelaaja_x + rand()%30 - rand()%30;
-                                sprite.pelaaja_x = -1;
-                             } */
+                     {
+                     sprite2->pelaaja_x = sprite.pelaaja_x + rand()%30 - rand()%30;
+                     sprite.pelaaja_x = -1;
+                     } */
                     
                     if (sprite.isEnemy() != sprite2.isEnemy() && sprite.parent != sprite2) {
                         if (sprite2.proto.type != ESpriteType.TYYPPI_TAUSTA &&
@@ -1438,8 +1408,8 @@ export class Game extends GameContext {
             if (future.b >= 0) { //If sprite is falling
                 if (sprite.jumpTimer > 0) {
                     if (sprite.jumpTimer >= 90 + 10) {
-                        // 					PK_Play_Sound(tomahdys_aani,30,(int)future.x, (int)sprite_y,
-                        // 				                  int(25050-sprite.weight*3000),true);
+                        this.playSound(this.stuff.getSound(LAND_SOUND_CKEY),
+                            0.3, future.x, future.y, (25050 - sprite.weight * 3000), true);
                         
                         // Janne
                         // Game::Particles->new_particle(	PARTICLE_DUST_CLOUDS,sprite_x+rand()%5-rand()%5-10,sprite_ala+rand()%3-rand()%3,
@@ -1518,10 +1488,10 @@ export class Game extends GameContext {
         
         // Source comment:
         /*
-               sprite.weight = sprite.tyyppi->paino;
-           
-               if (sprite.energy < 1 && sprite.weight == 0)
-                  sprite.weight = 1;*/
+         sprite.weight = sprite.tyyppi->paino;
+         
+         if (sprite.energy < 1 && sprite.weight == 0)
+         sprite.weight = 1;*/
         
         if (sprite.jumpTimer < 0)
             sprite.bottomIsBarrier = false;
@@ -2566,7 +2536,8 @@ export class Game extends GameContext {
                     block.left + (BLOCK_SIZE / 2), // (32 -> 16)
                     block.top + Math.floor(BLOCK_SIZE / 3.2),// (32 -> 10)
                     0);
-                //PK_Play_Sound(avaa_lukko_aani,100, (int)future.x, (int)sprite_y, SOUND_SAMPLERATE, false);
+                
+                this.playSound(this.stuff.getSound(LOCK_OPEN_SOUND_CKEY), 1, future.x, future.y);
             }
             
             /**********************************************************************/
@@ -2640,7 +2611,8 @@ export class Game extends GameContext {
                             if (block.code === EBlockPrototype.BLOCK_SWITCH1 && this.switchTimer1 === 0) {
                                 this._swichTimer1 = KYTKIN_ALOITUSARVO;
                                 this._kytkin_tarina = 64;
-                                //PK_Play_Sound(kytkin_aani, 100, (int)future.x, (int)sprite_y, SOUND_SAMPLERATE, false);
+                                
+                                this.playSound(this.stuff.getSound(SWITCH_SOUND_CKEY), 1, future.x, future.y);
                                 
                                 Log.d(`[Game] Switch 1 activated`);
                             }
@@ -2648,7 +2620,8 @@ export class Game extends GameContext {
                             if (block.code === EBlockPrototype.BLOCK_SWITCH2 && this.switchTimer2 === 0) {
                                 this._swichTimer2 = KYTKIN_ALOITUSARVO;
                                 this._kytkin_tarina = 64;
-                                //PK_Play_Sound(kytkin_aani, 100, (int)future.x, (int)sprite_y, SOUND_SAMPLERATE, false);
+                                
+                                this.playSound(this.stuff.getSound(SWITCH_SOUND_CKEY), 1, future.x, future.y);
                                 
                                 Log.d(`[Game] Switch 2 activated`);
                             }
@@ -2656,7 +2629,8 @@ export class Game extends GameContext {
                             if (block.code === EBlockPrototype.BLOCK_SWITCH3 && this.switchTimer3 === 0) {
                                 this._swichTimer3 = KYTKIN_ALOITUSARVO;
                                 this._kytkin_tarina = 64;
-                                //PK_Play_Sound(kytkin_aani, 100, (int)future.x, (int)sprite_y, SOUND_SAMPLERATE, false);
+                                
+                                this.playSound(this.stuff.getSound(SWITCH_SOUND_CKEY), 1, future.x, future.y);
                                 
                                 Log.d(`[Game] Switch 3 activated`);
                             }
@@ -2755,8 +2729,7 @@ export class Game extends GameContext {
      * SDL: PK_Draw_InGame_BG (1/2).
      */
     private addBackground(): void {
-        const texture = this.textureCache.getTexture(TEXTURE_ID_BGIMAGE);
-        this._bgImage = new DwTilingSprite(texture, this.device.screenWidth * 4, this.device.screenHeight * 4);
+        this._bgImage = new DwTilingSprite(this._bgTexture, this.device.screenWidth * 4, this.device.screenHeight * 4);
         this.composition.setBgImage(this._bgImage);
         
         this.updateBackground();
@@ -2792,28 +2765,6 @@ export class Game extends GameContext {
         this._bgImage.y += this.cameraY;
     }
     
-    private playSpriteSound(sprite: Sprite, soundIndex: int, intensity): void {
-        this.playSound(sprite.proto.getSound(soundIndex), intensity, Math.floor(sprite.x), Math.floor(sprite.y),
-            sprite.proto.soundFreq, sprite.proto.soundRandomFreq);
-    }
-    
-    private playMenuSound(sound: PkSound, intensity): void {
-        if (sound == null) {
-            Log.w(new Error(`The sound to play was not found.`));
-            return;
-        }
-        
-        sound.play();
-    }
-    
-    private playSound(sound: PkSound, intensity, x, y, freq, randomFreq): void {
-        if (sound == null) {
-            Log.w(new Error(`The sound to play was not found.`));
-            return;
-        }
-        
-        sound.play();
-    }
     
     private teleport(src: Sprite, sprite: Sprite): boolean {
         const destinations: Sprite[] = [];

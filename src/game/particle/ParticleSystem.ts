@@ -2,7 +2,7 @@ import { GameContext } from '@game/game/GameContext';
 import { Particle } from '@game/particle/Particle';
 import { ParticleContext } from '@game/particle/ParticleContext';
 import { Log } from '@ng/support/log/LoggerImpl';
-import { PkImage } from '@ng/types/PkImage';
+import { PkBaseTexture } from '@ng/types/image/PkBaseTexture';
 import { STUFF_CKEY } from '@sp/constants';
 import { int, rand } from '../support/types';
 
@@ -62,9 +62,9 @@ export class ParticleSystem implements ParticleContext {
             }
         }
         
-        if (++this._debug_report == 300) {
+        if (++this._debug_report == 60) {
             this._debug_report = 0;
-            Log.d('[ParticleSystem] Active particles: ' + (this.Particles.length + this.BGParticles.length));
+            Log.fast('Active particles', (this.Particles.length + this.BGParticles.length));
         }
     }
     
@@ -157,7 +157,7 @@ export class ParticleSystem implements ParticleContext {
     //     }
     // }
     
-    public get stuffSheet(): PkImage {
-        return this._context.stuff.getImageByKey(STUFF_CKEY);
+    public get stuffSheet(): PkBaseTexture {
+        return this._context.stuff.getBitmap(STUFF_CKEY);
     }
 }

@@ -1,7 +1,8 @@
 import { EDestructionType } from '@game/enum/EDestructionType';
-import { uint, rand, int } from '../support/types';
+import { SPLASH_SOUND_CKEY, SOUND_SAMPLERATE } from '@sp/constants';
 import { GameContext } from '../game/GameContext';
 import { EParticle } from '../particle/Particle';
+import { uint, rand, int } from '../support/types';
 
 export class Effects {
     
@@ -84,8 +85,7 @@ export class Effects {
                 (rand() % 5 - rand() % 5) / 4.0, (rand() % 2 - rand() % 7) / 3.0,
                 rand() % 50 + 40, 0.025, color);//0.015
         
-        // TODO
-        // PK_Play_Sound(loiskahdus_aani, 100, x, y, SOUND_SAMPLERATE, true);
+        ctx.playSound(ctx.stuff.getSound(SPLASH_SOUND_CKEY), 1, x, y, SOUND_SAMPLERATE, true);
     }
     
     public static explosion(ctx: GameContext, x: uint, y: uint, color: uint): void {

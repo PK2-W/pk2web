@@ -61,6 +61,8 @@ export interface Logger {
      */
     dg(...lines: any[][]): void;
     
+    fast(key: string, msg: string | number): void;
+    
     /**
      * Determina si el nivel establecido en el logger es DEBUG o inferior.
      */

@@ -3,9 +3,9 @@ import { BlockCollider } from '@game/tile/BlockCollider';
 import { BLOCK_SIZE } from '@game/tile/BlockConstants';
 import { BlockContext } from '@game/tile/BlockContext';
 import { BlockPrototype, TBlockProtoCode } from '@game/tile/BlockPrototype';
-import { DwObjectBase } from '@ng/drawable/object/DwObjectBase';
-import { DwFactory } from '@ng/drawable/skeleton/DwFactory';
-import { DwSprite } from '@ng/drawable/skeleton/DwSprite';
+import { Dw } from '@ng/drawable/dw/Dw';
+import { DwSprite } from '@ng/drawable/dw/DwSprite';
+import { DwObjectBase } from '@ng/drawable/dwo/DwObjectBase';
 
 export class Block extends DwObjectBase<DwSprite> {
     private readonly _context: BlockContext;
@@ -32,7 +32,7 @@ export class Block extends DwObjectBase<DwSprite> {
     
     
     public constructor(context: BlockContext, proto: BlockPrototype, i: number, j: number, textureId: string) {
-        super(DwFactory.new.sprite());
+        super(new DwSprite());
         
         this._context = context;
         this._proto = proto;
@@ -42,6 +42,7 @@ export class Block extends DwObjectBase<DwSprite> {
         this._j = j;
         this._xOffset = 0;
         this._yOffset = 0;
+        
         
         this.relayout();
         
@@ -117,11 +118,12 @@ export class Block extends DwObjectBase<DwSprite> {
     //private tmpSpr = DwFactory.new.sprite();
     public relayout(): void {
         //this._drawable.clear();
-        const texture = this._context.textureCache.getTexture(this._textureId, this._proto.getTextureArea(this._textureOffset));
+        
+        const texture = this._proto.texture.base.getTexture(this._proto.getTextureArea(this._textureOffset));
         this._drawable.setTexture(texture);
         //this._drawable.add(this.tmpSpr);
         
-        // Debug
+        // // Debug
         // const graphics = new PIXI.Graphics();
         // if (this.tausta) {
         //     graphics.lineStyle(1, 0xa8a8a8, 0.6);
@@ -130,21 +132,24 @@ export class Block extends DwObjectBase<DwSprite> {
         //     graphics.lineStyle(1, 0x1010ff, 0.6);
         //     graphics.drawRect(1, 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
         // }
-        // this._drawable.addChild(graphics);
-        //
+        // this._drawable.pixi.addChild(graphics);
+        
         // let text = new PIXI.Text(this.code, { fontFamily: 'Arial', fontSize: 10, fill: 0xff1010, align: 'left' });
         // text.x = 5;
         // text.y = 5;
         // this._drawable.addChild(text);
         
         // setTimeout(() => {
-        //     this._drawable.cacheAsBitmap = true;
-        // }, 1500);
+        //     //     this._drawable.cacheAsBitmap = true;
+        //     if (this.x > 200 && this.x < 250 && this.y > 6970 && this.y < 7000) {
+        //         debugger
+        //     }
+        // }, 6000);
     }
     
     public setTextureOffset(offset: uint): void {
         this._textureOffset = offset;
-        // this.relayout();
+        this.relayout();
     }
     
     ///
@@ -178,7 +183,17 @@ export class Block extends DwObjectBase<DwSprite> {
         };
     }
     
+    public getDrawable(): Dw<PIXI.DisplayObject> {
+        //const graphics = new DwCanvas();
+        // this._drawable.beginFill(0xbf0FF0);
+        // this._drawable.drawRect(this.i * 32, this.j * 32, 30, 30);
+        return this._drawable;
+    }
     
+    public destroy() {
+        this.dw.destroy();
+        
+    }
 }
 
 /**
