@@ -239,6 +239,14 @@ export abstract class PkScreen<T extends PkUIContext = PkUIContext> extends PkUI
         // Get ordered list of focusable elements
         const list = [...this].filter(cmp => cmp.canBeFocused());
         
+        // If there aren't focusable elements, no element can have the focus currently
+        if (list.length === 0) {
+            if (this._focusedComponent == null) {
+                this.blur();
+            }
+            return;
+        }
+        
         if (this._focusedComponent == null) {
             list[0].focus();
         } else {
@@ -258,7 +266,7 @@ export abstract class PkScreen<T extends PkUIContext = PkUIContext> extends PkUI
     protected focusNext() {
         const list = [...this].filter(cmp => cmp.canBeFocused());
         
-        // If there aren't focusable elements, any element can have the focus currently
+        // If there aren't focusable elements, no element can have the focus currently
         if (list.length === 0) {
             if (this._focusedComponent == null) {
                 this.blur();
