@@ -13,6 +13,7 @@ export class GameScreen extends Screen {
     public constructor(context) {
         super(context);
         this._uiGame = new UIGame(context).addTo(this);
+        this._uiGame.setFocusable();
         
         this.propagatePointerEvents = false;
     }
