@@ -356,8 +356,8 @@ export class BlockManager {
         }
         
         // Add to the scene;
-        // Blocks are added as not visible to help the initial culling
-        //    block.renderable = false;
+        // (Blocks are added not visible to help the initial culling)
+        block.renderable = false;
         this.ctx.composition.addBgBlock(block);
     }
     
@@ -395,9 +395,8 @@ export class BlockManager {
         }
         
         // Add to the scene;
-        // Blocks are added as not visible to help the initial culling
-        //   block.renderable = false;
-        // Add to the scene
+        // (Blocks are added not visible to help the initial culling)
+        block.renderable = false;
         this.ctx.composition.addFgBlock(block);
     }
     
@@ -687,7 +686,6 @@ export class BlockManager {
     }
     
     public updateCulling(): void {
-        return;
         if (this._prevCulling == null ||
             this.ctx.cameraX < this._prevCulling.ax ||
             this.ctx.cameraY < this._prevCulling.ay ||
