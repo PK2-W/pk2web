@@ -68,11 +68,4 @@ export abstract class UIText extends PkUIComponent<PekkaContext> {
             ? this.context.tx.get(this.text) || this.text.toLowerCase()
             : this.text.toLowerCase();
     }
-    
-    /**
-     * Returns calculated width, in pixels, taken by this text component.
-     */
-    public getWidth(): number {
-        return this._font.charWidth * this.text.length;
-    }
 }
