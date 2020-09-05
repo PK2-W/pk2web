@@ -29,7 +29,7 @@ export class PkFontHolder extends EventEmitter implements PkFont {
     /** @inheritDoc */
     public writeText(text: string, target?: DwContainer, x?: number, y?: number): DwContainer {
         this._fontRequired();
-        return this._font.writeText(text, target);
+        return this._font.writeText(text, target, x, y);
     }
     
     /**
