@@ -238,8 +238,8 @@ export class Game extends GameContext implements PkTickable {
      * This is the game loop.<br>
      * Repeats with each game tick to update each game element status/position according to its characteristics.<br>
      * SDL: PK_MainScreen_InGame
-     * <br><br>
-     * Implemented from {@link PkTickable#tick}.
+     *
+     * @see PkTickable#tick
      */
     public tick(delta: number, time: number): void {
         
@@ -252,7 +252,7 @@ export class Game extends GameContext implements PkTickable {
                 this._sprites.updateCulling();
                 this._updateSprites();
             }
-            // PK_Fadetext_Update();
+            this._updateOverlays();
         }
         
         // INI	PK_Draw_InGame();
@@ -260,10 +260,7 @@ export class Game extends GameContext implements PkTickable {
         //let luku: str[15];
         // char luku[15];
         // int vali = 20;
-        //
-        // if (!skip_frame){
         
-        // ~ PK_Draw_InGame_BG()
         this._updateBackground();
         
         // TODO    if (settings.tausta_spritet)
@@ -286,12 +283,14 @@ export class Game extends GameContext implements PkTickable {
         //
         //     if (settings.nayta_tavarat)
         //         PK_Draw_InGame_Lower_Menu();
-        //
-        //     PK_Fadetext_Draw();
-        //
-        //     PK_Draw_InGame_UI();
-        this._updateOverlays();
-        //
+        
+        // -> PK_Draw_InGame_UI();
+        //    - Energy    OK
+        //    - Invisible ??
+        //    - Score     OK
+        //    - Ammo      TODO
+        //    - Info      OK
+        
         //     if (draw_dubug_info)
         //         PK_Draw_InGame_DebugInfo();
         //     else {
@@ -309,10 +308,10 @@ export class Game extends GameContext implements PkTickable {
         //             PisteDraw2_Font_Write(fontti1, luku, 570 + vali, 48);
         //         }
         //     }
-        //
+        
         //     if (paused)
         //         PisteDraw2_Font_Write(fontti2,tekstit->Hae_Teksti(PK_txt.game_paused),screen_width/2-82,screen_height/2-9);
-        //
+        
         //     if (jakso_lapaisty)
         //         PK_Wavetext_Draw(tekstit->Hae_Teksti(PK_txt.game_clear),fontti2,screen_width/2-120,screen_height/2-9);
         //     else
@@ -326,9 +325,7 @@ export class Game extends GameContext implements PkTickable {
         //         PK_Wavetext_Draw(tekstit->Hae_Teksti(PK_txt.game_tryagain),fontti2,screen_width/2-75,screen_height/2-9+10);
         //     }
         // }
-        //
-        // if (skip_frame) Engine->ignore_frame();
-        //
+        
         // if (doublespeed) skip_frame = !skip_frame;
         // else skip_frame = false;
         
@@ -2816,7 +2813,7 @@ export class Game extends GameContext implements PkTickable {
     }
     
     /**
-     * SDL: ~PK_Fadetext_New
+     * SDL: ~PK_Fadetext_New (in game)
      *
      * @param text
      * @param font
@@ -2832,7 +2829,7 @@ export class Game extends GameContext implements PkTickable {
     }
     
     /**
-     *
+     *  SDL: ~PK_Fadetext_Update (in game)
      */
     private _updateOverlays(): void {
         this._flies.forEach(fly => {

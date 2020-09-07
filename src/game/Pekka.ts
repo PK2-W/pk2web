@@ -326,7 +326,6 @@ export class Pekka implements PkTickable, PekkaContext {
     // GRAPHICS
     
     private doublespeed: boolean = false;
-    private skip_frame: boolean = false;
     
     // Menus
     private menu_nyt: int = MENU.MENU_MAIN;
@@ -1466,7 +1465,6 @@ export class Pekka implements PkTickable, PekkaContext {
         
         // static bool wasPressed = false;
         
-        let skipped: boolean = !this.skip_frame && this.doublespeed; // If is in double speed and don't skip this frame, so the last frame was skipped, and it wasn't drawn
         // if (PisteInput_Keydown(PI_ESCAPE) && key_delay === 0 && !skipped) { //Don't activate menu whith a not drawn screen
         //     if (test_level)
         //         PK_Fade_Quit();
