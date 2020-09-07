@@ -1428,8 +1428,8 @@ export class Sprite extends DwObjectBase<DwSprite> {
         return this._x;
     }
     public set x(v: number) {
-        this._x = v;
-        this._dw.x = v;
+        this._x = ndecs(v, 15);
+        this._dw.x = this._x;
     }
     
     /** @deprecated use initialX */
@@ -1458,22 +1458,22 @@ export class Sprite extends DwObjectBase<DwSprite> {
         return this._y;
     }
     public set y(v: number) {
-        this._y = v;
-        this._dw.y = v;
+        this._y = ndecs(v, 15);
+        this._dw.y = this._y;
     }
     
     public get a(): number {
         return this._a;
     }
     public set a(v: number) {
-        this._a = v;
+        this._a = ndecs(v, 15);
     }
     
     public get b(): number {
         return this._b;
     }
     public set b(v: number) {
-        this._b = v;
+        this._b = ndecs(v, 15);
     }
     
     public get top(): number {

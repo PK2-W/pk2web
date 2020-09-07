@@ -30,7 +30,7 @@ export function minmax(n: number, min: number, max: number): number {
 }
 
 export function ndecs(n: number, ndecs: number = 2) {
-    return Math.round(n / Math.pow(10, ndecs)) * Math.pow(10, ndecs);
+    return Math.round(n * Math.pow(10, ndecs)) / Math.pow(10, ndecs);
 }
 
 export function ifnul<T>(nullable: T | null, replacement: T = null): T {
