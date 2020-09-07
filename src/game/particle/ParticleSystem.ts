@@ -72,7 +72,7 @@ export class ParticleSystem implements ParticleContext {
     public new_particle(type: int, x: number, y: number, a: number, b: number, time: int, weight: number, color: int): void {
         const particle = new Particle(this, type, x, y, a, b, rand() % 63, time, weight, color);
         this.Particles.push(particle);
-        this._context.composition.addBgParticle(particle._drawable);
+        this._context.composition.addBgParticle(particle._dw);
     }
     
     public newParticle(type: int, x: number, y: number, a: number, b: number, time: int, weight: number, color: int): void {

@@ -94,18 +94,18 @@ export abstract class Particle extends DwObjectBase<DwSprite> {
     private get x() { return this._x; }
     private set x(x: number) {
         this._x = x;
-        this._drawable.x = x;
+        this._dw.x = x;
     }
     private get y() { return this._y; }
     private set y(y: number) {
         this._y = y;
-        this._drawable.y = y;
+        this._dw.y = y;
     }
     
     private get alpha() { return this._alpha; }
     private set alpha(alpha: number) {
         this._alpha = alpha;
-        this._drawable.alpha = alpha / 100;
+        this._dw.alpha = alpha / 100;
     }
     
     // public draw(): void {

@@ -23,16 +23,16 @@ export class GameComposition extends DwObjectBase<DwContainer> {
         // It's born not renderable
         this.dw.renderable = false;
         
-        this._lyBgImage = new DwContainer().addTo(this._drawable);
-        this._lyBgSprites = new DwContainer().addTo(this._drawable);
-        this._lyBgParticles = new DwContainer().addTo(this._drawable);
-        this._lyBgBlocks = new DwContainer().addTo(this._drawable);
+        this._lyBgImage = new DwContainer().addTo(this._dw);
+        this._lyBgSprites = new DwContainer().addTo(this._dw);
+        this._lyBgParticles = new DwContainer().addTo(this._dw);
+        this._lyBgBlocks = new DwContainer().addTo(this._dw);
         
-        this._lyFgSprites = new DwContainer().addTo(this._drawable);
-        this._lyFgParticles = new DwContainer().addTo(this._drawable);
-        this._lyFgBlocks = new DwContainer().addTo(this._drawable);
+        this._lyFgSprites = new DwContainer().addTo(this._dw);
+        this._lyFgParticles = new DwContainer().addTo(this._dw);
+        this._lyFgBlocks = new DwContainer().addTo(this._dw);
         
-        this._lyOverlay = new DwContainer().addTo(this._drawable);
+        this._lyOverlay = new DwContainer().addTo(this._dw);
     }
     
     public show(): void {

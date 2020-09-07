@@ -24,9 +24,9 @@ export class Fly extends DwObjectBase<DwContainer> {
         this._translatable = translatable;
         this._ticks = ticks;
         
-        this._drawable.setPosition(x, y);
+        this._dw.setPosition(x, y);
         
-        this._font.writeText(this._text, this._drawable);
+        this._font.writeText(this._text, this._dw);
     }
     
     
@@ -46,14 +46,14 @@ export class Fly extends DwObjectBase<DwContainer> {
             this._ticks--;
             
             if (this._ticks <= 50) {
-                this._drawable.alpha = this._ticks * 2 / 100;
-                this._drawable.y -= 0.4 * this._ticks * 2 / 100;
+                this._dw.alpha = this._ticks * 2 / 100;
+                this._dw.y -= 0.4 * this._ticks * 2 / 100;
             } else {
-                this._drawable.y -= 0.4;
+                this._dw.y -= 0.4;
             }
             if (this.alpha === 0) {
                 // TODO: Replace with destroy
-                this._drawable.parent.remove(this._drawable);
+                this._dw.parent.remove(this._dw);
             }
         }
     }

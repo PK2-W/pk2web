@@ -231,7 +231,7 @@ export class Sprite extends DwObjectBase<DwSprite> {
             //this._drawable.y = -this.proto.height / 2;
             //this._drawable.clear();
             //this._drawable.add(this._drawable);
-            this._drawable.setAnchor({ x: 0.5, y: 0.5 });
+            this._dw.setAnchor({ x: 0.5, y: 0.5 });
         }
     }
     
@@ -251,8 +251,8 @@ export class Sprite extends DwObjectBase<DwSprite> {
         const texture = this.proto.getFrame(frame);
         // if (texture == null) {
         //     console.debug(`Current frame texture for sprite ${ this.__iid__ } is empty.`);
-        if (this._drawable.texture !== texture) {
-            this._drawable.texture = texture;
+        if (this._dw.texture !== texture) {
+            this._dw.texture = texture;
         }
         
         if (this.proto.shakes) {
@@ -261,7 +261,7 @@ export class Sprite extends DwObjectBase<DwSprite> {
         }
         
         if (this.flipX) {
-            this._drawable.scale.x = -1;
+            this._dw.scale.x = -1;
             //this._drawable.anchor.x = 1;
             if (!this._flip_y) {
                 // PisteDraw2_Image_Clip(tyyppi->framet_peilikuva[frame], x - l - 1, y - h);
@@ -269,7 +269,7 @@ export class Sprite extends DwObjectBase<DwSprite> {
                 // PisteDraw2_Image_Clip(tyyppi->framet_peilikuva[frame], x - l - 1, y - h, false, true);
             }
         } else {
-            this._drawable.scale.x = 1;
+            this._dw.scale.x = 1;
             //this._drawable.anchor.x = 0;
             if (!this._flip_y) {
                 // PisteDraw2_Image_Clip(tyyppi->framet[frame], x - l - 1, y - h);
@@ -278,7 +278,7 @@ export class Sprite extends DwObjectBase<DwSprite> {
             }
         }
         
-        this._drawable.renderable = true;
+        this._dw.renderable = true;
     }
     
     public causeDamage(level: number, type: EDamageType) {
@@ -355,7 +355,7 @@ export class Sprite extends DwObjectBase<DwSprite> {
             frame = this.proto.frameCount;
         }
         
-        this._drawable.renderable = false;
+        this._dw.renderable = false;
         
         return frame;
     }
@@ -1429,7 +1429,7 @@ export class Sprite extends DwObjectBase<DwSprite> {
     }
     public set x(v: number) {
         this._x = v;
-        this._drawable.x = v;
+        this._dw.x = v;
     }
     
     /** @deprecated use initialX */
@@ -1459,7 +1459,7 @@ export class Sprite extends DwObjectBase<DwSprite> {
     }
     public set y(v: number) {
         this._y = v;
-        this._drawable.y = v;
+        this._dw.y = v;
     }
     
     public get a(): number {

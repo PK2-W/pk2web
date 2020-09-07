@@ -106,9 +106,8 @@ export class IntroScreen extends Screen {
         // 	PisteDraw2_Image_CutClip(kuva_tausta, 280, 80, 280, 80, 640, 480);
         // const island = clipTSprite(this._bgBaseTexture, 280, 80, 640, 480);
         const spr: DwSprite = new DwSprite()
-            .setPosition(280, 80)
-            .setTexture(this._bgBaseTexture);
-        this._drawable.add(spr);
+            .setTexture(this._bgBaseTexture)
+            .addTo(this._dw, 280, 80);
         
         // Authors
         this.createText(this.tx.get(TX.INTRO_A_GAME_BY), font, 120, 200, AUTHORS_INI, AUTHORS_END);

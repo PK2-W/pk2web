@@ -24,7 +24,7 @@ export class UIMenuSquare extends PkUIComponent implements PkTickable {
         this._palette = palette;
         
         this._canvas = new DwCanvas();
-        this._drawable.add(this._canvas);
+        this._dw.add(this._canvas);
         this.setPosition(x1, y1);
         
         x2 = x2 - x1;

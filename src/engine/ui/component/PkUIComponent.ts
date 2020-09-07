@@ -26,10 +26,10 @@ export abstract class PkUIComponent<T extends PkUIContext = PkUIContext>
         this._focusable = false;
         
         // Mouse events
-        this._drawable.on(Dw.EV_POINTEROVER, () => this.emit(PkUIComponent.EV_POINTEROVER));
-        this._drawable.on(Dw.EV_POINTERMOVE, () => this.emit(PkUIComponent.EV_POINTERMOVE));
-        this._drawable.on(Dw.EV_POINTEROUT, () => this.emit(PkUIComponent.EV_POINTEROUT));
-        this._drawable.on(Dw.EV_POINTERTAP, () => this.emit(PkUIComponent.EV_POINTERTAP));
+        this._dw.on(Dw.EV_POINTEROVER, () => this.emit(PkUIComponent.EV_POINTEROVER));
+        this._dw.on(Dw.EV_POINTERMOVE, () => this.emit(PkUIComponent.EV_POINTERMOVE));
+        this._dw.on(Dw.EV_POINTEROUT, () => this.emit(PkUIComponent.EV_POINTEROUT));
+        this._dw.on(Dw.EV_POINTERTAP, () => this.emit(PkUIComponent.EV_POINTERTAP));
     }
     
     /**
@@ -145,13 +145,31 @@ export abstract class PkUIComponent<T extends PkUIContext = PkUIContext>
         return this._parent;
     }
     
-    /** Returns the x-coordinate of the current position of the component. */
-    public get x(): number { return this._drawable.x; }
-    public set x(value: number) { this._drawable.x = value; }
+    /**
+     * X coordinate of the component.
+     */
+    public get x(): number { return this._dw.x; }
+    public set x(x: number) { this.setX(x); }
+    /**
+     * Sets the {@link x} property.
+     */
+    public setX(x: number): this {
+        this._dw.x = x;
+        return this;
+    }
     
-    /** Returns the y-coordinate of the current position of the component. */
-    public get y(): number { return this._drawable.y; }
-    public set y(value: number) { this._drawable.y = value; }
+    /**
+     * Y coordinate of the component.
+     */
+    public get y(): number { return this._dw.y; }
+    public set y(y: number) { this.setY(y); }
+    /**
+     * Sets the {@link y} property.
+     */
+    public setY(y: number): this {
+        this._dw.y = y;
+        return this;
+    }
     
     public setPosition(x: number, y: number): this {
         this.x = x;
@@ -159,23 +177,23 @@ export abstract class PkUIComponent<T extends PkUIContext = PkUIContext>
         return this;
     }
     
-    public get visible(): boolean { return this.dw.visible; }
+    public get visible(): boolean { return this._dw.visible; }
     public set visible(visible: boolean) { this.setVisible(visible); }
     /** Sets the {@link visible} property. */
     public setVisible(visible: boolean): this {
-        this.dw.visible = visible === true;
+        this._dw.visible = visible === true;
         return this;
     }
     
     public get worldVisible(): boolean {
-        return this.dw.pixi.worldVisible;
+        return this._dw.pixi.worldVisible;
     }
     
-    public get renderable(): boolean { return this.dw.renderable; }
+    public get renderable(): boolean { return this._dw.renderable; }
     public set renderable(renderable: boolean) { this.setRenderable(renderable); }
     /** Sets the {@link renderable} property. */
     public setRenderable(renderable: boolean): this {
-        this.dw.renderable = renderable;
+        this._dw.renderable = renderable;
         return this;
     }
     
@@ -195,18 +213,18 @@ export abstract class PkUIComponent<T extends PkUIContext = PkUIContext>
         return this.focusable && this.worldVisible && this.renderable && this.alpha > 0 && this.globalAlpha > 0;
     }
     
-    public get alpha(): number { return this._drawable.alpha; }
-    public set alpha(value: number) { this._drawable.alpha = minmax(value, 0, 1); }
+    public get alpha(): number { return this._dw.alpha; }
+    public set alpha(value: number) { this._dw.alpha = minmax(value, 0, 1); }
     public setAlpha(value: number): this {
         this.alpha = value;
         return this;
     }
     
-    public get globalAlpha(): number { return this.dw.globalAlpha; }
+    public get globalAlpha(): number { return this._dw.globalAlpha; }
     public set globalAlpha(alpha: number) { this.setGlobalAlpha(alpha); }
     /** Sets the {@link globalAlpha} property. */
     public setGlobalAlpha(alpha: number): this {
-        this.dw.globalAlpha = minmax(alpha, 0, 1);
+        this._dw.globalAlpha = minmax(alpha, 0, 1);
         return this;
     }
     

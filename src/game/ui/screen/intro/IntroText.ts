@@ -63,7 +63,7 @@ export class IntroText extends UIText {
     }
     
     public arrange() {
-        this._drawable.clear();
-        this.font.writeText(this.text, this._drawable);
+        this._dw.clear();
+        this.font.writeText(this.text, this._dw);
     }
 }

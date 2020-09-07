@@ -63,8 +63,8 @@ export class MenuScreen extends Screen {
         // Load and prepare background
         this._bgImage = await PkAssetTk.getBitmap(pathJoin(RESOURCES_PATH, 'gfx/menu.bmp'));
         this._bgDrawable = new DwSprite()
-            .setTexture(this._bgImage.getTexture());
-        this._drawable.add(this._bgDrawable);
+            .setTexture(this._bgImage.getTexture())
+            .addTo(this._dw);
         
         // Prepare square
         this._square = new UIMenuSquare(this.context, 147, 195, 640 - 180, 415,

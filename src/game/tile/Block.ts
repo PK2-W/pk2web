@@ -85,19 +85,19 @@ export class Block extends DwObjectBase<DwSprite> {
         this.dw.y = this.y;
     }
     
-    public get visible(): boolean { return this.dw.visible; }
+    public get visible(): boolean { return this._dw.visible; }
     public set visible(visible: boolean) { this.setVisible(visible); }
     /** Sets the {@link visible} property. */
     public setVisible(visible: boolean): this {
-        this.dw.visible = visible === true;
+        this._dw.visible = visible === true;
         return this;
     }
     
-    public get renderable(): boolean { return this._drawable.renderable; }
+    public get renderable(): boolean { return this._dw.renderable; }
     public set renderable(renderable: boolean) { this.setRenderable(renderable); }
     /** Sets the {@link renderable} property. */
     public setRenderable(renderable: boolean): this {
-        this.dw.renderable = renderable === true;
+        this._dw.renderable = renderable === true;
         return this;
     }
     
@@ -120,7 +120,7 @@ export class Block extends DwObjectBase<DwSprite> {
         //this._drawable.clear();
         
         const texture = this._proto.texture.base.getTexture(this._proto.getTextureArea(this._textureOffset));
-        this._drawable.setTexture(texture);
+        this._dw.setTexture(texture);
         //this._drawable.add(this.tmpSpr);
         
         // // Debug
@@ -187,11 +187,11 @@ export class Block extends DwObjectBase<DwSprite> {
         //const graphics = new DwCanvas();
         // this._drawable.beginFill(0xbf0FF0);
         // this._drawable.drawRect(this.i * 32, this.j * 32, 30, 30);
-        return this._drawable;
+        return this._dw;
     }
     
     public destroy() {
-        this.dw.destroy();
+        this._dw.destroy();
         
     }
 }

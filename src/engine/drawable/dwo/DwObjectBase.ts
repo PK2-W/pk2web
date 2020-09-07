@@ -3,20 +3,20 @@ import { DwObject } from '@ng/drawable/dwo/DwObject';
 import { EventEmitter } from 'eventemitter3';
 
 export abstract class DwObjectBase<T extends Dw<PIXI.DisplayObject>> extends EventEmitter implements DwObject {
-    protected _drawable: T;
+    protected _dw: T;
     
     protected constructor(drawable: T) {
         super();
         
-        this._drawable = drawable;
+        this._dw = drawable;
     }
     
     protected get dw(): T {
-        return this._drawable;
+        return this._dw;
     }
     
     public getDrawable(): Dw<PIXI.DisplayObject> {
-        return this._drawable;
+        return this._dw;
     }
     
     

@@ -36,7 +36,7 @@ export abstract class PkUIComponentContainer<T extends PkUIContext = PkUIContext
     public add(component: PkUIComponent): this {
         // Add to collection
         this._children.push(component);
-        this._drawable.add(component.getDrawable());
+        this._dw.add(component.getDrawable());
         
         // Notify child
         // @ts-ignore
@@ -49,7 +49,7 @@ export abstract class PkUIComponentContainer<T extends PkUIContext = PkUIContext
         const i = this._children.indexOf(component);
         if (i > -1) {
             this._children.splice(i);
-            this._drawable.remove(component.getDrawable());
+            this._dw.remove(component.getDrawable());
             
             // @ts-ignore
             component._childOf(this);
@@ -61,7 +61,7 @@ export abstract class PkUIComponentContainer<T extends PkUIContext = PkUIContext
     public clean(): this {
         if (this.children > 0) {
             this._children = [];
-            this._drawable.clear();
+            this._dw.clear();
         }
         
         return this;
