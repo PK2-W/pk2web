@@ -267,8 +267,7 @@ export class Game extends GameContext implements PkTickable {
         this._updateBackground();
         
         // TODO    if (settings.tausta_spritet)
-        // ~ PK_Draw_InGame_BGSprites()
-        this.PK_Draw_InGame_BGSprites();
+        this._updateBgSprites();
         
         //     Game::Particles->draw_bg_particles();
         
@@ -277,8 +276,7 @@ export class Game extends GameContext implements PkTickable {
         this._blocks.updateAnimations(1);
         this._blocks.updateCulling();
         
-        // ~ PK_Draw_InGame_Sprites()
-        this.tmpDrawInGameSprites();
+        this._updateFgSprites();
         
         //     //PK_Particles_Draw();
         //     Game::Particles->draw_front_particles();
@@ -524,7 +522,7 @@ export class Game extends GameContext implements PkTickable {
     /**
      * SDL: PK_Draw_InGame_BGSprites.
      */
-    public PK_Draw_InGame_BGSprites() {
+    public _updateBgSprites() {
         let xl, yl, alku_x, alku_y, yk;
         let i: int;
         
@@ -616,7 +614,7 @@ export class Game extends GameContext implements PkTickable {
     /**
      * SDL: PK_Draw_InGame_Sprites.
      */
-    private tmpDrawInGameSprites(): void {
+    private _updateFgSprites(): void {
         // debug_sprites = 0;
         // debug_drawn_sprites = 0;
         let stars: int, sx: int;
