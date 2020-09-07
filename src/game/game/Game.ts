@@ -67,6 +67,12 @@ export class Game extends GameContext implements PkTickable {
      * SRC: avaimia. */
     private _keys: int;
     
+    // Debug info
+    private draw_dubug_info: boolean = false;
+    private debug_sprites: int = 0;
+    private debug_drawn_sprites: int = 0;
+    private debug_active_sprites: int = 0;
+    
     // PK2Kartta* current_map;
     // char map_path[PE_PATH_SIZE];
     //
@@ -120,9 +126,6 @@ export class Game extends GameContext implements PkTickable {
     public constructor(context: PekkaContext, episode: Episode, map: LevelMap) {
         super(context, episode, map);
         
-        // In debug, game is available globally
-        if (Log.isDebug()) window['game'] = this;
-        
         this._sprites = new SpriteManager(this);
         this._gifts = new GiftManager(this);
         this._blocks = new BlockManager(this);
@@ -150,85 +153,79 @@ export class Game extends GameContext implements PkTickable {
         // PND else
         // PND     uusinta = false;
         
-        if (!false/*!episode_started*/) {
-            this._levelCompleted = false;
-            
-            /////  Source: PK_Map_Open --------
-            
-            try {
-                await this._loadBgImage(this.map.fpath, this.map.bgImageFilename);
-            } catch (err) {
-                Log.w(`[Game] The background image for the game could not be loaded`);
-                Log.d(err.message);
-            }
-            
-            // PND	PK_New_Save();
-            
-            if (this.map.version === '1.2' || this.map.version === '1.3') {
-                // TODO try catch
-                await this._sprites.loadPrototypes(this.map, 'rooster island 1');
-            }
-            
-            this._sprites.addMapSprites(this.map);
-            this._sprites.startDirections();
-            
-            this._placePlayer();
-            
-            // 	PkEngine::Particles->load_bg_particles(kartta);
-            
-            // let abb = await PkAssetTk.getArrayBuffer('/pk2w/res/music/song02.xm');
-            // XMPlayer.init();
-            // XMPlayer.load(abb);
-            // XMPlayer.play();
-            
-            // 	if ( strcmp(kartta->musiikki, "") != 0) {
-            // 		char music_path[PE_PATH_SIZE] = "";
-            // 		PK_Load_EpisodeDir(music_path);
-            // 		strcat(music_path, kartta->musiikki);
-            // 		if (PisteSound_StartMusic(music_path) != 0) {
-            //
-            // 			printf("Can't load '%s'. ", music_path);
-            // 			strcpy(music_path, "music/");
-            // 			strcat(music_path, kartta->musiikki);
-            // 			printf("Trying '%s'.\n", music_path);
-            //
-            // 			if (PisteSound_StartMusic(music_path) != 0) {
-            //
-            // 				printf("Can't load '%s'. Trying 'music/song01.xm'.\n", music_path);
-            //
-            // 				if (PisteSound_StartMusic("music/song01.xm") != 0){
-            // 					PK2_error = true;
-            // 					PK2_error_msg = "Can't find song01.xm";
-            // 				}
-            // 			}
-            // 		}
-            // 	}
-            
-            /////  --------
-            
-            // Background image
-            this._addBackground();
-            
-            // Prepare blocks (load textures, generate prototypes and masks)
-            await this._blocks.loadTextures(this.map.fpath, this.map.getBlockTexturesLocation());
-            this._blocks.generatePrototypes();
-            
-            // BG Blocks
-            this._blocks.placeBgBlocks();
-            // FG Blocks
-            this._blocks.placeFgBlocks();
-            
-            this._blocks.calculateEdges();
-            // x->   PK_Fadetext_Init(); //Reset fade text
-            
-            //      Game::Gifts->clean();
-            //    episode_started = true;
-            //      music_volume = settings.music_max_volume;
-            this.entropy.degree = 0;
-            //      item_paneeli_x = -215;
-        } else {
-            // PND  degree = degree_temp;
+        this._levelCompleted = false;
+        
+        /////  Source: PK_Map_Open --------
+        
+        try {
+            await this._loadBgImage(this.map.fpath, this.map.bgImageFilename);
+        } catch (err) {
+            Log.w(`[Game] The background image for the game could not be loaded`);
+            Log.d(err.message);
         }
+        
+        // PND	PK_New_Save();
+        
+        if (this.map.version === '1.2' || this.map.version === '1.3') {
+            await this._sprites.loadPrototypes(this.map, 'rooster island 1');
+        }
+        
+        this._sprites.addMapSprites(this.map);
+        this._sprites.startDirections();
+        
+        this._placePlayer();
+        
+        // 	PkEngine::Particles->load_bg_particles(kartta);
+        
+        // let abb = await PkAssetTk.getArrayBuffer('/pk2w/resources/cky1.mod');
+        // XMPlayer.init();
+        // XMPlayer.load(abb);
+        // XMPlayer.play();
+        
+        // 	if ( strcmp(kartta->musiikki, "") != 0) {
+        // 		char music_path[PE_PATH_SIZE] = "";
+        // 		PK_Load_EpisodeDir(music_path);
+        // 		strcat(music_path, kartta->musiikki);
+        // 		if (PisteSound_StartMusic(music_path) != 0) {
+        //
+        // 			printf("Can't load '%s'. ", music_path);
+        // 			strcpy(music_path, "music/");
+        // 			strcat(music_path, kartta->musiikki);
+        // 			printf("Trying '%s'.\n", music_path);
+        //
+        // 			if (PisteSound_StartMusic(music_path) != 0) {
+        //
+        // 				printf("Can't load '%s'. Trying 'music/song01.xm'.\n", music_path);
+        //
+        // 				if (PisteSound_StartMusic("music/song01.xm") != 0){
+        // 					PK2_error = true;
+        // 					PK2_error_msg = "Can't find song01.xm";
+        // 				}
+        // 			}
+        // 		}
+        // 	}
+        
+        /////  --------
+        
+        // Background image
+        this._addBackground();
+        
+        // Prepare blocks (load textures, generate prototypes and masks)
+        await this._blocks.loadTextures(this.map.fpath, this.map.getBlockTexturesLocation());
+        this._blocks.generatePrototypes();
+        
+        // BG Blocks
+        this._blocks.placeBgBlocks();
+        // FG Blocks
+        this._blocks.placeFgBlocks();
+        
+        this._blocks.calculateEdges();
+        
+        //      Game::Gifts->clean();
+        //    episode_started = true;
+        //      music_volume = settings.music_max_volume;
+        this.entropy.degree = 0;
+        //      item_paneeli_x = -215;
         
         // Start rendering the game composition
         this.composition.show();
@@ -291,22 +288,66 @@ export class Game extends GameContext implements PkTickable {
         //    - Ammo      TODO
         //    - Info      OK
         
-        //     if (draw_dubug_info)
-        //         PK_Draw_InGame_DebugInfo();
-        //     else {
+        //     if (draw_dubug_info){
+        
+        // // vali = PisteDraw2_Font_Write(fontti1,"spriteja: ",10,fy);
+        // // itoa(debug_sprites,lukua,10);
+        // // PisteDraw2_Font_Write(fontti1,lukua,10+vali,fy);
+        // // fy += 10;
+        // //
+        // // vali = PisteDraw2_Font_Write(fontti1,"aktiivisia: ",10,fy);
+        // // itoa(debug_active_sprites,lukua,10);
+        // // PisteDraw2_Font_Write(fontti1,lukua,10+vali,fy);
+        // // fy += 10;
+        // //
+        // // vali = PisteDraw2_Font_Write(fontti1,"piirretty: ",10,fy);
+        // // itoa(debug_drawn_sprites,lukua,10);
+        // // PisteDraw2_Font_Write(fontti1,lukua,10+vali,fy);
+        // // fy += 10;
+        // //
+        // // for (int i=0;i<40;i++){
+        // //     itoa(Game::Sprites->protot[i].indeksi,lukua,10);
+        // //     PisteDraw2_Font_Write(fontti1,lukua,410,10+i*10);
+        // //     PisteDraw2_Font_Write(fontti1,Game::Sprites->protot[i].tiedosto,430,10+i*10);
+        // //     PisteDraw2_Font_Write(fontti1,Game::Sprites->protot[i].bonus_sprite,545,10+i*10);
+        // // }
+        // //
+        // // for (int i=0;i<EPISODI_MAX_LEVELS;i++)
+        // // if (strcmp(jaksot[i].nimi,"")!=0)
+        // //     PisteDraw2_Font_Write(fontti1,jaksot[i].nimi,0,240+i*10);
+        // //
+        // // char dluku[50];
+        // //
+        // // sprintf(dluku, "%.7f", Game::Sprites->player->x); //Player x
+        // // PisteDraw2_Font_Write(fontti1, dluku, 10, 410);
+        // //
+        // // sprintf(dluku, "%.7f", Game::Sprites->player->y); //Player y
+        // // PisteDraw2_Font_Write(fontti1, dluku, 10, 420);
+        //
+        // Log.fast('Player position', `{${ ndecs(this._sprites.player.x, 3) }, ${ ndecs(this._sprites.player.y, 3) } }`);
+        // Log.fast('Player speed', `{${ ndecs(this._sprites.player.a, 3) }, ${ ndecs(this._sprites.player.b, 3) }}`);
+        //
+        // // PisteDraw2_Font_Write(fontti1, seuraava_kartta, 10, 460);
+        //
+        // Log.fast('Hyppy_ajastin', ndecs(this._sprites.player.jumpTimer, 3));
+        //
+        // // char tpolku[PE_PATH_SIZE] = "";
+        // // PK_Load_EpisodeDir(tpolku);
+        // //
+        // // PisteDraw2_Font_Write(fontti1,tpolku,10,470);
+        // //
+        // // itoa(nakymattomyys,lukua,10);
+        // // PisteDraw2_Font_Write(fontti1,lukua,610,470);
+        //
+        // Log.fast('Switch timer 1', this._swichTimer1);
+        // Log.fast('Switch timer 2', this._swichTimer2);
+        // Log.fast('Switch timer 3', this._swichTimer3);
+        
+        //   }  else {
         //         if (dev_mode)
         //             PK_Draw_InGame_DevKeys();
         //         if (test_level)
         //             PisteDraw2_Font_Write(fontti1, "testing level", 0, 480 - 20);
-        //         if (show_fps) {
-        //             if (fps >= 100)
-        //                 vali = PisteDraw2_Font_Write(fontti1, "fps:", 570, 48);
-        //             else
-        //                 vali = PisteDraw2_Font_Write(fontti1, "fps: ", 570, 48);
-        //             fps = Engine->get_fps();
-        //             itoa((int)fps, luku, 10);
-        //             PisteDraw2_Font_Write(fontti1, luku, 570 + vali, 48);
-        //         }
         //     }
         
         //     if (paused)
@@ -325,9 +366,6 @@ export class Game extends GameContext implements PkTickable {
         //         PK_Wavetext_Draw(tekstit->Hae_Teksti(PK_txt.game_tryagain),fontti2,screen_width/2-75,screen_height/2-9+10);
         //     }
         // }
-        
-        // if (doublespeed) skip_frame = !skip_frame;
-        // else skip_frame = false;
         
         // END	PK_Draw_InGame();
         
@@ -519,7 +557,7 @@ export class Game extends GameContext implements PkTickable {
     /**
      * SDL: PK_Draw_InGame_BGSprites.
      */
-    public _updateBgSprites() {
+    private _updateBgSprites() {
         let xl, yl, alku_x, alku_y, yk;
         let i: int;
         
@@ -602,7 +640,7 @@ export class Game extends GameContext implements PkTickable {
                     //     sprite.piilossa = true;
                     // }
                     
-                    //  debug_sprites++;
+                    // debug_sprites++;
                 }
             }
         }
@@ -612,7 +650,6 @@ export class Game extends GameContext implements PkTickable {
      * SDL: PK_Draw_InGame_Sprites.
      */
     private _updateFgSprites(): void {
-        // debug_sprites = 0;
         // debug_drawn_sprites = 0;
         let stars: int, sx: int;
         let star_x: number;
@@ -662,7 +699,7 @@ export class Game extends GameContext implements PkTickable {
                     }
                 }
                 
-                // debug_sprites++;
+                // this.debug_sprites++;
             }
         }
     }

@@ -9,6 +9,7 @@ import { BlockCollider } from '@game/tile/BlockCollider';
 import { BLOCK_SIZE } from '@game/tile/BlockConstants';
 import { DwSprite } from '@ng/drawable/dw/DwSprite';
 import { DwObjectBase } from '@ng/drawable/dwo/DwObjectBase';
+import { ndecs } from '@ng/support/utils';
 import { VAHINKO_AIKA } from '@sp/constants';
 
 /**

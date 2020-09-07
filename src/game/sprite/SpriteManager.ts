@@ -5,7 +5,6 @@ import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, LevelMap } from '@ga
 import { Sprite } from '@game/sprite/Sprite';
 import { SpritePrototype, TSpriteProtoCode, SpritePrototypeLoadError } from '@game/sprite/SpritePrototype';
 import { int, CVect, cvect, rand } from '@game/support/types';
-import { AssetFetchError } from '@ng/error/AssetFetchError';
 import { PkError } from '@ng/error/PkError';
 import { Log } from '@ng/support/log/LoggerImpl';
 import { pathJoin, ifnul, floor } from '@ng/support/utils';
@@ -19,11 +18,13 @@ export class SpriteManager extends EventEmitter {
     /**
      * List of prototypes.<br>
      * List indexes are the same indexes used in sprite matrices to point to the requiered prototype.
+     * SRC: protot
      */
-    private _protot: SpritePrototype[];
-    /** Sprites pool. */
+    private readonly _prototypes: SpritePrototype[];
+    /**
+     * Sprites pool.
+     */
     private _sprites: CVect<Sprite> = cvect(MAX_SPRITES);
-    
     private _taustaspritet: CVect<int> = cvect(MAX_SPRITES);
     
     private _player: Sprite;
@@ -35,7 +36,7 @@ export class SpriteManager extends EventEmitter {
         
         this._context = ctx;
         
-        this._protot = [];
+        this._prototypes = [];
         
         this.clear();
     }
@@ -56,12 +57,11 @@ export class SpriteManager extends EventEmitter {
      * @param name - Name of the sprite prototype to recover.
      */
     public getPrototype(name: string) {
-        for (let proto of this._protot) {
+        for (let proto of this._prototypes) {
             if (proto.name === name) {
                 return proto;
             }
         }
-        
         return null;
     }
     
@@ -71,7 +71,7 @@ export class SpriteManager extends EventEmitter {
      * @param i - Index of the sprite prototype to recover.
      */
     public getPrototypeAt(i: int) {
-        return ifnul(this._protot[i]);
+        return ifnul(this._prototypes[i]);
     }
     
     // private	int  protot_get(char *polku, char *tiedosto);
@@ -137,7 +137,7 @@ export class SpriteManager extends EventEmitter {
                 if (proto != null) {
                     // TODO: Review this procedure
                     proto.assignIndex(this._nextFreeProtoIndex);
-                    this._protot[this._nextFreeProtoIndex] = proto;
+                    this._prototypes[this._nextFreeProtoIndex] = proto;
                 } else {
                     throw new Error(`Couldn't load the sprite prototype for {${ protoName }} from any of the provided locations:\n`
                         + errors.map((e: SpritePrototypeLoadError) => ' · ' + e.cause.message).join('\n'));
@@ -151,7 +151,7 @@ export class SpriteManager extends EventEmitter {
         
         Log.d('[SpriteManager] Loading child prototypes...');
         
-        for (let proto of this._protot) {
+        for (let proto of this._prototypes) {
             await this.loadMorphProtoFor(proto);
             await this.loadBonusProtoFor(proto);
             await this.loadAmmo1ProtoFor(proto);
@@ -194,7 +194,7 @@ export class SpriteManager extends EventEmitter {
                 // Load from file and assign
                 proto.morphProto = await SpritePrototype.loadFromFile(this._context, proto.path, proto.morphProtoName);
                 // Save it
-                this._protot.push(proto.morphProto);
+                this._prototypes.push(proto.morphProto);
             }
         }
     }
@@ -219,7 +219,7 @@ export class SpriteManager extends EventEmitter {
                     debugger
                     console.log('');
                 } // Save it
-                this._protot.push(proto.bonusProto);
+                this._prototypes.push(proto.bonusProto);
             }
         }
     }
@@ -240,7 +240,7 @@ export class SpriteManager extends EventEmitter {
                 // Load from file and assign
                 proto.ammo1Proto = await SpritePrototype.loadFromFile(this._context, proto.path, proto.ammo1ProtoName);
                 // Save it
-                this._protot.push(proto.ammo1Proto);
+                this._prototypes.push(proto.ammo1Proto);
             }
         }
     }
@@ -261,7 +261,7 @@ export class SpriteManager extends EventEmitter {
                 // Load from file and assign
                 proto.ammo2Proto = await SpritePrototype.loadFromFile(this._context, proto.path, proto.ammo2ProtoName);
                 // Save it
-                this._protot.push(proto.ammo2Proto);
+                this._prototypes.push(proto.ammo2Proto);
             }
         }
     }
@@ -543,7 +543,7 @@ export class SpriteManager extends EventEmitter {
                 code = this.ctx.map.getSpriteCode(x, y);
                 
                 if (code != null) {
-                    proto = this._protot[code]; // TODO -> Estoy podría fallar
+                    proto = this._prototypes[code]; // TODO -> Estoy podría fallar
                     if (proto.isKey() && proto.isDestructible()) {
                         keys++;
                     }

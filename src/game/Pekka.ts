@@ -25,7 +25,7 @@ import { Game } from '@game/game/Game';
 import { InputAction } from '@game/InputActions';
 import { LevelMap } from '@game/map/LevelMap';
 import { PekkaContext } from '@game/PekkaContext';
-import { PK2Settings } from '@game/settings/PK2Settings';
+import { PekkaSettings } from '@game/settings/PekkaSettings';
 import { int, CBYTE, uint, str, cvect, CVect } from '@game/support/types';
 import { TX } from '@game/texts';
 import { GameScreen } from '@game/ui/screen/game/GameScreen';
@@ -235,12 +235,6 @@ export class Pekka implements PkTickable, PekkaContext {
     private music_volume: int = 64;
     private music_volume_now: int = 64;
     
-    // Debug info
-    private draw_dubug_info: boolean = false;
-    private debug_sprites: int = 0;
-    private debug_drawn_sprites: int = 0;
-    private debug_active_sprites: int = 0;
-    
     // MUUTA
     //
     private degree_temp: int = 0;
@@ -351,7 +345,7 @@ export class Pekka implements PkTickable, PekkaContext {
     /////////////
     
     // Settings
-    private _settings: PK2Settings;
+    public settings: PekkaSettings;
     
     // Translated texts
     private _tx = i18nSchema;
@@ -496,7 +490,7 @@ export class Pekka implements PkTickable, PekkaContext {
      * SDL: PK_Load_Language
      */
     private async _loadLanguage(): Promise<void> {
-        Log.d('[Pekka] Loading language for "', this._settings.kieli, '"');
+        Log.d('[Pekka] Loading language for "', this.settings.language, '"');
         // 	char tiedosto[PE_PATH_SIZE];
         // 	int i;
         //
@@ -513,8 +507,7 @@ export class Pekka implements PkTickable, PekkaContext {
         // 	if (!tekstit->Read_File(tiedosto))
         // 		return false;
         
-        //  await this.tx.load(`language/${ this._settings.kieli }.txt`);
-        this._language = await PkAssetTk.getParamFile(pathJoin(RESOURCES_PATH, 'language', `${ this._settings.kieli }.txt`));
+        this._language = await PkAssetTk.getParamFile(pathJoin(RESOURCES_PATH, 'language', `${ this.settings.language }.txt`));
         
         await this.loadFonts();
     }
@@ -1439,14 +1432,14 @@ export class Pekka implements PkTickable, PekkaContext {
             update = true;
         
         if (update) {
-            if (this._settings.music_max_volume > 64)
-                this._settings.music_max_volume = 64;
+            if (this.settings.music_max_volume > 64)
+                this.settings.music_max_volume = 64;
             
-            if (this._settings.music_max_volume < 0)
-                this._settings.music_max_volume = 0;
+            if (this.settings.music_max_volume < 0)
+                this.settings.music_max_volume = 0;
             
-            if (this.music_volume > this._settings.music_max_volume)
-                this.music_volume = this._settings.music_max_volume;
+            if (this.music_volume > this.settings.music_max_volume)
+                this.music_volume = this.settings.music_max_volume;
             
             if (this.music_volume_now < this.music_volume)
                 this.music_volume_now++;
@@ -1524,7 +1517,7 @@ export class Pekka implements PkTickable, PekkaContext {
     }
     
     private async quit(ret: int): Promise<void> {
-        await this._settings.save();
+        await this.settings.save();
         // REPL this.PK_Unload();
         this._engine.destroy();
         if (!ret) console.log('Exited correctely\n');
@@ -1611,8 +1604,8 @@ export class Pekka implements PkTickable, PekkaContext {
         Log.l('PK2 Started!');
         
         // Load settings
-        this._settings = await PK2Settings.loadFromClient();
-        Log.dg(['Settings', ...Object.entries(this._settings)]);
+        this.settings = await PekkaSettings.loadFromClient();
+        Log.dg(['Settings', ...Object.entries(this.settings)]);
         
         this._engine = new PkEngine();
         this._engine.setDebug(this.dev_mode);
@@ -1722,8 +1715,15 @@ export class Pekka implements PkTickable, PekkaContext {
         await this._game.start();
         
         const minifn = (delta, time) => {
+            // Schedule next tick
             this._engine.clock.add(minifn.bind(this));
+            
+            // Exec game loop
             this._game.tick(delta, time);
+            // If double_spped setting, call again
+            if (this.settings.double_speed) {
+                this._game.tick(delta, time);
+            }
         };
         
         this._engine.clock.add(minifn.bind(this));

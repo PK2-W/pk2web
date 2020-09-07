@@ -10,6 +10,8 @@ export interface ISettingsView {
     show_goods: boolean;
     show_sprites_bg: boolean;
     
+    double_speed: boolean
+    
     // controls
     control_left: number;
     control_right: number;

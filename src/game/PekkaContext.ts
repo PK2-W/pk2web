@@ -1,4 +1,5 @@
 import { Entropy } from '@game/Entropy';
+import { ISettingsView } from '@game/settings/ISettingsView';
 import { GameTimer } from '@ng/core/GameTimer';
 import { PK2wSound } from '@ng/core/PK2wSound';
 import { PkDevice } from '@ng/core/PkDevice';
@@ -19,6 +20,7 @@ export interface PekkaContext extends PkUIContext {
     readonly font4: PkFont;
     readonly font5: PkFont;
     
+    readonly settings: ISettingsView;
     readonly tx: PkParameters;
     /** @deprecated */
     readonly clock: GameTimer;
