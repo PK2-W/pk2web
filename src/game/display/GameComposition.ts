@@ -15,6 +15,7 @@ export class GameComposition extends DwObjectBase<DwContainer> {
     private readonly _lyFgSprites: DwContainer;
     private readonly _lyFgParticles: DwContainer;
     private readonly _lyFgBlocks: DwContainer;
+    private readonly _lyOverlay: DwContainer;
     
     public constructor() {
         super(new DwContainer);
@@ -30,6 +31,8 @@ export class GameComposition extends DwObjectBase<DwContainer> {
         this._lyFgSprites = new DwContainer().addTo(this._drawable);
         this._lyFgParticles = new DwContainer().addTo(this._drawable);
         this._lyFgBlocks = new DwContainer().addTo(this._drawable);
+        
+        this._lyOverlay = new DwContainer().addTo(this._drawable);
     }
     
     public show(): void {
@@ -151,5 +154,12 @@ export class GameComposition extends DwObjectBase<DwContainer> {
     public removeFgParticle(particle: Particle): this {
         this._lyFgParticles.remove(particle.getDrawable());
         return this;
+    }
+    
+    
+    ///  Overlay  ///
+    
+    public addOverlay(dwo: DwObject): void {
+        this._lyOverlay.add(dwo.getDrawable());
     }
 }

@@ -97,7 +97,10 @@ export class SpritePrototype {
     private _causedDamage: int;										// paljon vahinkoa tekee jos osuu
     private _causedDamageType: CBYTE;									// mink� tyyppist� vahinkoa tekee (1.1)
     private _suojaus: CBYTE;										// mink� tyyppiselt� vahingolta on suojattu (1.1)
-    private _pisteet: int;										// paljonko siit� saa pisteit�
+    /**
+     * See: {@link score}.
+     */
+    private _score: int;
     
     private _AI: CVect<EAi> = cvect(SPRITE_MAX_AI);								// mit� teko�lyj� k�ytet��n
     
@@ -210,7 +213,7 @@ export class SpritePrototype {
         this.morphProto = null;
         this._weight = 0;
         this._pallarx_kerroin = 0;
-        this._pisteet = 0;
+        this._score = 0;
         this._random_frq = true;
         this._suojaus = EDamageType.VAHINKO_EI;
         this._shakes = false;
@@ -294,7 +297,7 @@ export class SpritePrototype {
         this.morphProto = null;
         this._weight = 0;
         this._pallarx_kerroin = 0;
-        this._pisteet = 0;
+        this._score = 0;
         this._random_frq = true;
         this._suojaus = EDamageType.VAHINKO_EI;
         this._shakes = false;
@@ -580,7 +583,7 @@ export class SpritePrototype {
         this._causedDamageType = stream.streamReadUint8();
         this._suojaus = stream.streamReadUint8();
         stream.streamOffset += 2;                                 // <- 2 bytes padding for struct alignment
-        this._pisteet = stream.streamReadInt(4);
+        this._score = stream.streamReadInt(4);
         for (let i = 0; i < 5; i++) {
             this._AI[i] = stream.streamReadUint32() as EAi;
         }
@@ -660,7 +663,7 @@ export class SpritePrototype {
         this._causedDamageType = stream.streamReadUint8();
         this._suojaus = stream.streamReadUint8();
         stream.streamOffset += 2;                                 // <- 2 bytes padding for struct alignment
-        this._pisteet = stream.streamReadInt(4);
+        this._score = stream.streamReadInt(4);
         for (let i = 0; i < 10; i++) {
             this._AI[i] = stream.streamReadUint32() as EAi;
         }
@@ -901,10 +904,13 @@ export class SpritePrototype {
     public get este_oikealle(): boolean { return this._este_oikealle; }
     public get este_vasemmalle(): boolean { return this._este_vasemmalle; }
     
-    /** @deprecated use score */
-    public get pisteet(): number { return this.score; }
+    /**
+     * Score value of this sprite.<br>
+     * For example, is the score given by a bonus sprite when player takes it.
+     * SRC: pisteet
+     */
     public get score(): number {
-        return this._pisteet;
+        return this._score;
     }
     
     /** @deprecated Use attack1Duration. */

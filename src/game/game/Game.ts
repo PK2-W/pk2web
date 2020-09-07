@@ -10,6 +10,7 @@ import { EDestructionType } from '@game/enum/EDestructionType';
 import { ESpriteType } from '@game/enum/ESpriteType';
 import { Episode } from '@game/episodes/Episode';
 import { GameContext } from '@game/game/GameContext';
+import { Fly } from '@game/game/overlay/Fly';
 import { GiftManager } from '@game/gift/GiftManager';
 import { InputAction } from '@game/InputActions';
 import {
@@ -34,6 +35,7 @@ import { DwTilingSprite } from '@ng/drawable/dwo/DwTilingSprite';
 import { Log } from '@ng/support/log/LoggerImpl';
 import { pathJoin, minmax } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
+import { PkFont } from '@ng/types/font/PkFont';
 import { PkTexture } from '@ng/types/PkTexture';
 import {
     MAX_SPRITES,
@@ -45,6 +47,7 @@ import {
     LOCK_OPEN_SOUND_CKEY,
     LAND_SOUND_CKEY
 } from '@sp/constants';
+import { uint } from '@sp/types';
 import { int, rand, DWORD } from '../support/types';
 
 export class Game extends GameContext {
@@ -56,6 +59,7 @@ export class Game extends GameContext {
     private _sprites: SpriteManager;
     private _gifts: GiftManager;
     private _blocks: BlockManager;
+    private readonly _flies: Set<Fly>;
     
     /**
      * Number of keys left.<br>
@@ -121,6 +125,7 @@ export class Game extends GameContext {
         this._sprites = new SpriteManager(this);
         this._gifts = new GiftManager(this);
         this._blocks = new BlockManager(this);
+        this._flies = new Set();
         
         this._paused = false;
         
@@ -285,6 +290,7 @@ export class Game extends GameContext {
         //     PK_Fadetext_Draw();
         //
         //     PK_Draw_InGame_UI();
+        this._updateOverlays();
         //
         //     if (draw_dubug_info)
         //         PK_Draw_InGame_DebugInfo();
@@ -1366,14 +1372,12 @@ export class Game extends GameContext {
                     
                     if (sprite.hasBehavior(EAi.AI_UUSI_JOS_TUHOUTUU)) {
                         this._sprites.addSprite(sprite.proto, false, sprite.initialX - sprite.proto.width, sprite.initialY - sprite.proto.height, sprite, false);
-                    } //TODO - does sprite.tyyppi->indeksi work
+                    }
                     
-                    // 				if (sprite.tyyppi->tyyppi == TYYPPI_PELIHAHMO && sprite.tyyppi->pisteet != 0){
-                    // 					char luku[10];
-                    // 					itoa(sprite.tyyppi->pisteet,luku,10);
-                    // 					PK_Fadetext_New(fontti2,luku,(int)Game::Sprites->spritet[i].x-8,(int)Game::Sprites->spritet[i].y-8,80,false);
-                    // 					this.score(sprite.tyyppi->pisteet);
-                    // 				}
+                    if (sprite.proto.type === ESpriteType.TYYPPI_PELIHAHMO && sprite.proto.score !== 0) {
+                        this.score(sprite.proto.score);
+                        this.showFly(String(sprite.proto.score), this.context.font2, sprite.x - 8, sprite.y - 8, 80);
+                    }
                 } else {
                     sprite.energy = 1;
                 }
@@ -2311,13 +2315,10 @@ export class Game extends GameContext {
             if (sprite.energy > 0 && this._sprites.player.energy > 0) {
                 if (sprite.proto.score != 0) {
                     this.score(sprite.proto.score);
-                    // 				char luku[6];
-                    // 				itoa(sprite.tyyppi->pisteet,luku,10);
-                    // 				if (sprite.tyyppi->pisteet >= 50)
-                    // 					PK_Fadetext_New(fontti2,luku,(int)sprite.x-8,(int)sprite.y-8,100,false);
-                    // 				else
-                    // 					PK_Fadetext_New(fontti1,luku,(int)sprite.x-8,(int)sprite.y-8,100,false);
-                    
+                    this.showFly(
+                        String(sprite.proto.score),
+                        (sprite.proto.score >= 50) ? this.context.font2 : this.context.font1,
+                        sprite.x - 8, sprite.y - 8);
                 }
                 
                 if (sprite.hasBehavior(EAi.AI_BONUS_AIKA)) {
@@ -2821,8 +2822,33 @@ export class Game extends GameContext {
         Log.d('[Game] Score ', (score > 0 ? '+' : '-'), score, ' -> ', (this._score + this._scoreBuffer));
     }
     
-    ///  Accessors  ///
+    /**
+     * SDL: ~PK_Fadetext_New
+     *
+     * @param text
+     * @param font
+     * @param x
+     * @param y
+     * @param ticks
+     * @param translate
+     */
+    public showFly(text: string, font: PkFont, x: number, y: number, ticks: uint = 100, translate: boolean = false): void {
+        const fly = new Fly(this.context, text, font, x, y, ticks, translate);
+        this._flies.add(fly);
+        this.composition.addOverlay(fly);
+    }
     
+    /**
+     *
+     */
+    private _updateOverlays(): void {
+        this._flies.forEach(fly => {
+            fly.tick();
+            if (fly.isDone()) {
+                this._flies.delete(fly);
+            }
+        });
+    }
 }
 
 export const TEXTURE_ID_BGIMAGE = 'PK·BGIMAGE';
