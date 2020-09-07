@@ -93,7 +93,10 @@ export class SpritePrototype {
     private _weight: number;											// sprite paino (vaikuttaa hyppyyn ja kytkimiin)
     
     private _isEnemy: boolean;										// onko sprite vihollinen
-    private _energia: int;										// monta iskua kest��
+    /**
+     * See {@link energy}.
+     */
+    private _energy: int;
     private _causedDamage: int;										// paljon vahinkoa tekee jos osuu
     private _causedDamageType: CBYTE;									// mink� tyyppist� vahinkoa tekee (1.1)
     private _suojaus: CBYTE;										// mink� tyyppiselt� vahingolta on suojattu (1.1)
@@ -190,7 +193,7 @@ export class SpritePrototype {
         this._isKey = false;
         this.bonusProto = null;
         this._droppedBonusCount = 1;
-        this._energia = 0;
+        this._energy = 0;
         this._obstacle = false;
         this._este_ylos = true;
         this._este_alas = true;
@@ -274,7 +277,7 @@ export class SpritePrototype {
         this._isKey = false;
         this.bonusProto = null;
         this._droppedBonusCount = 1;
-        this._energia = 0;
+        this._energy = 0;
         this._obstacle = false;
         this._este_ylos = true;
         this._este_alas = true;
@@ -415,7 +418,7 @@ export class SpritePrototype {
             [`Version: ${ this._version }`],
             [`Max jump: ${ this._maxJump }`],
             [`Max speed: ${ this._maxSpeed }`],
-            [`Energy: ${ this._energia }`],
+            [`Energy: ${ this._energy }`],
             [`Weight: ${ this._weight }`],
             [`Frames: ${ this._frameCount }`],
             [`Animations: [${ this._animaatiot.join(',') }]`],
@@ -578,7 +581,7 @@ export class SpritePrototype {
         this._isEnemy = stream.streamReadBool();
         
         stream.streamOffset += 3;                                 // <- 3 bytes padding for struct alignment
-        this._energia = stream.streamReadInt(4);
+        this._energy = stream.streamReadInt(4);
         this._causedDamage = stream.streamReadInt(4);
         this._causedDamageType = stream.streamReadUint8();
         this._suojaus = stream.streamReadUint8();
@@ -658,7 +661,7 @@ export class SpritePrototype {
         this._isEnemy = stream.streamReadBool();
         
         stream.streamOffset += 3;                                 // <- 3 bytes padding for struct alignment
-        this._energia = stream.streamReadInt(4);
+        this._energy = stream.streamReadInt(4);
         this._causedDamage = stream.streamReadInt(4);
         this._causedDamageType = stream.streamReadUint8();
         this._suojaus = stream.streamReadUint8();
@@ -872,8 +875,12 @@ export class SpritePrototype {
         this._maxSpeed = v;
     }
     
+    /**
+     * Sprite "lifes"; how many hits it can take.<br>
+     * SRC: energia
+     */
     public get energy(): int {
-        return this._energia;
+        return this._energy;
     }
     
     /** @deprecated Use weight */    public get paino(): number { return this.weight; }
