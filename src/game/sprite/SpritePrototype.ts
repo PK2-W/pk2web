@@ -906,7 +906,7 @@ export class SpritePrototype {
     
     /**
      * Score value of this sprite.<br>
-     * For example, is the score given by a bonus sprite when player takes it.
+     * For example, it's the score given by a bonus sprite when player takes it.<br>
      * SRC: pisteet
      */
     public get score(): number {
