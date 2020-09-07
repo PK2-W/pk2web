@@ -46,7 +46,7 @@ export class IntroScreen extends Screen {
     }
     
     public async start() {
-        this.startTime = this.context.time.now();
+        this.startTime = this.context.clock.now();
         
         Log.d(`[${ IntroScreen.name }] Initializing intro screen`);
         

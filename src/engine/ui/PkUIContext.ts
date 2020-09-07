@@ -4,5 +4,5 @@ import { PkDevice } from '@ng/core/PkDevice';
 export interface PkUIContext {
     readonly device: PkDevice;
     /** @deprecated */
-    readonly time: GameTimer;
+    readonly clock: GameTimer;
 }

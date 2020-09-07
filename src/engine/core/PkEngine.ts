@@ -34,7 +34,7 @@ export class PkEngine {
     private count: number = 0;
     private real_fps: number = 0;
     
-    private readonly _gameTimer: GameTimer;
+    public readonly clock: GameTimer;
     private readonly _language: PkLanguage;
     private readonly _rendr: PkRenderer;
     private readonly _input: PkInput;
@@ -50,7 +50,7 @@ export class PkEngine {
         // 		return;
         // 	}
         
-        this._gameTimer = new GameTimer(PK2GAMELOOP); // Windows "system timer" has a resolution of 10~16 ms = 62.5 tps
+        this.clock = new GameTimer(PK2GAMELOOP); // Windows "system timer" has a resolution of 10~16 ms = 62.5 tps
         this._language = new PkLanguage();
         this._input = new PkInput(this);
         this._audio = new PK2wSound(this);
@@ -71,7 +71,7 @@ export class PkEngine {
     ///
     
     public destroy() {
-        this._gameTimer.stop();
+        this.clock.stop();
         
         this.rendr.destroy();
         // 	PisteInput_Exit();
@@ -125,15 +125,15 @@ export class PkEngine {
         this.gameLogicFnPtr = gameLogic.bind(context);
         this.running = true;
         
-        this._gameTimer.start();
+        this.clock.start();
         
-        this._gameTimer.add(this._screenTick.bind(this));
+        this.clock.add(this._screenTick.bind(this));
         this._rendr.tmp();
         //this.loop2();
     }
     
     private _screenTick(delta: number, time: number) {
-        this._gameTimer.add(this._screenTick.bind(this));
+        this.clock.add(this._screenTick.bind(this));
         this._rendr.tick(delta, time);
     }
     
@@ -185,10 +185,6 @@ export class PkEngine {
     
     public getRenderer(): PkRenderer {
         return this._rendr;
-    }
-    
-    public get gt(): GameTimer {
-        return this._gameTimer;
     }
     
     /** @deprecated */

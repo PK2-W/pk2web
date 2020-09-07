@@ -2,7 +2,6 @@ import { Entropy } from '@game/Entropy';
 import { GameTimer } from '@ng/core/GameTimer';
 import { PK2wSound } from '@ng/core/PK2wSound';
 import { PkDevice } from '@ng/core/PkDevice';
-import { PkEngine } from '@ng/core/PkEngine';
 import { PkInput } from '@ng/core/PkInput';
 import { PkAssetCache } from '@ng/PkAssetCache';
 import { PkFont } from '@ng/types/font/PkFont';
@@ -22,7 +21,7 @@ export interface PekkaContext extends PkUIContext {
     
     readonly tx: PkParameters;
     /** @deprecated */
-    readonly time: GameTimer;
+    readonly clock: GameTimer;
     readonly input: PkInput;
     readonly audio: PK2wSound;
     

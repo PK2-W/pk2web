@@ -6,7 +6,6 @@ import { PkEasing } from '@ng/support/PkEasing';
 import { mod } from '@ng/support/utils';
 import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
 import { PkUIComponentContainer } from '@ng/ui/component/PkUIComponentContainer';
-import { PkUIEffectDelay } from '@ng/ui/effect/PkUIEffectDelay';
 import { PkUIEffectFadeIn } from '@ng/ui/effect/PkUIEffectFadeIn';
 import { PkUIEffectFadeOut } from '@ng/ui/effect/PkUIEffectFadeOut';
 import { PkUIContext } from '@ng/ui/PkUIContext';
@@ -28,7 +27,7 @@ export abstract class PkScreen<T extends PkUIContext = PkUIContext> extends PkUI
     protected constructor(context: T) {
         super(context);
         
-        this._creationTime = this.context.time.now();
+        this._creationTime = this.context.clock.now();
         
         this._status = PkScreenLCS.SUSPENDED;
         this.renderable = false;

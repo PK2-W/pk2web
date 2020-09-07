@@ -158,7 +158,7 @@ export class Game extends GameContext implements PkTickable {
             try {
                 await this._loadBgImage(this.map.fpath, this.map.bgImageFilename);
             } catch (err) {
-                Log.w(`[Game] The background image for the game could not be loaded.`);
+                Log.w(`[Game] The background image for the game could not be loaded`);
                 Log.d(err.message);
             }
             

@@ -415,8 +415,8 @@ export class Pekka implements PkTickable, PekkaContext {
         return this._language;
     }
     /** @deprecated */
-    public get time(): GameTimer {
-        return this._engine.gt;
+    public get clock(): GameTimer {
+        return this._engine.clock;
     }
     public get input(): PkInput {
         return this._engine.input;
@@ -1534,7 +1534,7 @@ export class Pekka implements PkTickable, PekkaContext {
     }
     
     public tick(delta: number, time: number): void {
-        this._engine.gt.add(this.tick.bind(this));
+        this._engine.clock.add(this.tick.bind(this));
         
         //const diff = delta / 16; //--> 1pt every 10ms
         
@@ -1656,7 +1656,7 @@ export class Pekka implements PkTickable, PekkaContext {
         this._engine.input.associateAction([kbAction('P')], [InputAction.GAME_PAUSE]);
         
         
-        this._engine.gt.add(this.tick.bind(this));
+        this._engine.clock.add(this.tick.bind(this));
         
         //
         await this.createScreens();
@@ -1724,12 +1724,11 @@ export class Pekka implements PkTickable, PekkaContext {
         await this._game.start();
         
         const minifn = (delta, time) => {
-            this._engine.gt.add(minifn.bind(this));
-            //const coef = delta / (1000 / PK2GAMELOOP);
-            this._game.tick();
+            this._engine.clock.add(minifn.bind(this));
+            this._game.tick(delta, time);
         };
         
-        this._engine.gt.add(minifn.bind(this));
+        this._engine.clock.add(minifn.bind(this));
     }
     
     
