@@ -125,7 +125,8 @@ export abstract class Dw<T extends PIXI.DisplayObject> extends EventEmitter {
      * Sets the {@link alpha} property.
      */
     public setAlpha(alpha: number): this {
-        this.pixi.alpha = alpha;
+        this.pixi.alpha = minmax(alpha, 0, 1);
+        this._updateTransform();
         return this;
     }
     
