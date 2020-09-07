@@ -33,6 +33,7 @@ import { BLOCK_SIZE } from '@game/tile/BlockConstants';
 import { BlockManager } from '@game/tile/BlockManager';
 import { DwTilingSprite } from '@ng/drawable/dwo/DwTilingSprite';
 import { Log } from '@ng/support/log/LoggerImpl';
+import { PkTickable } from '@ng/support/PkTickable';
 import { pathJoin, minmax } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { PkFont } from '@ng/types/font/PkFont';
@@ -50,7 +51,7 @@ import {
 import { uint } from '@sp/types';
 import { int, rand, DWORD } from '../support/types';
 
-export class Game extends GameContext {
+export class Game extends GameContext implements PkTickable {
     private _episodeName: string;
     
     private _bgTexture: PkTexture;
@@ -155,7 +156,7 @@ export class Game extends GameContext {
             /////  Source: PK_Map_Open --------
             
             try {
-                await this.loadBgImage(this.map.fpath, this.map.bgImageFilename);
+                await this._loadBgImage(this.map.fpath, this.map.bgImageFilename);
             } catch (err) {
                 Log.w(`[Game] The background image for the game could not be loaded.`);
                 Log.d(err.message);
@@ -206,7 +207,7 @@ export class Game extends GameContext {
             /////  --------
             
             // Background image
-            this.addBackground();
+            this._addBackground();
             
             // Prepare blocks (load textures, generate prototypes and masks)
             await this._blocks.loadTextures(this.map.fpath, this.map.getBlockTexturesLocation());
@@ -234,21 +235,22 @@ export class Game extends GameContext {
     }
     
     /**
-     * Sourfce: PK_MainScreen_InGame
-     *
-     * @param coef - Game loop coefficient; variation between expected time from the last game loop (i.e. 10ms)
-     *               and the real elapsed time.
+     * This is the game loop.<br>
+     * Repeats with each game tick to update each game element status/position according to its characteristics.<br>
+     * SDL: PK_MainScreen_InGame
+     * <br><br>
+     * Implemented from {@link PkTickable#tick}.
      */
-    public gameLoop(): void {
+    public tick(delta: number, time: number): void {
         
-        this.updateCamera();
+        this._updateCamera();
         
-        this.particles.update();
+        this._particles.update();
         
         if (!this._paused) {
             if (!this._levelCompleted && (!this._againstTime || this._remainingTime > 0)) {
                 this._sprites.updateCulling();
-                this.updateSprites();
+                this._updateSprites();
             }
             // PK_Fadetext_Update();
         }
@@ -262,7 +264,7 @@ export class Game extends GameContext {
         // if (!skip_frame){
         
         // ~ PK_Draw_InGame_BG()
-        this.updateBackground();
+        this._updateBackground();
         
         // TODO    if (settings.tausta_spritet)
         // ~ PK_Draw_InGame_BGSprites()
@@ -690,7 +692,7 @@ export class Game extends GameContext {
         this._dcameraY = playerPosY;
     }
     
-    private async loadBgImage(fpath: string, fname: string): Promise<void> {
+    private async _loadBgImage(fpath: string, fname: string): Promise<void> {
         const bt = await PkAssetTk.getImage(
             ...(this.episode.isCommunity() ? [pathJoin(this.episode.homePath, 'gfx/scenery/', fname)] : []),
             pathJoin(fpath, fname),
@@ -701,7 +703,7 @@ export class Game extends GameContext {
     /**
      * SDL: PK_Update_Camera.
      */
-    private updateCamera(): void {
+    private _updateCamera(): void {
         this._camera.x = Math.floor(this._sprites.player.x - this.device.screenWidth / 2);
         this._camera.y = Math.floor(this._sprites.player.y - this.device.screenHeight / 2);
         
@@ -763,7 +765,7 @@ export class Game extends GameContext {
     /**
      * SDL: PK_Update_Sprites.
      */
-    public updateSprites(): void {
+    private _updateSprites(): void {
         // 	debug_active_sprites = 0;
         let sprite: Sprite;
         
@@ -772,9 +774,9 @@ export class Game extends GameContext {
             
             if (sprite.active && sprite.proto.type !== ESpriteType.TYYPPI_TAUSTA) {
                 if (sprite.proto.type === ESpriteType.TYYPPI_BONUS) {
-                    this.updateBonusSpriteMovement(sprite);
+                    this._updateBonusSpriteMovement(sprite);
                 } else {
-                    this.updateSpriteMovement(sprite);
+                    this._updateSpriteMovement(sprite);
                 }
                 
                 // debug_active_sprites++;
@@ -788,7 +790,7 @@ export class Game extends GameContext {
      *
      * @param sprite - Sprite to update.
      */
-    private updateSpriteMovement(sprite: Sprite): void {
+    private _updateSpriteMovement(sprite: Sprite): void {
         // TODO - Caution with this: Dead sprites are going to be updated
         if (sprite.proto == null)
             return;
@@ -866,7 +868,7 @@ export class Game extends GameContext {
                 if (lisavauhti) {
                     // Draw dust
                     if (rand() % 20 == 1 && sprite.animationIndex == EAnimation.ANIMAATIO_KAVELY)
-                        this.particles.newParticle(EParticle.PARTICLE_DUST_CLOUDS, future.x - 8, future.bottom - 8, 0.25, -0.25, 40, 0, 0);
+                        this._particles.newParticle(EParticle.PARTICLE_DUST_CLOUDS, future.x - 8, future.bottom - 8, 0.25, -0.25, 40, 0, 0);
                     
                     a_lisays += 0.09;//0.05
                 }
@@ -884,7 +886,7 @@ export class Game extends GameContext {
                 if (lisavauhti) {
                     // Draw dust
                     if (rand() % 20 == 1 && sprite.animationIndex == EAnimation.ANIMAATIO_KAVELY)
-                        this.particles.newParticle(EParticle.PARTICLE_DUST_CLOUDS, future.x - 8, future.bottom - 8, 0.25, -0.25, 40, 0, 0);
+                        this._particles.newParticle(EParticle.PARTICLE_DUST_CLOUDS, future.x - 8, future.bottom - 8, 0.25, -0.25, 40, 0, 0);
                     
                     a_lisays -= 0.09;
                 }
@@ -1090,7 +1092,7 @@ export class Game extends GameContext {
                     if (p < 300) { //src: && p>=0)//{
                         //src: if(sprite.pelaaja == 1) printf("%i\n",palikat_lkm);
                         collider = this._blocks.getBlockCollider(kartta_vasen + x - 1, kartta_yla + y - 1);
-                        this.checkBlocks(sprite, future, collider);
+                        this._checkBlocks(sprite, future, collider);
                         //src: }
                     }
                 }
@@ -1116,7 +1118,7 @@ export class Game extends GameContext {
             }
             
             if (rand() % 80 == 1)
-                this.particles.newParticle(EParticle.PARTICLE_SPARK, future.x - 4, future.y, 0, -0.5 - rand() % 2, rand() % 30 + 30, 0, 32);
+                this._particles.newParticle(EParticle.PARTICLE_SPARK, future.x - 4, future.y, 0, -0.5 - rand() % 2, rand() % 30 + 30, 0, 32);
         }
         
         // Enters or exist from water, splash
@@ -1197,7 +1199,7 @@ export class Game extends GameContext {
                         if (sprite2.b > 0)
                             collider.code = EBlockPrototype.BLOCK_ELEVATOR_H;
                         
-                        this.checkBlocks2(sprite, collider, future);
+                        this._checkBlocks2(sprite, collider, future);
                     }
                 }
                 
@@ -1322,9 +1324,9 @@ export class Game extends GameContext {
                     Effects.destruction(this, EDestructionType.TUHOUTUMINEN_HOYHENET, Math.floor(sprite.x), Math.floor(sprite.y));
                 
                 if (sprite.proto.type != ESpriteType.TYYPPI_AMMUS) {
-                    this.particles.newParticle(EParticle.PARTICLE_STAR, future.x, future.y, -1, -1, 60, 0.01, 128);
-                    this.particles.newParticle(EParticle.PARTICLE_STAR, future.x, future.y, 0, -1, 60, 0.01, 128);
-                    this.particles.newParticle(EParticle.PARTICLE_STAR, future.x, future.y, 1, -1, 60, 0.01, 128);
+                    this._particles.newParticle(EParticle.PARTICLE_STAR, future.x, future.y, -1, -1, 60, 0.01, 128);
+                    this._particles.newParticle(EParticle.PARTICLE_STAR, future.x, future.y, 0, -1, 60, 0.01, 128);
+                    this._particles.newParticle(EParticle.PARTICLE_STAR, future.x, future.y, 1, -1, 60, 0.01, 128);
                 }
                 
                 // 			if (sprite.Onko_AI(AI_VAIHDA_KALLOT_JOS_OSUTTU))
@@ -1420,8 +1422,8 @@ export class Game extends GameContext {
                         //			  0,-0.2,rand()%50+20,0,0);
                         
                         if (rand() % 7 == 1) {
-                            this.particles.newParticle(EParticle.PARTICLE_SMOKE, future.x + rand() % 5 - rand() % 5 - 10, future.bottom + rand() % 3 - rand() % 3, 0.3, -0.1, 450, 0, 0);
-                            this.particles.newParticle(EParticle.PARTICLE_SMOKE, future.x + rand() % 5 - rand() % 5 - 10, future.bottom + rand() % 3 - rand() % 3, -0.3, -0.1, 450, 0, 0);
+                            this._particles.newParticle(EParticle.PARTICLE_SMOKE, future.x + rand() % 5 - rand() % 5 - 10, future.bottom + rand() % 3 - rand() % 3, 0.3, -0.1, 450, 0, 0);
+                            this._particles.newParticle(EParticle.PARTICLE_SMOKE, future.x + rand() % 5 - rand() % 5 - 10, future.bottom + rand() % 3 - rand() % 3, -0.3, -0.1, 450, 0, 0);
                         }
                         
                         if (sprite.weight > 1)
@@ -2041,12 +2043,7 @@ export class Game extends GameContext {
         // 	return 0;
     }
     
-    /**
-     *
-     * @param sprite
-     * @param coef
-     */
-    private updateBonusSpriteMovement(sprite: Sprite, coef: number = 1): void {
+    private _updateBonusSpriteMovement(sprite: Sprite): void {
         const future: SpriteFuture = sprite.getPackedAttributes();
         
         let x = 0;
@@ -2087,7 +2084,7 @@ export class Game extends GameContext {
                 }
                 
                 if (rand() % 80 == 1)
-                    this.particles.newParticle(EParticle.PARTICLE_SPARK, future.x - 4, future.y, 0, -0.5 - rand() % 2, rand() % 30 + 30, 0, 32);
+                    this._particles.newParticle(EParticle.PARTICLE_SPARK, future.x - 4, future.y, 0, -0.5 - rand() % 2, rand() % 30 + 30, 0, 32);
             }
             
             sprite.inWater = false;
@@ -2129,7 +2126,7 @@ export class Game extends GameContext {
                             //
                             // PK_Block_Set_Barriers(spritepalikka);
                             
-                            this.checkBlocks2(sprite, collider, future);
+                            this._checkBlocks2(sprite, collider, future);
                         }
                     }
                     
@@ -2204,7 +2201,7 @@ export class Game extends GameContext {
                 for (y = 0; y < palikat_y_lkm; y++) {
                     for (x = 0; x < palikat_x_lkm; x++) {
                         collider = this._blocks.getBlockCollider(kartta_vasen + x - 1, kartta_yla + y - 1);
-                        this.checkBlocks(sprite, future, collider);
+                        this._checkBlocks(sprite, future, collider);
                     }
                 }
                 
@@ -2362,7 +2359,7 @@ export class Game extends GameContext {
                         const ay = sprite.initialY - sprite.proto.height / 2.0;
                         // 					PkEngine::Sprites->add(sprite.tyyppi->indeksi,0,ax-17, ay,i, false);
                         for (let r = 1; r < 6; r++)
-                            this.particles.newParticle(EParticle.PARTICLE_SPARK,
+                            this._particles.newParticle(EParticle.PARTICLE_SPARK,
                                 ax + rand() % 10 - rand() % 10, ay + rand() % 10 - rand() % 10,
                                 0, 0, rand() % 100,
                                 0.1, 32);
@@ -2432,14 +2429,13 @@ export class Game extends GameContext {
         }
     }
     
-    
     /**
      * Check if the specified *sprite* is going to collide with the provided *block*,
      * updating the given *future* as necessary.
      * CPP: PK_Tutki_Seina (2 args).
      * SDL: PK_Check_Blocks.
      */
-    private checkBlocks(sprite: Sprite, future: SpriteFuture, block: BlockCollider): void {
+    private _checkBlocks(sprite: Sprite, future: SpriteFuture, block: BlockCollider): void {
         let mask_index: int;
         
         //If sprite is in the block (NO 255)
@@ -2667,7 +2663,7 @@ export class Game extends GameContext {
      * CPP: PK_Tutki_Seina (17 args).
      * SDL: PK_Check_Blocks2.
      */
-    private checkBlocks2(sprite: Sprite, block: BlockCollider, future: SpriteFuture) {
+    private _checkBlocks2(sprite: Sprite, block: BlockCollider, future: SpriteFuture) {
         //left and right
         if (future.top < block.bottom && future.bottom - 1 > block.top) {
             if (future.right + future.a - 1 > block.left && future.left + future.a < block.right) {
@@ -2729,17 +2725,17 @@ export class Game extends GameContext {
     /**
      * SDL: PK_Draw_InGame_BG (1/2).
      */
-    private addBackground(): void {
+    private _addBackground(): void {
         this._bgImage = new DwTilingSprite(this._bgTexture, this.device.screenWidth * 4, this.device.screenHeight * 4);
         this.composition.setBgImage(this._bgImage);
         
-        this.updateBackground();
+        this._updateBackground();
     }
     
     /**
      * SDL: PK_Draw_InGame_BG (2/2).
      */
-    private updateBackground(): void {
+    private _updateBackground(): void {
         let pallarx: int = (this.cameraX % (640 * 3)) / 3;
         let pallary: int = (this.cameraY % (480 * 3)) / 3;
         
@@ -2766,8 +2762,7 @@ export class Game extends GameContext {
         this._bgImage.y += this.cameraY;
     }
     
-    
-    private teleport(src: Sprite, sprite: Sprite): boolean {
+    public teleport(src: Sprite, sprite: Sprite): boolean {
         const destinations: Sprite[] = [];
         let queried: Sprite[];
         
@@ -2803,7 +2798,7 @@ export class Game extends GameContext {
         return true;
     }
     
-    private useGift(): void {
+    public useGift(): void {
         if (this._gifts.count == 0) {
             Log.d('[Game] There is no gifts to use.');
             return;

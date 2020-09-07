@@ -61,7 +61,7 @@ export class Effects {
     
     public static feathers(ctx: GameContext, x: uint, y: uint): void {
         for (let i = 0; i < 9; i++) {//6
-            ctx.particles.newParticle(EParticle.PARTICLE_FEATHER,
+            ctx._particles.newParticle(EParticle.PARTICLE_FEATHER,
                 x + rand() % 17 - rand() % 17, y + rand() % 20 - rand() % 10,
                 (rand() % 16 - rand() % 16) / 10.0, (45 + rand() % 45) / 100.0,
                 300 + rand() % 40, 0, 0);
@@ -74,13 +74,13 @@ export class Effects {
         //       Game::Particles->new_particle(	PARTICLE_LIGHT,x+rand()%17-13,y+rand()%17-13,
         // 				(rand()%7-rand()%7)/5,(rand()%7-rand()%7)/3, rand()%50+60,0.025,color);
         for (let i = 0; i < 7; i++)
-            ctx.particles.newParticle(EParticle.PARTICLE_SPARK,
+            ctx._particles.newParticle(EParticle.PARTICLE_SPARK,
                 x + rand() % 17 - 13, y + rand() % 17 - 13,
                 (rand() % 5 - rand() % 5) / 4.0, (rand() % 4 - rand() % 7) / 3.0,
                 rand() % 50 + 40, 0.025, color);//0.015
         
         for (let i = 0; i < 20; i++)
-            ctx.particles.newParticle(EParticle.PARTICLE_POINT,
+            ctx._particles.newParticle(EParticle.PARTICLE_POINT,
                 x + rand() % 17 - 13, y + rand() % 17 - 13,
                 (rand() % 5 - rand() % 5) / 4.0, (rand() % 2 - rand() % 7) / 3.0,
                 rand() % 50 + 40, 0.025, color);//0.015
@@ -92,35 +92,35 @@ export class Effects {
         let i: int;
         
         for (i = 0; i < 3; i++)
-            ctx.particles.newParticle(EParticle.PARTICLE_SMOKE, x + rand() % 17 - 32, y + rand() % 17,
+            ctx._particles.newParticle(EParticle.PARTICLE_SMOKE, x + rand() % 17 - 32, y + rand() % 17,
                 0, ((rand() % 4) + 3) / -10.0, 450, 0.0, color);
         
         for (i = 0; i < 9; i++)//12
-            ctx.particles.newParticle(EParticle.PARTICLE_LIGHT, x + rand() % 17 - 13, y + rand() % 17 - 13,
+            ctx._particles.newParticle(EParticle.PARTICLE_LIGHT, x + rand() % 17 - 13, y + rand() % 17 - 13,
                 (rand() % 7 - rand() % 7) / 5.0, (rand() % 7 - rand() % 7) / 3.0,
                 rand() % 40 + 60, 0.025, color);
         
         for (i = 0; i < 8; i++)//8//10
-            ctx.particles.newParticle(EParticle.PARTICLE_SPARK, x + rand() % 17 - 13, y + rand() % 17 - 13,
+            ctx._particles.newParticle(EParticle.PARTICLE_SPARK, x + rand() % 17 - 13, y + rand() % 17 - 13,
                 (rand() % 3 - rand() % 3),//(rand()%7-rand()%7)/5,
                 (rand() % 7 - rand() % 7) / 3,
                 rand() % 20 + 60, 0.015, color);//50+60
         
         for (i = 0; i < 20; i++)//12
-            ctx.particles.newParticle(EParticle.PARTICLE_POINT, x + rand() % 17 - 13, y + rand() % 17 - 13,
+            ctx._particles.newParticle(EParticle.PARTICLE_POINT, x + rand() % 17 - 13, y + rand() % 17 - 13,
                 (rand() % 7 - rand() % 7) / 5.0, (rand() % 7 - rand() % 7) / 3.0,
                 rand() % 40 + 60, 0.025, color);
     }
     
     public static smoke(ctx: GameContext, x: uint, y: uint, color: uint): void {
         for (let i = 0; i < 3; i++) {
-            ctx.particles.newParticle(EParticle.PARTICLE_SMOKE,
+            ctx._particles.newParticle(EParticle.PARTICLE_SMOKE,
                 x + rand() % 17 - 32, y + rand() % 17,
                 0, ((rand() % 3) + 3) / -10.0/*-0.3*/,
                 450, 0.0, color);
         }
         for (let i = 0; i < 6; i++) {
-            ctx.particles.newParticle(EParticle.PARTICLE_DUST_CLOUDS,
+            ctx._particles.newParticle(EParticle.PARTICLE_DUST_CLOUDS,
                 x + rand() % 30 - rand() % 30 - 10, y + rand() % 30 - rand() % 30 + 10,
                 0, -0.3,
                 rand() % 50 + 60, 0, color);
@@ -129,7 +129,7 @@ export class Effects {
     
     public static smokeClouds(ctx: GameContext, x: uint, y: uint): void {
         for (let i = 0; i < 5; i++) {
-            ctx.particles.newParticle(EParticle.PARTICLE_SMOKE,
+            ctx._particles.newParticle(EParticle.PARTICLE_SMOKE,
                 x + rand() % 17 - 32, y + rand() % 17,
                 0, ((rand() % 3) + 3) / -10.0/*-0.3*/,
                 450, 0.0, 0);
@@ -138,14 +138,14 @@ export class Effects {
     
     public static stars(ctx: GameContext, x: uint, y: uint, color: uint): void {
         for (let i = 0; i < 5; i++) {
-            ctx.particles.newParticle(EParticle.PARTICLE_STAR,
+            ctx._particles.newParticle(EParticle.PARTICLE_STAR,
                 x - 5, y - 5,
                 (rand() % 3 - rand() % 3) / 1.5, rand() % 3 * -1,
                 100, (rand() % 5 + 5) / 100.0/* 0.05*/, color);//300
         }
         
         for (let i = 0; i < 3; i++) { //12
-            ctx.particles.newParticle(EParticle.PARTICLE_POINT,
+            ctx._particles.newParticle(EParticle.PARTICLE_POINT,
                 x - 5, y - 5,
                 (rand() % 3 - rand() % 3) / 1.5, rand() % 3 * -1,
                 100, (rand() % 5 + 5) / 100.0, color);

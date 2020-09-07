@@ -2,6 +2,7 @@ import { GameComposition } from '@game/display/GameComposition';
 import { Entropy } from '@game/Entropy';
 import { Episode } from '@game/episodes/Episode';
 import { TextureCache } from '@game/game/TextureCache';
+import { UIGame } from '@game/game/ui/UIGame';
 import { LevelMap } from '@game/map/LevelMap';
 import { ParticleSystem } from '@game/particle/ParticleSystem';
 import { PekkaContext } from '@game/PekkaContext';
@@ -30,7 +31,7 @@ export abstract class GameContext {
     public readonly textureCache: TextureCache;
     public readonly composition: GameComposition;
     public readonly camera: PkCamera;
-    public readonly particles: ParticleSystem;
+    protected readonly _particles: ParticleSystem;
     protected _camera: { x: number, y: number };
     protected _sound: PKSound;
     

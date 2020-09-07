@@ -1726,7 +1726,7 @@ export class Pekka implements PkTickable, PekkaContext {
         const minifn = (delta, time) => {
             this._engine.gt.add(minifn.bind(this));
             //const coef = delta / (1000 / PK2GAMELOOP);
-            this._game.gameLoop();
+            this._game.tick();
         };
         
         this._engine.gt.add(minifn.bind(this));
