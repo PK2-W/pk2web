@@ -391,7 +391,7 @@ export class PkBitmapBT implements PkBaseTexture {
     
     public get pixi(): PIXI.BaseTexture {
         if (this._xPixiBT == null) {
-            this._xPixiBT = PIXI.BaseTexture.fromBuffer(this._colorBuffer.getUint8Array(), this.width, this.height);
+             this._xPixiBT = PIXI.BaseTexture.fromBuffer(this._colorBuffer.getUint8Array(), this.width, this.height);
         }
         return this._xPixiBT;
     }

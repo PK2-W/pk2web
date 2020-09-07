@@ -83,6 +83,10 @@ export class PkRenderer implements PkTickable {
         }
     }
     
+    private _fpsPrev = performance.now();
+    private _fpsAvg = [];
+    private _fpsAvgDisplay = 0;
+    
     public tmp() {
         //try{ window.pk2w._game.context.time.trigger(); } catch(r){}
         
@@ -90,6 +94,19 @@ export class PkRenderer implements PkTickable {
             this._renderer.render(this._stage);
         
         requestAnimationFrame(this.tmp.bind(this));
+        
+        const now = performance.now();
+        const delta = now - this._fpsPrev;
+        this._fpsPrev = now;
+        this._fpsAvg.push(1000 / delta);
+        if (this._fpsAvg.length > 10) this._fpsAvg.shift();
+        
+        this._fpsAvgDisplay += delta;
+        if (this._fpsAvgDisplay > 1000) {
+            this._fpsAvgDisplay = 0;
+            const avg = this._fpsAvg.reduce((p, c) => p + c, 0) / (this._fpsAvg.length);
+            Log.fast('Frame rate', Math.round(avg) + ' fps (~' + (Math.round(avg / 60 * 10) / 10) + ')');
+        }
     }
     
     ///

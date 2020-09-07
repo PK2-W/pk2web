@@ -129,10 +129,10 @@ export class GameTimer {
         if (this._tpsAvg.length > 10) this._tpsAvg.shift();
         
         this._tpsAvgDisplay += this._deltaT;
-        if (this._tpsAvgDisplay > 500) {
+        if (this._tpsAvgDisplay > 1000) {
             this._tpsAvgDisplay = 0;
             const avg = this._tpsAvg.reduce((p, c) => p + c, 0) / (this._tpsAvg.length);
-            Log.fast('Tick rate', Math.round(avg) + 'tps (~' + (Math.round(avg / this._tps * 10) / 10) + ')');
+            Log.fast('Tick rate', Math.round(avg) + ' tps (~' + (Math.round(avg / this._tps * 10) / 10) + ')');
         }
     }
     
