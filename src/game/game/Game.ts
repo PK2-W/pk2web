@@ -231,6 +231,44 @@ export class Game extends GameContext implements PkTickable {
         this.composition.show();
     }
     
+    private async _loadBgImage(fpath: string, fname: string): Promise<void> {
+        const bt = await PkAssetTk.getImage(
+            ...(this.episode.isCommunity() ? [pathJoin(this.episode.homePath, 'gfx/scenery/', fname)] : []),
+            pathJoin(fpath, fname),
+            pathJoin(RESOURCES_PATH, 'gfx/scenery/', fname));
+        this._bgTexture = bt.getTexture();
+    }
+    
+    /**
+     * Places the player at the start position and centers the camera on him.<br>
+     * SDL: Select_Start
+     * @private
+     */
+    private _placePlayer(): void {
+        const startPos = this.map.getStartPosition();
+        
+        const playerPosX = startPos.x + this._sprites.player.proto.width / 2;
+        const playerPosY = startPos.y + this._sprites.player.proto.height / 2;
+        
+        this._sprites.player.x = playerPosX;
+        this._camera.x = Math.floor(playerPosX);
+        this._dcameraX = playerPosX;
+        
+        this._sprites.player.y = playerPosY;
+        this._camera.y = Math.floor(playerPosY);
+        this._dcameraY = playerPosY;
+    }
+    
+    /**
+     * SDL: PK_Draw_InGame_BG (1/2).
+     */
+    private _addBackground(): void {
+        this._bgImage = new DwTilingSprite(this._bgTexture, this.device.screenWidth * 4, this.device.screenHeight * 4);
+        this.composition.setBgImage(this._bgImage);
+        
+        this._updateBackground();
+    }
+    
     /**
      * This is the game loop.<br>
      * Repeats with each game tick to update each game element status/position according to its characteristics.<br>
@@ -550,186 +588,6 @@ export class Game extends GameContext implements PkTickable {
         // 		if (PisteInput_Keydown(PI_V))
         // 			nakymattomyys = 3000;
         // 	}
-    }
-    
-    private med = 0;
-    
-    /**
-     * SDL: PK_Draw_InGame_BGSprites.
-     */
-    private _updateBgSprites() {
-        let xl, yl, alku_x, alku_y, yk;
-        let i: int;
-        
-        for (let o = 0; o < MAX_SPRITES; o++) {
-            const sprite: Sprite = this._sprites.get(o);
-            
-            if (sprite.proto != null && i !== -1) {
-                if (!sprite.isDiscarded() && sprite.proto.type === ESpriteType.TYYPPI_TAUSTA) {
-                    //Tarkistetaanko onko sprite tai osa siit� kuvassa
-                    
-                    alku_x = sprite.initialX;
-                    alku_y = sprite.initialY;
-                    
-                    if (sprite.proto.pallarx_kerroin != 0) {
-                        xl = alku_x - this.cameraX - this.device.screenWidth / 2 - sprite.proto.width / 2;
-                        xl /= sprite.proto.pallarx_kerroin;
-                        yl = alku_y - this.cameraY - this.device.screenHeight / 2 - sprite.proto.height / 2;
-                        yk = sprite.proto.pallarx_kerroin;///1.5;
-                        if (yk != 0) {
-                            yl /= yk;
-                        }
-                    } else
-                        xl = yl = 0;
-                    
-                    switch (sprite.proto.getBehavior(0)) {
-                        case EAi.AI_TAUSTA_KUU               :
-                            yl += this.device.screenHeight / 3 + 50;
-                            break;
-                        // Janne:
-                        // case AI_TAUSTA_LIIKKUU_VASEMMALLE	:	if (sprite.a == 0)
-                        //    sprite.a = rand()%3;
-                        //    sprite.alku_x -= sprite.a;
-                        //    if (sprite.hidden && sprite.alku_x < Game::camera_x)
-                        //    {
-                        //           sprite.alku_x = Game::camera_x+screen_width+sprite.proto.leveys*2;
-                        //         sprite.a = rand()%3;
-                        //    }
-                        //    break;
-                        case EAi.AI_LIIKKUU_X_COS:
-                            sprite.AI_MovesX(this.entropy.cos(this.entropy.degree % 360));
-                            alku_x = sprite.x;
-                            alku_y = sprite.y;
-                            break;
-                        case EAi.AI_LIIKKUU_Y_COS:
-                            sprite.AI_MovesY(this.entropy.cos(this.entropy.degree % 360));
-                            alku_x = sprite.x;
-                            alku_y = sprite.y;
-                            break;
-                        case EAi.AI_LIIKKUU_X_SIN:
-                            sprite.AI_MovesX(this.entropy.sin(this.entropy.degree % 360));
-                            alku_x = sprite.x;
-                            alku_y = sprite.y;
-                            break;
-                        case EAi.AI_LIIKKUU_Y_SIN:
-                            sprite.AI_MovesY(this.entropy.sin(this.entropy.degree % 360));
-                            alku_x = sprite.x;
-                            alku_y = sprite.y;
-                            break;
-                        default:
-                            break;
-                    }
-                    
-                    sprite.x = alku_x - xl;
-                    sprite.y = alku_y - yl;
-                    
-                    //Tarkistetaanko onko sprite tai osa siit� kuvassa
-                    // if (sprite.x - sprite.proto.leveys/2  < this.cameraX+screen_width &&
-                    // sprite.x + sprite.proto.leveys/2  > this.cameraX &&
-                    // sprite.y - sprite.proto.korkeus/2 < this.cameraY+screen_height &&
-                    // sprite.y + sprite.proto.korkeus/2 > this.cameraY)
-                    // {
-                    sprite.Piirra(this.cameraX, this.cameraY);
-                    sprite.hidden = false;
-                    
-                    //   debug_drawn_sprites++;
-                    // } else {
-                    //     if (!this._paused) {
-                    //         sprite.Animoi();
-                    //     }
-                    //     sprite.piilossa = true;
-                    // }
-                    
-                    // debug_sprites++;
-                }
-            }
-        }
-    }
-    
-    /**
-     * SDL: PK_Draw_InGame_Sprites.
-     */
-    private _updateFgSprites(): void {
-        // debug_drawn_sprites = 0;
-        let stars: int, sx: int;
-        let star_x: number;
-        let star_y: number;
-        
-        for (let i = 0; i < MAX_SPRITES; i++) {
-            // Onko sprite n�kyv�
-            const sprite: Sprite = this._sprites.get(i);
-            
-            if (!sprite.isDiscarded() && sprite.proto.type != ESpriteType.TYYPPI_TAUSTA) {
-                //Check whether or not sprite is on the screen
-                if (sprite.x - sprite.proto.width / 2 < this.cameraX + this.device.screenWidth &&
-                    sprite.x + sprite.proto.width / 2 > this.cameraX &&
-                    sprite.y - sprite.proto.height / 2 < this.cameraY + this.device.screenHeight &&
-                    sprite.y + sprite.proto.height / 2 > this.cameraY) {
-                    
-                    if (sprite.isku > 0 && sprite.proto.type != ESpriteType.TYYPPI_BONUS && sprite.energy < 1) {
-                        // TODO
-                        // int framex = ((degree%12)/3) * 58;
-                        // DWORD hit_x = sprite->x-8, hit_y = sprite->y-8;
-                        // PisteDraw2_Image_CutClip(kuva_peli,hit_x-Game::camera_x-28+8, hit_y-Game::camera_y-27+8,1+framex,83,1+57+framex,83+55);
-                    }
-                    
-                    const doublespeed = false; // TODO temp
-                    if (this._nakymattomyys === 0 || (!doublespeed && this._nakymattomyys % 2 == 0) || (doublespeed && this._nakymattomyys % 4 <= 1) || sprite != this._sprites.player/*i != pelaaja_index*/)
-                        sprite.Piirra(null, null);
-                    
-                    if (sprite.energy < 1 && sprite.proto.type != ESpriteType.TYYPPI_AMMUS) {
-                        // TODO
-                        // sx = (int)sprite->x;
-                        // for (stars=0; stars<3; stars++){
-                        //     star_x = sprite->x-8 + (sin_table[((stars*120+degree)*2)%359])/3;
-                        //     star_y = sprite->y-18 + (cos_table[((stars*120+degree)*2+sx)%359])/8;
-                        //     PisteDraw2_Image_CutClip(kuva_peli,star_x-Game::camera_x, star_y-Game::camera_y,1,1,11,11);
-                        // }
-                    }
-                    
-                    //  debug_drawn_sprites++;
-                } else {
-                    //     if (!this._paused) {
-                    // // Animate without draw
-                    sprite.Animoi();
-                    //     }
-                    //
-                    if (sprite.energy < 1) {
-                        sprite.discard();
-                    }
-                }
-                
-                // this.debug_sprites++;
-            }
-        }
-    }
-    
-    /**
-     * Places the player at the start position and centers the camera on him.<br>
-     * SDL: Select_Start
-     * @private
-     */
-    private _placePlayer(): void {
-        const startPos = this.map.getStartPosition();
-        
-        const playerPosX = startPos.x + this._sprites.player.proto.width / 2;
-        const playerPosY = startPos.y + this._sprites.player.proto.height / 2;
-        
-        this._sprites.player.x = playerPosX;
-        this._camera.x = Math.floor(playerPosX);
-        this._dcameraX = playerPosX;
-        
-        this._sprites.player.y = playerPosY;
-        this._camera.y = Math.floor(playerPosY);
-        this._dcameraY = playerPosY;
-    }
-    
-    private async _loadBgImage(fpath: string, fname: string): Promise<void> {
-        const bt = await PkAssetTk.getImage(
-            ...(this.episode.isCommunity() ? [pathJoin(this.episode.homePath, 'gfx/scenery/', fname)] : []),
-            pathJoin(fpath, fname),
-            pathJoin(RESOURCES_PATH, 'gfx/scenery/', fname));
-        this._bgTexture = bt.getTexture();
     }
     
     /**
@@ -1361,8 +1219,9 @@ export class Game extends GameContext implements PkTickable {
                     this._particles.newParticle(EParticle.PARTICLE_STAR, future.x, future.y, 1, -1, 60, 0.01, 128);
                 }
                 
-                // 			if (sprite.Onko_AI(AI_VAIHDA_KALLOT_JOS_OSUTTU))
-                // 				kartta->Change_SkullBlocks();
+                if (sprite.hasBehavior(EAi.AI_VAIHDA_KALLOT_JOS_OSUTTU)) {
+                    this._blocks.changeSkullBlocks();
+                }
                 
                 if (sprite.hasBehavior(EAi.AI_HYOKKAYS_1_JOS_OSUTTU)) {
                     sprite.attack1Remaining = sprite.proto.attack1Duration;
@@ -1392,8 +1251,9 @@ export class Game extends GameContext implements PkTickable {
                                 this._sprites.addSprite(sprite.proto.bonusProto, false,
                                     future.x - 11 + (10 - rand() % 20), future.bottom - 16 - (10 + rand() % 20), sprite, true);
                     
-                    // 				if (sprite.Onko_AI(AI_VAIHDA_KALLOT_JOS_TYRMATTY) && !sprite.Onko_AI(AI_VAIHDA_KALLOT_JOS_OSUTTU))
-                    // 					kartta->Change_SkullBlocks();
+                    if (sprite.hasBehavior(EAi.AI_VAIHDA_KALLOT_JOS_TYRMATTY) && !sprite.hasBehavior(EAi.AI_VAIHDA_KALLOT_JOS_OSUTTU)) {
+                        this._blocks.changeSkullBlocks();
+                    }
                     
                     if (tuhoutuminen >= EDestructionType.TUHOUTUMINEN_ANIMAATIO)
                         tuhoutuminen -= EDestructionType.TUHOUTUMINEN_ANIMAATIO;
@@ -1805,118 +1665,80 @@ export class Game extends GameContext implements PkTickable {
                     // 													break;
                     //
                     case EAi.AI_INFO1:
-                        if (sprite.AI_Info(this._sprites.player)) {
-                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info01));
-                            Log.l('[INFO] ', this.context.tx.get(TX.INFO01));
-                        }
+                        if (sprite.AI_Info(this._sprites.player))
+                            this.ui.showInfo(TX.INFO01);
                         break;
                     case EAi.AI_INFO2:
-                        if (sprite.AI_Info(this._sprites.player)) {
-                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info02));
-                            Log.l('[INFO] ', this.context.tx.get(TX.INFO02));
-                        }
+                        if (sprite.AI_Info(this._sprites.player))
+                            this.ui.showInfo(TX.INFO02);
                         break;
                     case EAi.AI_INFO3:
-                        if (sprite.AI_Info(this._sprites.player)) {
-                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info03));
-                            Log.l('[INFO] ', this.context.tx.get(TX.INFO03));
-                        }
+                        if (sprite.AI_Info(this._sprites.player))
+                            this.ui.showInfo(TX.INFO03);
                         break;
                     case EAi.AI_INFO4:
-                        if (sprite.AI_Info(this._sprites.player)) {
-                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info04));
-                            Log.l('[INFO] ', this.context.tx.get(TX.INFO04));
-                        }
+                        if (sprite.AI_Info(this._sprites.player))
+                            this.ui.showInfo(TX.INFO04);
                         break;
                     case EAi.AI_INFO5:
-                        if (sprite.AI_Info(this._sprites.player)) {
-                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info05));
-                            Log.l('[INFO] ', this.context.tx.get(TX.INFO05));
-                        }
+                        if (sprite.AI_Info(this._sprites.player))
+                            this.ui.showInfo(TX.INFO05);
                         break;
                     case EAi.AI_INFO6:
-                        if (sprite.AI_Info(this._sprites.player)) {
-                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info06));
-                            Log.l('[INFO] ', this.context.tx.get(TX.INFO06));
-                        }
+                        if (sprite.AI_Info(this._sprites.player))
+                            this.ui.showInfo(TX.INFO06);
                         break;
                     case EAi.AI_INFO7:
-                        if (sprite.AI_Info(this._sprites.player)) {
-                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info07));
-                            Log.l('[INFO] ', this.context.tx.get(TX.INFO07));
-                        }
+                        if (sprite.AI_Info(this._sprites.player))
+                            this.ui.showInfo(TX.INFO07);
                         break;
                     case EAi.AI_INFO8:
-                        if (sprite.AI_Info(this._sprites.player)) {
-                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info08));
-                            Log.l('[INFO] ', this.context.tx.get(TX.INFO08));
-                        }
+                        if (sprite.AI_Info(this._sprites.player))
+                            this.ui.showInfo(TX.INFO08);
                         break;
                     case EAi.AI_INFO9:
-                        if (sprite.AI_Info(this._sprites.player)) {
-                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info09));
-                            Log.l('[INFO] ', this.context.tx.get(TX.INFO09));
-                        }
+                        if (sprite.AI_Info(this._sprites.player))
+                            this.ui.showInfo(TX.INFO09);
                         break;
                     case EAi.AI_INFO10:
-                        if (sprite.AI_Info(this._sprites.player)) {
-                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info10));
-                            Log.l('[INFO] ', this.context.tx.get(TX.INFO10));
-                        }
+                        if (sprite.AI_Info(this._sprites.player))
+                            this.ui.showInfo(TX.INFO10);
                         break;
                     case EAi.AI_INFO11:
-                        if (sprite.AI_Info(this._sprites.player)) {
-                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info11));
-                            Log.l('[INFO] ', this.context.tx.get(TX.INFO11));
-                        }
+                        if (sprite.AI_Info(this._sprites.player))
+                            this.ui.showInfo(TX.INFO11);
                         break;
                     case EAi.AI_INFO12:
-                        if (sprite.AI_Info(this._sprites.player)) {
-                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info12));
-                            Log.l('[INFO] ', this.context.tx.get(TX.INFO12));
-                        }
+                        if (sprite.AI_Info(this._sprites.player))
+                            this.ui.showInfo(TX.INFO12);
                         break;
                     case EAi.AI_INFO13:
-                        if (sprite.AI_Info(this._sprites.player)) {
-                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info13));
-                            Log.l('[INFO] ', this.context.tx.get(TX.INFO13));
-                        }
+                        if (sprite.AI_Info(this._sprites.player))
+                            this.ui.showInfo(TX.INFO13);
                         break;
                     case EAi.AI_INFO14:
-                        if (sprite.AI_Info(this._sprites.player)) {
-                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info14));
-                            Log.l('[INFO] ', this.context.tx.get(TX.INFO14));
-                        }
+                        if (sprite.AI_Info(this._sprites.player))
+                            this.ui.showInfo(TX.INFO14);
                         break;
                     case EAi.AI_INFO15:
-                        if (sprite.AI_Info(this._sprites.player)) {
-                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info15));
-                            Log.l('[INFO] ', this.context.tx.get(TX.INFO15));
-                        }
+                        if (sprite.AI_Info(this._sprites.player))
+                            this.ui.showInfo(TX.INFO15);
                         break;
                     case EAi.AI_INFO16:
-                        if (sprite.AI_Info(this._sprites.player)) {
-                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info16));
-                            Log.l('[INFO] ', this.context.tx.get(TX.INFO16));
-                        }
+                        if (sprite.AI_Info(this._sprites.player))
+                            this.ui.showInfo(TX.INFO16);
                         break;
                     case EAi.AI_INFO17:
-                        if (sprite.AI_Info(this._sprites.player)) {
-                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info17));
-                            Log.l('[INFO] ', this.context.tx.get(TX.INFO17));
-                        }
+                        if (sprite.AI_Info(this._sprites.player))
+                            this.ui.showInfo(TX.INFO17);
                         break;
                     case EAi.AI_INFO18:
-                        if (sprite.AI_Info(this._sprites.player)) {
-                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info18));
-                            Log.l('[INFO] ', this.context.tx.get(TX.INFO18));
-                        }
+                        if (sprite.AI_Info(this._sprites.player))
+                            this.ui.showInfo(TX.INFO18);
                         break;
                     case EAi.AI_INFO19:
-                        if (sprite.AI_Info(this._sprites.player)) {
-                            //PK_Start_Info(tekstit->Hae_Teksti(PK_txt.info19));
-                            Log.l('[INFO] ', this.context.tx.get(TX.INFO19));
-                        }
+                        if (sprite.AI_Info(this._sprites.player))
+                            this.ui.showInfo(TX.INFO19);
                         break;
                     default:
                         break;
@@ -2462,6 +2284,198 @@ export class Game extends GameContext implements PkTickable {
     }
     
     /**
+     *  SDL: ~PK_Fadetext_Update (in game)
+     */
+    private _updateOverlays(): void {
+        this._flies.forEach(fly => {
+            fly.tick();
+            if (fly.isDone()) {
+                this._flies.delete(fly);
+            }
+        });
+    }
+    
+    /**
+     * SDL: PK_Draw_InGame_BG (2/2).
+     */
+    private _updateBackground(): void {
+        let pallarx: int = (this.cameraX % (640 * 3)) / 3;
+        let pallary: int = (this.cameraY % (480 * 3)) / 3;
+        
+        switch (this.map.bgMovement) {
+            case EBgImageMovement.TAUSTA_STAATTINEN:
+                this._bgImage.x = 0;
+                this._bgImage.y = 0;
+                break;
+            case EBgImageMovement.TAUSTA_PALLARX_HORI:
+                this._bgImage.x = -pallarx;
+                this._bgImage.y = 0;
+                break;
+            case EBgImageMovement.TAUSTA_PALLARX_VERT:
+                this._bgImage.x = 0;
+                this._bgImage.y = -pallary;
+                break;
+            case EBgImageMovement.TAUSTA_PALLARX_VERT_JA_HORI:
+                this._bgImage.x = -pallarx;
+                this._bgImage.y = -pallary;
+                break;
+        }
+        
+        this._bgImage.x += this.cameraX;
+        this._bgImage.y += this.cameraY;
+    }
+    
+    /**
+     * SDL: PK_Draw_InGame_BGSprites.
+     */
+    private _updateBgSprites() {
+        let xl, yl, alku_x, alku_y, yk;
+        let i: int;
+        
+        for (let o = 0; o < MAX_SPRITES; o++) {
+            const sprite: Sprite = this._sprites.get(o);
+            
+            if (sprite.proto != null && i !== -1) {
+                if (!sprite.isDiscarded() && sprite.proto.type === ESpriteType.TYYPPI_TAUSTA) {
+                    //Tarkistetaanko onko sprite tai osa siit� kuvassa
+                    
+                    alku_x = sprite.initialX;
+                    alku_y = sprite.initialY;
+                    
+                    if (sprite.proto.pallarx_kerroin != 0) {
+                        xl = alku_x - this.cameraX - this.device.screenWidth / 2 - sprite.proto.width / 2;
+                        xl /= sprite.proto.pallarx_kerroin;
+                        yl = alku_y - this.cameraY - this.device.screenHeight / 2 - sprite.proto.height / 2;
+                        yk = sprite.proto.pallarx_kerroin;///1.5;
+                        if (yk != 0) {
+                            yl /= yk;
+                        }
+                    } else
+                        xl = yl = 0;
+                    
+                    switch (sprite.proto.getBehavior(0)) {
+                        case EAi.AI_TAUSTA_KUU               :
+                            yl += this.device.screenHeight / 3 + 50;
+                            break;
+                        // Janne:
+                        // case AI_TAUSTA_LIIKKUU_VASEMMALLE	:	if (sprite.a == 0)
+                        //    sprite.a = rand()%3;
+                        //    sprite.alku_x -= sprite.a;
+                        //    if (sprite.hidden && sprite.alku_x < Game::camera_x)
+                        //    {
+                        //           sprite.alku_x = Game::camera_x+screen_width+sprite.proto.leveys*2;
+                        //         sprite.a = rand()%3;
+                        //    }
+                        //    break;
+                        case EAi.AI_LIIKKUU_X_COS:
+                            sprite.AI_MovesX(this.entropy.cos(this.entropy.degree % 360));
+                            alku_x = sprite.x;
+                            alku_y = sprite.y;
+                            break;
+                        case EAi.AI_LIIKKUU_Y_COS:
+                            sprite.AI_MovesY(this.entropy.cos(this.entropy.degree % 360));
+                            alku_x = sprite.x;
+                            alku_y = sprite.y;
+                            break;
+                        case EAi.AI_LIIKKUU_X_SIN:
+                            sprite.AI_MovesX(this.entropy.sin(this.entropy.degree % 360));
+                            alku_x = sprite.x;
+                            alku_y = sprite.y;
+                            break;
+                        case EAi.AI_LIIKKUU_Y_SIN:
+                            sprite.AI_MovesY(this.entropy.sin(this.entropy.degree % 360));
+                            alku_x = sprite.x;
+                            alku_y = sprite.y;
+                            break;
+                        default:
+                            break;
+                    }
+                    
+                    sprite.x = alku_x - xl;
+                    sprite.y = alku_y - yl;
+                    
+                    //Tarkistetaanko onko sprite tai osa siit� kuvassa
+                    // if (sprite.x - sprite.proto.leveys/2  < this.cameraX+screen_width &&
+                    // sprite.x + sprite.proto.leveys/2  > this.cameraX &&
+                    // sprite.y - sprite.proto.korkeus/2 < this.cameraY+screen_height &&
+                    // sprite.y + sprite.proto.korkeus/2 > this.cameraY)
+                    // {
+                    sprite.Piirra(this.cameraX, this.cameraY);
+                    sprite.hidden = false;
+                    
+                    //   debug_drawn_sprites++;
+                    // } else {
+                    //     if (!this._paused) {
+                    //         sprite.Animoi();
+                    //     }
+                    //     sprite.piilossa = true;
+                    // }
+                    
+                    // debug_sprites++;
+                }
+            }
+        }
+    }
+    
+    /**
+     * SDL: PK_Draw_InGame_Sprites.
+     */
+    private _updateFgSprites(): void {
+        // debug_drawn_sprites = 0;
+        let stars: int, sx: int;
+        let star_x: number;
+        let star_y: number;
+        
+        for (let i = 0; i < MAX_SPRITES; i++) {
+            // Onko sprite n�kyv�
+            const sprite: Sprite = this._sprites.get(i);
+            
+            if (!sprite.isDiscarded() && sprite.proto.type != ESpriteType.TYYPPI_TAUSTA) {
+                //Check whether or not sprite is on the screen
+                if (sprite.x - sprite.proto.width / 2 < this.cameraX + this.device.screenWidth &&
+                    sprite.x + sprite.proto.width / 2 > this.cameraX &&
+                    sprite.y - sprite.proto.height / 2 < this.cameraY + this.device.screenHeight &&
+                    sprite.y + sprite.proto.height / 2 > this.cameraY) {
+                    
+                    if (sprite.isku > 0 && sprite.proto.type != ESpriteType.TYYPPI_BONUS && sprite.energy < 1) {
+                        // TODO
+                        // int framex = ((degree%12)/3) * 58;
+                        // DWORD hit_x = sprite->x-8, hit_y = sprite->y-8;
+                        // PisteDraw2_Image_CutClip(kuva_peli,hit_x-Game::camera_x-28+8, hit_y-Game::camera_y-27+8,1+framex,83,1+57+framex,83+55);
+                    }
+                    
+                    const doublespeed = false; // TODO temp
+                    if (this._nakymattomyys === 0 || (!doublespeed && this._nakymattomyys % 2 == 0) || (doublespeed && this._nakymattomyys % 4 <= 1) || sprite != this._sprites.player/*i != pelaaja_index*/)
+                        sprite.Piirra(null, null);
+                    
+                    if (sprite.energy < 1 && sprite.proto.type != ESpriteType.TYYPPI_AMMUS) {
+                        // TODO
+                        // sx = (int)sprite->x;
+                        // for (stars=0; stars<3; stars++){
+                        //     star_x = sprite->x-8 + (sin_table[((stars*120+degree)*2)%359])/3;
+                        //     star_y = sprite->y-18 + (cos_table[((stars*120+degree)*2+sx)%359])/8;
+                        //     PisteDraw2_Image_CutClip(kuva_peli,star_x-Game::camera_x, star_y-Game::camera_y,1,1,11,11);
+                        // }
+                    }
+                    
+                    //  debug_drawn_sprites++;
+                } else {
+                    //     if (!this._paused) {
+                    // // Animate without draw
+                    sprite.Animoi();
+                    //     }
+                    //
+                    if (sprite.energy < 1) {
+                        sprite.discard();
+                    }
+                }
+                
+                // this.debug_sprites++;
+            }
+        }
+    }
+
+    /**
      * Check if the specified *sprite* is going to collide with the provided *block*,
      * updating the given *future* as necessary.
      * CPP: PK_Tutki_Seina (2 args).
@@ -2754,46 +2768,6 @@ export class Game extends GameContext implements PkTickable {
         }
     }
     
-    /**
-     * SDL: PK_Draw_InGame_BG (1/2).
-     */
-    private _addBackground(): void {
-        this._bgImage = new DwTilingSprite(this._bgTexture, this.device.screenWidth * 4, this.device.screenHeight * 4);
-        this.composition.setBgImage(this._bgImage);
-        
-        this._updateBackground();
-    }
-    
-    /**
-     * SDL: PK_Draw_InGame_BG (2/2).
-     */
-    private _updateBackground(): void {
-        let pallarx: int = (this.cameraX % (640 * 3)) / 3;
-        let pallary: int = (this.cameraY % (480 * 3)) / 3;
-        
-        switch (this.map.bgMovement) {
-            case EBgImageMovement.TAUSTA_STAATTINEN:
-                this._bgImage.x = 0;
-                this._bgImage.y = 0;
-                break;
-            case EBgImageMovement.TAUSTA_PALLARX_HORI:
-                this._bgImage.x = -pallarx;
-                this._bgImage.y = 0;
-                break;
-            case EBgImageMovement.TAUSTA_PALLARX_VERT:
-                this._bgImage.x = 0;
-                this._bgImage.y = -pallary;
-                break;
-            case EBgImageMovement.TAUSTA_PALLARX_VERT_JA_HORI:
-                this._bgImage.x = -pallarx;
-                this._bgImage.y = -pallary;
-                break;
-        }
-        
-        this._bgImage.x += this.cameraX;
-        this._bgImage.y += this.cameraY;
-    }
-    
     public teleport(src: Sprite, sprite: Sprite): boolean {
         const destinations: Sprite[] = [];
         let queried: Sprite[];
@@ -2863,18 +2837,6 @@ export class Game extends GameContext implements PkTickable {
         const fly = new Fly(this.context, text, font, x, y, ticks, translate);
         this._flies.add(fly);
         this.composition.addOverlay(fly);
-    }
-    
-    /**
-     *  SDL: ~PK_Fadetext_Update (in game)
-     */
-    private _updateOverlays(): void {
-        this._flies.forEach(fly => {
-            fly.tick();
-            if (fly.isDone()) {
-                this._flies.delete(fly);
-            }
-        });
     }
 }
 
