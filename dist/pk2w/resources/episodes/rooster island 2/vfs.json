@@ -1,0 +1,20 @@
+{
+  "gen": 1599665882000,
+  "vfs": [
+    {"t": 1, "n": "level1.map"},
+    {"t": 1, "n": "level2.map"},
+    {"t": 1, "n": "level3.map"},
+    {"t": 1, "n": "level4.map"},
+    {"t": 1, "n": "level5.map"},
+    {"t": 1, "n": "level6.map"},
+    {"t": 1, "n": "level7.map"},
+    {"t": 1, "n": "level8.map"},
+    {"t": 1, "n": "level9.map"},
+    {"t": 1, "n": "level10.map"},
+    {"t": 1, "n": "level11.map"},
+    {"t": 1, "n": "level12.map"},
+    {"t": 1, "n": "level13.map"},
+    {"t": 1, "n": "map.bmp"}
+  ]
+}
+

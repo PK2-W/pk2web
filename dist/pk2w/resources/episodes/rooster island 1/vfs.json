@@ -1,38 +1,17 @@
 {
-  "level001.map": {
-    "type": 1
-  },
-  "level002.map": {
-    "type": 1
-  },
-  "level003.map": {
-    "type": 1
-  },
-  "level004.map": {
-    "type": 1
-  },
-  "level005.map": {
-    "type": 1
-  },
-  "level006.map": {
-    "type": 1
-  },
-  "level007.map": {
-    "type": 1
-  },
-  "level008.map": {
-    "type": 1
-  },
-  "level009.map": {
-    "type": 1
-  },
-  "level010.map": {
-    "type": 1
-  },
-  "level011.map": {
-    "type": 1
-  },
-  "scores.dat": {
-    "type": 1
-  }
+  "gen": 1599665882000,
+  "vfs": [
+    {"t": 1, "n": "level001.map"},
+    {"t": 1, "n": "level002.map"},
+    {"t": 1, "n": "level003.map"},
+    {"t": 1, "n": "level004.map"},
+    {"t": 1, "n": "level005.map"},
+    {"t": 1, "n": "level006.map"},
+    {"t": 1, "n": "level007.map"},
+    {"t": 1, "n": "level008.map"},
+    {"t": 1, "n": "level009.map"},
+    {"t": 1, "n": "level010.map"},
+    {"t": 1, "n": "level011.map"},
+    {"t": 1, "n": "scores.dat"}
+  ]
 }

@@ -1,8 +1,7 @@
 {
-  "rooster island 1": {
-    "type": 0
-  },
-  "roosted island 2": {
-    "type": 0
-  }
+  "gen": 1599665882000,
+  "vfs": [
+    {"t": 0, "n": "rooster island 1"},
+    {"t": 0, "n": "rooster island 2"}
+  ]
 }
