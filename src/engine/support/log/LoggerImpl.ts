@@ -166,6 +166,7 @@ class LoggerImpl implements Logger {
             background: rgba(255,255,255,0.4);
             padding: 3px 6px;
             border-radius: 1px;
+            pointer-events: none;
             display: none;
             backdrop-filter: blur(5px);`);
         document.body.appendChild(this._$fastLogs);
@@ -248,15 +249,17 @@ class LoggerImpl implements Logger {
     }
     
     public fast(key: string, msg: string | number): void {
-        const xkey = key.replace(/[^a-zA-Z0-9_]/g, '_');
-        let fld: HTMLDivElement = this._$fastLogs.querySelector('#__log_fl__' + xkey);
-        if (fld == null) {
-            fld = document.createElement('div');
-            fld.id = '__log_fl__' + xkey;
-            this._$fastLogs.appendChild(fld);
-            this._$fastLogs.style.display = 'block';
+        if (this.isDebug()) {
+            const xkey = key.replace(/[^a-zA-Z0-9_]/g, '_');
+            let fld: HTMLDivElement = this._$fastLogs.querySelector('#__log_fl__' + xkey);
+            if (fld == null) {
+                fld = document.createElement('div');
+                fld.id = '__log_fl__' + xkey;
+                this._$fastLogs.appendChild(fld);
+                this._$fastLogs.style.display = 'block';
+            }
+            fld.innerHTML = `<b>${ key }:</b> ${ msg }`;
         }
-        fld.innerHTML = `<b>${ key }:</b> ${ msg }`;
     }
     
     public isDebug(): boolean {

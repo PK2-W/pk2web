@@ -1,7 +1,7 @@
-import { PkDeviceAction } from '@ng/core/input/PkDeviceAction';
+import { PkDeviceAction } from '@ng/core/input/action/PkDeviceAction';
+import { PkKeyboardAction } from '@ng/core/input/action/PkKeyboardAction';
+import { PkKeyboardEvent } from '@ng/core/input/event/PkKeyboardEvent';
 import { PkInputEvent } from '@ng/core/input/PkInputEvent';
-import { PkKeyboardAction } from '@ng/core/input/PkKeyboardAction';
-import { PkKeyboardEvent } from '@ng/core/input/PkKeyboardEvent';
 import type { PkEngine } from '@ng/core/PkEngine';
 import { Log } from '@ng/support/log/LoggerImpl';
 import { EventEmitter } from 'eventemitter3';
@@ -102,7 +102,7 @@ export class PkInput extends EventEmitter {
     
     public getGameActionsByDeviceActn(deviceActn: PkDeviceAction): (number | string)[] {
         return this._relations
-            .filter(relation => relation.deviceActns.some(action => action.id === deviceActn.id))
+            .filter(relation => relation.deviceActns.some(action => action.fullId === deviceActn.fullId))
             .map(relation => relation.gameActns)
             .reduce((result, current) => {
                 result.push(...current);
@@ -110,9 +110,9 @@ export class PkInput extends EventEmitter {
             }, []);
     }
     
-    public getGameActionsById(id: string): (number | string)[] {
+    public getGameActionsById(fullId: string): (number | string)[] {
         return this._relations
-            .filter(relation => relation.deviceActns.some(action => action.id === id))
+            .filter(relation => relation.deviceActns.some(action => action.fullId === fullId))
             .map(relation => relation.gameActns)
             .reduce((result, current) => {
                 result.push(...current);
@@ -122,7 +122,7 @@ export class PkInput extends EventEmitter {
     
     public getGameActionsByKeyId(keyId: string): (number | string)[] {
         return this._relations
-            .filter(relation => relation.deviceActns.some(action => action.keyId === keyId))
+            .filter(relation => relation.deviceActns.some(action => action.id === keyId))
             .map(relation => relation.gameActns)
             .reduce((result, current) => {
                 result.push(...current);
@@ -149,8 +149,8 @@ export class PkInput extends EventEmitter {
         
         const deviceEvnt = new PkKeyboardEvent(ev);
         
-        if (!this._actingDeviceKeys.has(deviceEvnt.action.keyId)) {
-            this._actingDeviceKeys.add(deviceEvnt.action.keyId);
+        if (!this._actingDeviceKeys.has(deviceEvnt.action.id)) {
+            this._actingDeviceKeys.add(deviceEvnt.action.id);
             this._updateActiveGameActions();
             
             Log.v('         Added to active (', this._actingDeviceKeys.size, ')');
@@ -159,7 +159,7 @@ export class PkInput extends EventEmitter {
         const gameActns = this.getGameActionsByDeviceActn(deviceEvnt.action);
         const inputEvent = new PkInputEvent(deviceEvnt, gameActns);
         
-        Log.v('[~Input] Device DOWN: "', deviceEvnt.action.id, '"');
+        Log.v('[~Input] Device DOWN: "', deviceEvnt.action.fullId, '"');
         Log.v('         Triggers actions: [', gameActns.join(', '), ']');
         
         this.emit(PkInput.EV_KEYDOWN, inputEvent);
@@ -173,11 +173,11 @@ export class PkInput extends EventEmitter {
         const deviceEvnt = new PkKeyboardEvent(ev);
         const gameActns = this.getGameActionsByDeviceActn(deviceEvnt.action);
         
-        Log.v('[~Input] Device UP: "', deviceEvnt.action.id, '"');
+        Log.v('[~Input] Device UP: "', deviceEvnt.action.fullId, '"');
         Log.v('         Triggers actions: [', gameActns.join(', '), ']');
         
-        if (this._actingDeviceKeys.has(deviceEvnt.action.keyId)) {
-            this._actingDeviceKeys.delete(deviceEvnt.action.keyId);
+        if (this._actingDeviceKeys.has(deviceEvnt.action.id)) {
+            this._actingDeviceKeys.delete(deviceEvnt.action.id);
             this._updateActiveGameActions();
             
             Log.v('         Removed from active (', this._actingDeviceKeys.size, ')');

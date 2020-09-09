@@ -6,6 +6,7 @@ export enum InputAction {
     UI_PREV = 'UI_TAB_PREV',
     UI_NEXT = 'UI_TAB_NEXT',
     UI_ACTUATE = 'UI_ACTUATE',
+    UI_BACKSPACE = 'UI_BACKSPACE',
     ESCAPE = 'ESCAPE',
     GAME_LEFT = 'GAME_LEFT',
     GAME_RIGHT = 'GAME_RIGHT',

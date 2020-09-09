@@ -1,5 +1,5 @@
 import { PkInputEventType } from '@ng/core/input/enum/PkInputEventType';
-import { PkDeviceEvent } from '@ng/core/input/PkDeviceEvent';
+import { PkDeviceEvent } from '@ng/core/input/event/PkDeviceEvent';
 
 export class PkInputEvent {
     public readonly deviceEvent: PkDeviceEvent;
@@ -21,7 +21,7 @@ export class PkInputEvent {
         return this._propagate;
     }
     
-    public preventPropagation(): void {
+    public preventBubbling(): void {
         this._propagate = false;
     }
 }

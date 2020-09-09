@@ -33,11 +33,12 @@ import { IntroScreen } from '@game/ui/screen/intro/IntroScreen';
 import { MapScreen } from '@game/ui/screen/map/MapScreen';
 import { MenuScreen } from '@game/ui/screen/menu/MenuScreen';
 import { GameTimer } from '@ng/core/GameTimer';
-import { kbAction } from '@ng/core/input/PkKeyboardAction';
+import { kbAction } from '@ng/core/input/action/PkKeyboardAction';
+import { KbCode } from '@ng/core/input/enum/KbCode';
 import { PK2wSound } from '@ng/core/PK2wSound';
 import { PkDevice } from '@ng/core/PkDevice';
 import { PkEngine } from '@ng/core/PkEngine';
-import { Key, PkInput } from '@ng/core/PkInput';
+import { PkInput } from '@ng/core/PkInput';
 import { PkAssetCache } from '@ng/PkAssetCache';
 import { PkLanguage } from '@ng/PkLanguage';
 import { PkRenderer, FADE } from '@ng/render/PkRenderer';
@@ -300,9 +301,6 @@ export class Pekka implements PkTickable, PekkaContext {
     
     // Player
     private pisteet: uint = 0;
-    private pelaajan_nimi: str<20> = ' ';
-    
-    private nimiedit: boolean = false;
     
     // Screens
     private readonly _screens: Map<int, PkScreen>;
@@ -925,7 +923,7 @@ export class Pekka implements PkTickable, PekkaContext {
     
     private PK_MainScreen_Menu(): void {
         
-        if (!this.nimiedit && this.key_delay === 0 && this.menu_lue_kontrollit === 0) {
+        if (/*!this.nimiedit &&*/ this.key_delay === 0 && this.menu_lue_kontrollit === 0) {
             // 		if (PisteInput_Keydown(PI_UP) || PisteInput_Keydown(PI_LEFT) ||
             // 			PisteInput_Ohjain_X(PI_PELIOHJAIN_1) < 0 || PisteInput_Ohjain_Y(PI_PELIOHJAIN_1) < 0){
             // 			menu_valittu_id--;
@@ -1626,25 +1624,26 @@ export class Pekka implements PkTickable, PekkaContext {
         await this._loadStuff();
         
         // setup input
-        this._engine.input.associateAction([kbAction(Key.ArrowLeft)], [InputAction.UI_PREV, InputAction.UI_LEFT]);
-        this._engine.input.associateAction([kbAction(Key.ArrowRight)], [InputAction.UI_NEXT, InputAction.UI_RIGHT]);
-        this._engine.input.associateAction([kbAction(Key.ArrowUp)], [InputAction.UI_UP]);
-        this._engine.input.associateAction([kbAction(Key.ArrowDown)], [InputAction.UI_DOWN]);
-        this._engine.input.associateAction([kbAction(Key.Enter), kbAction(' ')], [InputAction.UI_ACTUATE]);
-        this._engine.input.associateAction([kbAction(Key.Escape)], [InputAction.ESCAPE]);
-        this._engine.input.associateAction([kbAction(Key.Tab)], [InputAction.UI_NEXT]);
+        this._engine.input.associateAction([kbAction(KbCode.ArrowLeft)], [InputAction.UI_PREV, InputAction.UI_LEFT]);
+        this._engine.input.associateAction([kbAction(KbCode.ArrowRight)], [InputAction.UI_NEXT, InputAction.UI_RIGHT]);
+        this._engine.input.associateAction([kbAction(KbCode.ArrowUp)], [InputAction.UI_UP]);
+        this._engine.input.associateAction([kbAction(KbCode.ArrowDown)], [InputAction.UI_DOWN]);
+        this._engine.input.associateAction([kbAction(KbCode.Enter), kbAction(KbCode.Space)], [InputAction.UI_ACTUATE]);
+        this._engine.input.associateAction([kbAction(KbCode.Backspace)], [InputAction.UI_BACKSPACE]);
+        this._engine.input.associateAction([kbAction(KbCode.Escape)], [InputAction.ESCAPE]);
+        this._engine.input.associateAction([kbAction(KbCode.Tab)], [InputAction.UI_NEXT]);
         
-        this._engine.input.associateAction([kbAction(Key.ArrowLeft)], [InputAction.GAME_LEFT]);
-        this._engine.input.associateAction([kbAction(Key.ArrowRight)], [InputAction.GAME_RIGHT]);
-        this._engine.input.associateAction([kbAction(Key.ArrowUp)], [InputAction.GAME_JUMP]);
-        this._engine.input.associateAction([kbAction(Key.ArrowDown)], [InputAction.GAME_CROUCH]);
-        this._engine.input.associateAction([kbAction(Key.AltGraph)], [InputAction.GAME_WALK_SLOW]);
-        this._engine.input.associateAction([kbAction(Key.Control)], [InputAction.GAME_ATTACK1]);
-        this._engine.input.associateAction([kbAction(Key.Alt)], [InputAction.GAME_ATTACK2]);
-        this._engine.input.associateAction([kbAction(Key.Tab)], [InputAction.GAME_GIFT_NEXT]);
-        this._engine.input.associateAction([kbAction(' ')], [InputAction.GAME_GIFT_USE]);
-        this._engine.input.associateAction([kbAction(Key.Delete)], [InputAction.GAME_SUICIDE]);
-        this._engine.input.associateAction([kbAction('P')], [InputAction.GAME_PAUSE]);
+        this._engine.input.associateAction([kbAction(KbCode.ArrowLeft)], [InputAction.GAME_LEFT]);
+        this._engine.input.associateAction([kbAction(KbCode.ArrowRight)], [InputAction.GAME_RIGHT]);
+        this._engine.input.associateAction([kbAction(KbCode.ArrowUp)], [InputAction.GAME_JUMP]);
+        this._engine.input.associateAction([kbAction(KbCode.ArrowDown)], [InputAction.GAME_CROUCH]);
+        this._engine.input.associateAction([kbAction(KbCode.AltRight)], [InputAction.GAME_WALK_SLOW]);
+        this._engine.input.associateAction([kbAction(KbCode.ControlLeft)], [InputAction.GAME_ATTACK1]);
+        this._engine.input.associateAction([kbAction(KbCode.AltLeft)], [InputAction.GAME_ATTACK2]);
+        this._engine.input.associateAction([kbAction(KbCode.Tab)], [InputAction.GAME_GIFT_NEXT]);
+        this._engine.input.associateAction([kbAction(KbCode.Space)], [InputAction.GAME_GIFT_USE]);
+        this._engine.input.associateAction([kbAction(KbCode.Delete)], [InputAction.GAME_SUICIDE]);
+        this._engine.input.associateAction([kbAction(KbCode.KeyP)], [InputAction.GAME_PAUSE]);
         
         
         this._engine.clock.add(this.tick.bind(this));
@@ -1673,9 +1672,9 @@ export class Pekka implements PkTickable, PekkaContext {
         
         //console.log('RENDER IS DISABLED');
         //this.changeToIntro();
-        //this.changeToMenu();
+        this.changeToMenu();
         
-        this.uiActionNewGame();
+        //this.uiActionNewGame();
         
         // Open the requested map
         // const tmpEpisodeName = 'rooster island 1';

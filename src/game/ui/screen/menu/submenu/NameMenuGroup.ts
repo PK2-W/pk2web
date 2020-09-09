@@ -41,7 +41,7 @@ export class NameMenuGroup extends PkUIComponentContainer<PekkaContext> {
         this.lbContinue = new UIWaveText(context, TX.PLAYERMENU_CONTINUE, font, true)
             .addTo(this, 180, 300)
             .setFocusable()
-            .on(PkUIComponent.EV_ACTUATED, () => this._menu.acNewGameNameSelected(this.tiInput.text));
+            .on(PkUIComponent.EV_ACTUATED, () => this._menu.acNewGameNameSelected(this.tiInput.value));
         
         // Clear inserted text
         this.lbClear = new UIWaveText(context, TX.PLAYERMENU_CLEAR, font, true)
@@ -57,7 +57,7 @@ export class NameMenuGroup extends PkUIComponentContainer<PekkaContext> {
     }
     
     public reset(): this {
-        this.tiInput.text = 'pekka';
+        this.tiInput.value = 'pekka';
         return this;
     }
 }
