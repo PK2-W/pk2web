@@ -1,9 +1,10 @@
 import { PkInputEvent } from '@ng/core/input/PkInputEvent';
 import { PkEngine } from '@ng/core/PkEngine';
 import { PkInput } from '@ng/core/PkInput';
+import { Log } from '@ng/support/log/LoggerImpl';
 import { PkTickable } from '@ng/support/PkTickable';
 import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
-import { WEB_CANVAS_QS } from '@sp/constants';
+import { WEB_CONTAINER } from '@sp/constants';
 import * as PIXI from 'pixi.js';
 import { PkScreen } from '../ui/PkScreen';
 
@@ -13,6 +14,9 @@ export enum FADE {
     FADE_SLOW = 1
 }
 
+/**
+ * TODO: Move to WindowManager or something else
+ */
 export class PkRenderer implements PkTickable {
     private readonly _engine: PkEngine;
     
@@ -87,13 +91,13 @@ export class PkRenderer implements PkTickable {
     private _fpsAvg = [];
     private _fpsAvgDisplay = 0;
     
-    public tmp() {
+    public renderTick() {
         //try{ window.pk2w._game.context.time.trigger(); } catch(r){}
         
         if (window.nor != true)
             this._renderer.render(this._stage);
         
-        requestAnimationFrame(this.tmp.bind(this));
+        requestAnimationFrame(this.renderTick.bind(this));
         
         const now = performance.now();
         const delta = now - this._fpsPrev;

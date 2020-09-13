@@ -128,7 +128,7 @@ export class PkEngine {
         this.clock.start();
         
         this.clock.add(this._screenTick.bind(this));
-        this._rendr.tmp();
+        this._rendr.renderTick();
         //this.loop2();
     }
     

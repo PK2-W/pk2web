@@ -1713,9 +1713,9 @@ export class Pekka implements PkTickable, PekkaContext {
         this.changeToGame(this._game);
         await this._game.start();
         
-        const minifn = (delta, time) => {
+        const gameTick = (delta, time) => {
             // Schedule next tick
-            this._engine.clock.add(minifn.bind(this));
+            this._engine.clock.add(gameTick.bind(this));
             
             // Exec game loop
             this._game.tick(delta, time);
@@ -1725,7 +1725,7 @@ export class Pekka implements PkTickable, PekkaContext {
             }
         };
         
-        this._engine.clock.add(minifn.bind(this));
+        this._engine.clock.add(gameTick.bind(this));
     }
     
     
