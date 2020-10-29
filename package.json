@@ -1,27 +1,30 @@
 {
-  "name": "pekka-kana-ts-port",
+  "name": "pekka-kana-web-port",
   "private": true,
   "version": "0.1.0",
   "dependencies": {
     "eventemitter3": "^4.0.7",
+    "glob": "^7.1.6",
     "pixi.js": "^5.3.3",
-    "ts-key-enum": "^2.0.3"
+    "ts-key-enum": "^2.0.3",
+    "minimatch": "^3.0.4"
   },
   "devDependencies": {
-    "webpack": "^4.29.6",
-    "webpack-cli": "^3.3.0",
-    "webpack-notifier": "^1.7.0",
-    "ts-loader": "^8.0.3",
-    "eslint": "^6.8.0",
     "@types/bmp-js": "^0.1.0",
+    "@types/minimatch": "^3.0.3",
+    "@typescript-eslint/eslint-plugin": "^2.16.0",
+    "@typescript-eslint/eslint-plugin-tslint": "^2.16.0",
+    "@typescript-eslint/parser": "^2.16.0",
+    "eslint": "^6.8.0",
+    "fork-ts-checker-webpack-plugin": "^1.0.2",
     "gulp": "^4.0.2",
     "gulp-typedoc": "^2.2.5",
-    "typescript": "^4.0.2",
-    "typedoc": "^0.19.1",
-    "fork-ts-checker-webpack-plugin": "^1.0.2",
+    "ts-loader": "^8.0.3",
     "tslint": "^5.20.1",
-    "@typescript-eslint/parser": "^2.16.0",
-    "@typescript-eslint/eslint-plugin": "^2.16.0",
-    "@typescript-eslint/eslint-plugin-tslint": "^2.16.0"
+    "typedoc": "^0.19.1",
+    "typescript": "^4.0.2",
+    "webpack": "^4.29.6",
+    "webpack-cli": "^3.3.0",
+    "webpack-notifier": "^1.7.0"
   }
 }
