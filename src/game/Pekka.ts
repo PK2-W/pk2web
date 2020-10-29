@@ -39,6 +39,7 @@ import { PK2wSound } from '@ng/core/PK2wSound';
 import { PkDevice } from '@ng/core/PkDevice';
 import { PkEngine } from '@ng/core/PkEngine';
 import { PkInput } from '@ng/core/PkInput';
+import { PkFsXHR } from '@ng/filesystem/PkFsXHR';
 import { PkAssetCache } from '@ng/PkAssetCache';
 import { PkLanguage } from '@ng/PkLanguage';
 import { PkRenderer, FADE } from '@ng/render/PkRenderer';
@@ -1538,7 +1539,7 @@ export class Pekka implements PkTickable, PekkaContext {
      */
     private async _loadStuff(): Promise<void> {
         Log.d('[Pekka] Preparing game\'s stuff bitmap');
-        const stuffBmp = await PkAssetTk.getBitmap(pathJoin(RESOURCES_PATH, 'gfx/pk2stuff.bmp'));
+        const stuffBmp = await this._engine.fs.getBitmap('/assets/gfx/pk2stuff.bmp');
         stuffBmp.makeColorTransparent();
         await this._stuff.addBitmap(STUFF_CKEY, stuffBmp);
         
@@ -1607,6 +1608,19 @@ export class Pekka implements PkTickable, PekkaContext {
         
         this._engine = new PkEngine();
         this._engine.setDebug(this.dev_mode);
+        
+        // Setup FS
+        this._engine.fs.add('/assets', new PkFsXHR('./pk2w/resources', [
+            { for: /^(\/).+$/, check: '/vfs.json' }
+        ]));
+        this._engine.fs.add('/community', new PkFsXHR(
+            'https://pk2-w.github.io/community-episodes/episodes',
+            [
+                { for: /^(\/)[^/]+$/, check: '/vfs.json' },
+                { for: /^(\/[^/]+\/).+$/, check: '/$1/vfs.json' }
+            ]));
+        //this._engine.fs.addMountpoint('/browser', new PkFsBrowser());
+        
         this.renderer = this._engine.getRenderer();
         
         // Load language

@@ -18,6 +18,7 @@ export class PkAssetTk {
      * @param url - Full URL of the resource.
      */
     public static async getPlainText(url: string): Promise<string> {
+        Log.d('[~AssetTk] Fetching plain text from \'', url, '\'');
         return await PkAssetTk._xhrGet(url, XHR_FMT.TEXT);
     }
     
@@ -26,7 +27,8 @@ export class PkAssetTk {
      *
      * @param url - Full URL of the resource.
      */
-    private static async getJSON(url: string): Promise<string> {
+    public static async getJSON(url: string): Promise<string> {
+        Log.d('[~AssetTk] Fetching JSON from \'', url, '\'');
         return JSON.parse(await this.getPlainText(url));
     }
     
@@ -57,7 +59,7 @@ export class PkAssetTk {
      *
      * @param url - Full URL of the resource.
      */
-    private static async getBlob(url: string): Promise<Blob> {
+    public static async getBlob(url: string): Promise<Blob> {
         return await PkAssetTk._xhrGet(url, XHR_FMT.BLOB);
     }
     

@@ -33,7 +33,7 @@ export function ndecs(n: number, ndecs: number = 2) {
     return Math.round(n * Math.pow(10, ndecs)) / Math.pow(10, ndecs);
 }
 
-export function ifnul<T>(nullable: T | null, replacement: T = null): T {
+export function ifnul<T>(nullable: T, replacement: T = null): T {
     return nullable != null ? nullable : replacement;
 }
 

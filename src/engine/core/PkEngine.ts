@@ -6,6 +6,7 @@
 import { int, SCREENID } from '@game/support/types';
 import { PkDevice } from '@ng/core/PkDevice';
 import { PkInput } from '@ng/core/PkInput';
+import { PkFilesystem } from '@ng/filesystem/PkFilesystem';
 import { PK2GAMELOOP } from '@sp/constants';
 import { PkLanguage } from '../PkLanguage';
 import { PkRenderer } from '../render/PkRenderer';
@@ -15,6 +16,7 @@ import { PK2wSound } from './PK2wSound';
 
 export class PkEngine {
     private readonly _device: PkDevice;
+    private readonly _filesystem: PkFilesystem;
     
     private _screens: Map<int, PkScreen>;
     private _tmpScreen: PkScreen;
@@ -44,6 +46,7 @@ export class PkEngine {
     // TODO bx: throw custom error -> printf("PK2    - Failed to init PisteEngine.\n");
     public constructor() {
         this._device = new PkDevice();
+        this._filesystem = new PkFilesystem();
         
         // 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
         // 		printf("Unable to init SDL: %s\n", SDL_GetError());
@@ -170,6 +173,10 @@ export class PkEngine {
     }
     
     public get device(): PkDevice { return this._device; };
+    
+    public get fs(): PkFilesystem {
+        return this._filesystem;
+    }
     
     public get rendr(): PkRenderer {
         return this._rendr;
