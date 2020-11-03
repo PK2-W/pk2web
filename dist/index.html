@@ -2,26 +2,32 @@
 <head>
     <meta charset="utf-8">
     <title>Pekka Kana 2 - Web Port</title>
+
+    <link rel="stylesheet" href="c/main.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto+Mono:400,500,700|Roboto:300,400,500,700">
 </head>
 <body>
+    <div id="pekka"></div>
     <canvas id="pk-canvas" width="800" height="500" style="border: 1px solid #300; background: #000"></canvas>
-    <br>
-    click anywhere to start<br>
-    bumxu © 2020
 
-    <div id="delta">
-        <span id="tps" style="font-family: monospace"></span>
-    </div>
-    <div id="speed"></div>
-    <div id="more">
-        <button onclick="try{pk2w._game.context.time.stop();}catch(e){};try{pk2w._engine._rendr._stage.removeChildren();}catch(e){};">ABORT</button><br>
-        <button onclick="try{pk2w._game.context.time.stop();}catch(e){};try{pk2w._engine._rendr._stage.removeChildren();}catch(e){};location.reload();">ABORT + RESET</button>
-    </div>
+    <footer>
+        <button class="btn btn-ic" onclick="try{pk2w._game.context.time.stop();}catch(e){};try{pk2w._engine._rendr._stage.removeChildren();}catch(e){};">
+            STOP TIMERS
+        </button>
+        <button class="btn btn-ic" onclick="try{pk2w._game.context.time.stop();}catch(e){};try{pk2w._engine._rendr._stage.removeChildren();}catch(e){};location.reload();">
+            STOP TIMERS + RELOAD
+        </button>
+
+        <div class="mid">Click anywhere to start</div>
+
+        <div class="right">bumxu / 2020</div>
+    </footer>
+
 
     <script type="text/javascript" src="j/vendor/xmeffects.js"></script>
     <script type="text/javascript" src="j/vendor/xm.js"></script>
 
-    <script src="j/vendor/pixi.min.js"></script>
+    <script src="j/vendor/pixi.js"></script>
     <!--script src="pk2w/pk2web.min.js"></script-->
     <script>
         const scr = document.createElement('script');
