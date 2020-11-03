@@ -15,6 +15,7 @@ export class EpisodesMenuGroup extends PkUIComponentContainer<PekkaContext> {
     public readonly lbSubmenu: UIText;
     public readonly lbBack: UIText;
     
+    private _stack;
     
     public constructor(context: PekkaContext, menu: MenuScreen) {
         super(context);
@@ -23,8 +24,9 @@ export class EpisodesMenuGroup extends PkUIComponentContainer<PekkaContext> {
         // Contents ¬
         
         const fontFg = this.context.font2;
-        const stack = new UIStackLayout(context, 23)
-            .addTo(this, 180, 150);
+        const stack = new UIStackLayout(context, 24)
+            .addTo(this, 120, 150);
+        this._stack = stack;
         
         this.lbSubmenu = new UIPlainText(context, TX.EPISODES_CHOOSE_EPISODE, fontFg, true)
             .addTo(this, 70, 90);
@@ -39,9 +41,9 @@ export class EpisodesMenuGroup extends PkUIComponentContainer<PekkaContext> {
         
         new UIDummy(context).addTo(stack);
         
-        new UIWaveText(context, 'community episodes...', fontFg, true)
-            .setFocusable()
-            .addTo(stack);
+        // new UIWaveText(context, 'community episodes...', fontFg, true)
+        //     .setFocusable()
+        //     .addTo(stack);
         
         stack.layout();
         
@@ -50,5 +52,19 @@ export class EpisodesMenuGroup extends PkUIComponentContainer<PekkaContext> {
             .addTo(this, 180, 400)
             .setFocusable()
             .on(PkUIComponent.EV_ACTUATED, () => this._menu.acBackToMain());
+        this.placeholder();
+    }
+    
+    private async placeholder() {
+        const ls = await this.context.fs.ls('/community');
+        for (let entry of ls) {
+            new UIWaveText(this.context, entry.name, this.context.font1, true)
+                .setFocusable()
+                .setMetadata('nameEpisode', entry.name)
+                .setMetadata('communityEpisode', true)
+                .on(PkUIComponent.EV_ACTUATED, (uic) => {alert('Lets play ' + uic.getMetadata('nameEpisode'));})
+                .addTo(this._stack);
+        }
+        this._stack.layout();
     }
 }

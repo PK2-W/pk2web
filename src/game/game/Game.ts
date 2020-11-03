@@ -2550,7 +2550,6 @@ export class Game extends GameContext implements PkTickable {
             if (mask_index > 31)
                 mask_index = 31;
             
-            // PND: block.top += palikkamaskit[block.code].alas[mask_index];
             block.top += block.bottomMask[mask_index];
             
             if (block.top >= block.bottom - 2)

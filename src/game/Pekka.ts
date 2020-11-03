@@ -66,41 +66,14 @@ import {
     pistelaskuri_SOUND_CKEY
 } from '@sp/constants';
 import { i18nSchema } from '@sp/i18nSchema';
-import { RECT } from './Map_';
 
 PIXI.settings.ROUND_PIXELS = true;
+PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+//PIXI.settings.PRECISION_FRAGMENT = PIXI.PRECISION.HIGH;
 
-// #ifndef _WIN32
-// void itoa(int n, char s[], int radix){
-// 	sprintf(s, "%i", n);
-// }
-// void ltoa(long n, char s[], int radix){
-// 	sprintf(s, "%ld", n);
-// }
-// #endif
-//
-//
-// //#### Classes
-// Piste::PkEngine* Engine;
-//
 // //#### Constants
 // const int MAX_SAVES = 10;
 // const BYTE BLOCK_MAX_MASKEJA = 150;
-
-enum UI_MODE {
-    UI_TOUCH_TO_START,
-    UI_CURSOR,
-    UI_GAME_BUTTONS
-}
-
-
-type PK2BLOCKMASKI = {
-    // 	short int	ylos[32];
-    // 	short int	alas[32];
-    // 	short int	vasemmalle[32];
-    // 	short int	oikealle[32];
-};
-
 
 //Episode
 const EPISODI_MAX_LEVELS: int = 100; //50;
@@ -181,10 +154,6 @@ type PK2SAVE = {
     // 	bool  jakso_lapaisty[EPISODI_MAX_LEVELS];
     // 	uint pisteet;
 };
-
-
-///...
-
 
 //
 // //��NIEFEKTIT
@@ -328,7 +297,7 @@ export class Pekka implements PkTickable, PekkaContext {
     // char menu_name_last_mark = '\0';
     private menu_valittu_id: int = 0;
     private menu_valinta_id: int = 1;
-    private menunelio: RECT;
+    //private menunelio: RECT;
     
     // Framerate
     private fps: number = 0;
@@ -1265,7 +1234,6 @@ export class Pekka implements PkTickable, PekkaContext {
     }
     
     private PK_MainScreen_Change__SCREEN_BASIC_FORMAT() {
-        //this.PK_UI_Change(UI_MODE.UI_TOUCH_TO_START);
         // 		strcpy(pelaajan_nimi, tekstit->Hae_Teksti(PK_txt.player_default_name));
         // 		srand((unsigned)time(NULL));
         // 		if (!test_level)
