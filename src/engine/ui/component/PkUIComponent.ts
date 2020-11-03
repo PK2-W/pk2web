@@ -306,6 +306,15 @@ export abstract class PkUIComponent<T extends PkUIContext = PkUIContext>
         return this;
     }
     
+    /**
+     * Stops and destroys all in progress or pending effects.
+     */
+    public cancelEffects(): this {
+        this._effects.forEach(effect => effect.cancel());
+        this._effects.clear();
+        return this;
+    }
+    
     
     ///  Game loop  ///
     
