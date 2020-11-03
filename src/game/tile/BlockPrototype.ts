@@ -1,6 +1,6 @@
 import { EBlockPrototype } from '@game/enum/EBlockPrototype';
 import { EBlocks } from '@game/tile/Block';
-import { BLOCK_RAW_SIZE, BLOCK_SIZE } from '@game/tile/BlockConstants';
+import { BLOCK_SIZE } from '@game/tile/BlockConstants';
 import { PkBitmapBT } from '@ng/types/image/PkBitmapBT';
 import { PkRectangle } from '@ng/types/PkRectangle';
 import { PkTexture } from '@ng/types/PkTexture';
@@ -131,10 +131,10 @@ export class BlockPrototype {
     // TODO: Cachear rectangulos
     public getTextureArea(frame: number = 0): PkRectangle {
         return PkRectangle.$(
-            ((this._code + frame) % 10) * BLOCK_RAW_SIZE,
-            Math.floor((this._code + frame) / 10) * BLOCK_RAW_SIZE,
-            BLOCK_RAW_SIZE,
-            BLOCK_RAW_SIZE);
+            ((this._code + frame) % 10) * BLOCK_SIZE,
+            Math.floor((this._code + frame) / 10) * BLOCK_SIZE,
+            BLOCK_SIZE,
+            BLOCK_SIZE);
     }
     
     /**

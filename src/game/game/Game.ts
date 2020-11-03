@@ -312,10 +312,11 @@ export class Game extends GameContext implements PkTickable {
         
         //     //PK_Particles_Draw();
         //     Game::Particles->draw_front_particles();
-        //
-        //     kartta->Piirra_Seinat(Game::camera_x,Game::camera_y, false);
+        
+        // ~ Piirra_Seinat
         this._blocks.updateOffsets();
-        //
+        this._blocks.updateComplexAnimations();
+        
         //     if (settings.nayta_tavarat)
         //         PK_Draw_InGame_Lower_Menu();
         
@@ -427,6 +428,7 @@ export class Game extends GameContext implements PkTickable {
             
             // Score
             if (this._scoreBuffer > 0) {
+                // Move buffered score to final counter
                 this._score++;
                 this._scoreBuffer--;
             }

@@ -6,7 +6,7 @@ import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, KYTKIN_ALOITUSARVO }
 import { int, CVect, cvect } from '@game/support/types';
 import { Block } from '@game/tile/Block';
 import { BlockCollider } from '@game/tile/BlockCollider';
-import { BLOCK_SIZE } from '@game/tile/BlockConstants';
+import { BLOCK_SIZE, BLOCKSHEET_WIDTH } from '@game/tile/BlockConstants';
 import { BlockContext } from '@game/tile/BlockContext';
 import { BlockPrototype, TBlockProtoCode } from '@game/tile/BlockPrototype';
 import { AssetNotFoundError } from '@ng/error/AssetNotFoundError';
@@ -15,7 +15,7 @@ import { pathJoin } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { PkBitmapBT } from '@ng/types/image/PkBitmapBT';
 import { RESOURCES_PATH } from '@sp/constants';
-import { uint } from '@sp/types';
+import { uint, uint8, rand } from '@sp/types';
 
 export class BlockManager {
     // Game Environment
@@ -42,6 +42,10 @@ export class BlockManager {
     /** SRC: animaatio */
     private _animatedBlocks: Set<Block>;
     private _animFrame: number;
+    /**
+     * SRC: vesiaste
+     */
+    private _animWater: number = 0;
     
     public constructor(ctx: GameContext) {
         this._context = ctx;
@@ -542,6 +546,343 @@ export class BlockManager {
     }
     
     /**
+     * Updates position offset for blocks that can move.
+     * SRC: ~Piirra_Seinat
+     */
+    public updateOffsets(editor: boolean = false) {
+        // int palikka;
+        // int px = 0,
+        //     py = 0,
+        //     ay = 0,
+        //     ax = 0,
+        //     by = 0, bx = 0,
+        //     kartta_x = kamera_x/32,
+        //     kartta_y = kamera_y/32;
+        let xOffset: number;
+        let yOffset: number;
+        
+        // timers
+        let ajastin1_y: int = 0;
+        let ajastin2_y: int = 0;
+        let ajastin3_x: int = 0;
+        
+        if (this.ctx.switchTimer1 > 0) {
+            ajastin1_y = 64;
+            
+            if (this.ctx.switchTimer1 < 64)
+                ajastin1_y = this.ctx.switchTimer1;
+            
+            if (this.ctx.switchTimer1 > KYTKIN_ALOITUSARVO - 64)
+                ajastin1_y = KYTKIN_ALOITUSARVO - this.ctx.switchTimer1;
+        }
+        
+        if (this.ctx.switchTimer2 > 0) {
+            ajastin2_y = 64;
+            
+            if (this.ctx.switchTimer2 < 64)
+                ajastin2_y = this.ctx.switchTimer2;
+            
+            if (this.ctx.switchTimer2 > KYTKIN_ALOITUSARVO - 64)
+                ajastin2_y = KYTKIN_ALOITUSARVO - this.ctx.switchTimer2;
+        }
+        
+        if (this.ctx.switchTimer3 > 0) {
+            ajastin3_x = 64;
+            
+            if (this.ctx.switchTimer3 < 64)
+                ajastin3_x = this.ctx.switchTimer3;
+            
+            if (this.ctx.switchTimer3 > KYTKIN_ALOITUSARVO - 64)
+                ajastin3_x = KYTKIN_ALOITUSARVO - this.ctx.switchTimer3;
+        }
+        
+        let block: Block;
+        
+        // for (let j = 0; j < PK2KARTTA_KARTTA_KORKEUS; j++) {
+        //     for (let i = 0; i < PK2KARTTA_KARTTA_LEVEYS; i++) {
+        for (let b = 0, len = this._fgBlocks.length; b < len; b++) {
+            block = this._fgBlocks[b];
+            
+            if (block != null && block.renderable) {
+                // Show invisible block only in editor TODO: Extend to the dev-mode and a specific option in editor, not ever
+                if (block.code === EBlockPrototype.BLOCK_ESTO_ALAS) {
+                    block.visible = editor;
+                } else {
+                    // px = ((palikka % 10) * 32);
+                    // py = ((palikka / 10) * 32);
+                    xOffset = 0;
+                    yOffset = 0;
+                    
+                    if (!editor) {
+                        if (block.code === EBlockPrototype.BLOCK_ELEVATOR_V)
+                            yOffset = Math.floor(this.ctx.entropy.sin(this.ctx.entropy.degree % 360));
+                        
+                        if (block.code === EBlockPrototype.BLOCK_ELEVATOR_H)
+                            xOffset = Math.floor(this.ctx.entropy.cos(this.ctx.entropy.degree % 360));
+                        
+                        if (block.code === EBlockPrototype.BLOCK_SWITCH1)
+                            yOffset = ajastin1_y / 2;
+                        
+                        if (block.code === EBlockPrototype.BLOCK_SWITCH2_GATE_U)
+                            yOffset = -ajastin2_y / 2;
+                        
+                        if (block.code === EBlockPrototype.BLOCK_SWITCH2_GATE_D)
+                            yOffset = ajastin2_y / 2;
+                        
+                        if (block.code === EBlockPrototype.BLOCK_SWITCH2)
+                            yOffset = ajastin2_y / 2;
+                        
+                        if (block.code === EBlockPrototype.BLOCK_SWITCH3_GATE_L)
+                            xOffset = ajastin3_x / 2;
+                        
+                        if (block.code === EBlockPrototype.BLOCK_SWITCH3_GATE_R)
+                            xOffset = -ajastin3_x / 2;
+                        
+                        if (block.code === EBlockPrototype.BLOCK_SWITCH3)
+                            yOffset = ajastin3_x / 2;
+                    }
+                    
+                    block.setOffset(xOffset, yOffset);
+                }
+            }
+            //  }
+        }
+    }
+    
+    /**
+     * SRC: ~Piirra_Seinat
+     */
+    public updateComplexAnimations(): void {
+        if (this._animWater % 2 == 0) {
+            this.animateFire();
+            this.animateWaterfall();
+            this.animateFlowUp();
+        }
+        
+        if (this._animWater % 3 == 0) {
+            this.animateWaterSurface();
+        }
+        
+        if (this._animWater % 4 == 0) {
+            this.animateWater();
+            //     PisteDraw2_RotatePalette(224, 239);
+        }
+        
+        this._spritesheet.pixi.update();
+        
+        this._animWater = 1 + this._animWater % 320;
+    }
+    
+    /**
+     * SRC: Animoi_Tuli
+     */
+    private animateFire(): void {
+        let x: number, y: number;
+        let index: uint8;
+        
+        // PisteDraw2_DrawImage_Start(palikat_buffer,*&buffer,(DWORD &)leveys);
+        
+        for (y = 448; y < 479; y++) {
+            for (x = 128; x < 160; x++) {
+                index = this._spritesheet.getPixelIndex(x, y);
+                
+                if (index != 255) {
+                    index %= 32;
+                    index = index - rand() % 4;
+                    
+                    if (index < 0) {
+                        index = 255;
+                    } else {
+                        if (index > 21) {
+                            index += 128;
+                        } else {
+                            index += 64;
+                        }
+                    }
+                }
+                
+                this._spritesheet.setPixelIndex(x, y, index);
+            }
+        }
+        
+        if (this._context.switchTimer1 < 20) {
+            for (x = 128; x < 160; x++) {
+                this._spritesheet.setPixelIndex(x, y, rand() % 15 + 144);
+            }
+        } else {
+            for (x = 128; x < 160; x++) {
+                this._spritesheet.setPixelIndex(x, y, 255);
+            }
+        }
+        
+        // this._spritesheet.pixi.update();
+        
+        // PisteDraw2_DrawImage_End(palikat_buffer);
+    }
+    
+    /**
+     * SRC: Animoi_Vesiputous
+     */
+    private animateWaterfall(): void {
+        let x: number, y: number;
+        let plus: uint;
+        let index: uint8, index2: uint8;
+        
+        const temp = new Array(32 * 32);
+        
+        // Copy current tile to temporal buffer
+        for (x = 32; x < 64; x++)
+            for (y = 416; y < 448; y++)
+                temp[x - 32 + (y - 416) * 32] = this._spritesheet.getPixelIndex(x, y);
+        
+        // Allow waterfalls of different colors
+        index2 = (temp[0] / 32) * 32;
+        
+        for (x = 32; x < 64; x++) {
+            plus = rand() % 2 + 2; //...+1
+            
+            for (y = 416; y < 448; y++) {
+                index = temp[x - 32 + (y - 416) * 32];
+                
+                // Allow waterfalls of different widths
+                if (index != 255) {
+                    index %= 32;
+                    if (index > 10)//20
+                        index--;
+                    if (rand() % 40 == 1)
+                        index = 11 + rand() % 11; //15+rand()%8;//9+rand()%5;
+                    if (rand() % 160 == 1)
+                        index = 30;
+                    // buffer[x + (416+(y+plus)%32)*leveys] = color+color2;
+                    this._spritesheet.setPixelIndex(x, 416 + (y + plus) % 32, index);
+                } else {
+                    // buffer[x + (416+(y+plus)%32)*leveys] = color;
+                    this._spritesheet.setPixelIndex(x, 416 + (y + plus) % 32, index);
+                }
+            }
+        }
+    }
+    
+    /**
+     * SRC: Animoi_Virta_Ylos
+     */
+    private animateFlowUp(): void {
+        let x: number, y: number;
+        const temp = new Array(32);
+        
+        for (x = 64; x < 96; x++)
+            temp[x - 64] = this._spritesheet.getPixelIndex(x, 448);
+        
+        for (x = 64; x < 96; x++) {
+            for (y = 448; y < 479; y++) {
+                // buffer[x+y*leveys] = buffer[x+(y+1)*leveys];
+                this._spritesheet.setPixelIndex(x, y, this._spritesheet.getPixelIndex(x, y + 1));
+            }
+        }
+        
+        for (x = 64; x < 96; x++)
+            // buffer[x+479*leveys] = temp[x-64];
+            this._spritesheet.setPixelIndex(x, y, temp[x - 64]);
+    }
+    
+    /**
+     * SRC: Animoi_Vedenpinta
+     */
+    private animateWaterSurface(): void {
+        let x: number, y: number;
+        const temp = new Array(32);
+        
+        for (y = 416; y < 448; y++)
+            temp[y - 416] = this._spritesheet.getPixelIndex(0, y);
+        
+        for (y = 416; y < 448; y++) {
+            for (x = 0; x < 31; x++) {
+                // buffer[x+y*leveys] = buffer[x+1+y*leveys];
+                this._spritesheet.setPixelIndex(x, y, this._spritesheet.getPixelIndex(x + 1, y));
+            }
+        }
+        
+        for (y = 416; y < 448; y++)
+            //  buffer[31+y*leveys] = temp[y-416];
+            this._spritesheet.setPixelIndex(31, y, temp[y - 416]);
+    }
+    
+    private buuuf = null;
+    
+    /**
+     * SRC: Animoi_Vesi
+     */
+    private animateWater(): void {
+        let x: number, y: number;
+        let d1: number = this._animWater / 2,
+            d2: number;
+        let color1: uint8, color2: uint8;
+        let sini: int, cosi: int;
+        let vx: int = 0, vy: int = 0;
+        let i: int;
+        
+        const sheetWidth = BLOCK_SIZE * BLOCKSHEET_WIDTH;
+        
+        if (this.buuuf == null) {
+            this.buuuf = new Array(sheetWidth * 32).fill(0);
+            
+            for (x = 0; x < sheetWidth; x++)
+                for (y = 416; y < 416 + BLOCK_SIZE; y++)
+                    this.buuuf[x + (y - 416) * sheetWidth] = this._spritesheet.getPixelIndex(x, y);
+        }
+        
+        for (y = 0; y < BLOCK_SIZE; y++) {
+            d2 = d1;
+            
+            for (x = 0; x < BLOCK_SIZE; x++) {
+                sini = Math.floor((y + d2 / 2) * 11.25) % 360;
+                cosi = Math.floor((x + d1 / 2) * 11.25) % 360;
+                sini = Math.floor(this._context.entropy.sin(sini));
+                cosi = Math.floor(this._context.entropy.cos(cosi));
+                
+                vy = Math.floor((y + sini / 11) % BLOCK_SIZE);
+                vx = Math.floor((x + cosi / 11) % BLOCK_SIZE);
+                
+                if (vy < 0) {
+                    vy = -vy;
+                    vy = 31 - (vy % BLOCK_SIZE);
+                }
+                
+                if (vx < 0) {
+                    vx = -vx;
+                    vx = 31 - (vx % BLOCK_SIZE);
+                }
+                
+                color1 = this.buuuf[64 + vx + vy * sheetWidth];
+                this.buuuf[BLOCK_SIZE + x + y * sheetWidth] = color1;
+                d2 = 1 + d2 % 360;
+            }
+            
+            d1 = 1 + d1 % 360;
+        }
+        
+        let vy2: int;
+        
+        for (let p = 2; p < 5; p++) {
+            i = p * BLOCK_SIZE;
+            
+            for (y = 0; y < BLOCK_SIZE; y++) {
+                // d2 = d1;
+                vy = y * sheetWidth;
+                vy2 = (y + 416) * sheetWidth;
+                
+                for (x = 0; x < BLOCK_SIZE; x++) {
+                    vx = x + vy;
+                    color1 = this.buuuf[BLOCK_SIZE + vx];
+                    color2 = this.buuuf[i + vx];
+                    
+                    this._spritesheet.setPixelIndex(i + x, vy2 / sheetWidth, Math.floor((color1 + color2 * 2) / 3));
+                }
+            }
+        }
+    }
+    
+    /**
      * Returns if the block is of an animated type.
      */
     public isAnimated(block: Block): boolean {
@@ -754,6 +1095,9 @@ export class BlockManager {
         }
     }
     
+    
+    ///  Locks  ////
+    
     public openLocks(): void {
         let code: number;
         
@@ -778,117 +1122,38 @@ export class BlockManager {
         this.calculateEdges();
     }
     
-    public updateOffsets(editor: boolean = false) {
-        // int palikka;
-        // int px = 0,
-        //     py = 0,
-        //     ay = 0,
-        //     ax = 0,
-        //     by = 0, bx = 0,
-        //     kartta_x = kamera_x/32,
-        //     kartta_y = kamera_y/32;
-        let xOffset: number;
-        let yOffset: number;
+    /**
+     *
+     * SDL: Change_SkullBlocks
+     */
+    public changeSkullBlocks(): void {
+        let front: TBlockProtoCode, back: TBlockProtoCode;
         
-        // timers
-        let ajastin1_y: int = 0;
-        let ajastin2_y: int = 0;
-        let ajastin3_x: int = 0;
-        
-        if (this.ctx.switchTimer1 > 0) {
-            ajastin1_y = 64;
-            
-            if (this.ctx.switchTimer1 < 64)
-                ajastin1_y = this.ctx.switchTimer1;
-            
-            if (this.ctx.switchTimer1 > KYTKIN_ALOITUSARVO - 64)
-                ajastin1_y = KYTKIN_ALOITUSARVO - this.ctx.switchTimer1;
-        }
-        
-        if (this.ctx.switchTimer2 > 0) {
-            ajastin2_y = 64;
-            
-            if (this.ctx.switchTimer2 < 64)
-                ajastin2_y = this.ctx.switchTimer2;
-            
-            if (this.ctx.switchTimer2 > KYTKIN_ALOITUSARVO - 64)
-                ajastin2_y = KYTKIN_ALOITUSARVO - this.ctx.switchTimer2;
-        }
-        
-        if (this.ctx.switchTimer3 > 0) {
-            ajastin3_x = 64;
-            
-            if (this.ctx.switchTimer3 < 64)
-                ajastin3_x = this.ctx.switchTimer3;
-            
-            if (this.ctx.switchTimer3 > KYTKIN_ALOITUSARVO - 64)
-                ajastin3_x = KYTKIN_ALOITUSARVO - this.ctx.switchTimer3;
-        }
-        
-        let block: Block;
-        
-        // for (let j = 0; j < PK2KARTTA_KARTTA_KORKEUS; j++) {
-        //     for (let i = 0; i < PK2KARTTA_KARTTA_LEVEYS; i++) {
-        for (let b = 0, len = this._fgBlocks.length; b < len; b++) {
-            block = this._fgBlocks[b];
-            
-            if (block != null && block.renderable) {
-                // Show invisible block only in editor TODO: Extend to the dev-mode and a specific option in editor, not ever
-                if (block.code === EBlockPrototype.BLOCK_ESTO_ALAS) {
-                    block.visible = editor;
-                } else {
-                    // px = ((palikka % 10) * 32);
-                    // py = ((palikka / 10) * 32);
-                    xOffset = 0;
-                    yOffset = 0;
+        for (let j = 0; j < PK2KARTTA_KARTTA_KORKEUS; j++) {
+            for (let i = 0; i < PK2KARTTA_KARTTA_LEVEYS; i++) {
+                front = this.getFgBlockCode(i, j);
+                back = this.getBgBlockCode(i, j);
+                
+                if (front === EBlockPrototype.BLOCK_KALLOSEINA) {
+                    this.removeFg(i, j);
                     
-                    if (!editor) {
-                        if (block.code === EBlockPrototype.BLOCK_ELEVATOR_V)
-                            yOffset = Math.floor(this.ctx.entropy.sin(this.ctx.entropy.degree % 360));
-                        
-                        if (block.code === EBlockPrototype.BLOCK_ELEVATOR_H)
-                            xOffset = Math.floor(this.ctx.entropy.cos(this.ctx.entropy.degree % 360));
-                        
-                        if (block.code === EBlockPrototype.BLOCK_SWITCH1)
-                            yOffset = ajastin1_y / 2;
-                        
-                        if (block.code === EBlockPrototype.BLOCK_SWITCH2_GATE_U)
-                            yOffset = -ajastin2_y / 2;
-                        
-                        if (block.code === EBlockPrototype.BLOCK_SWITCH2_GATE_D)
-                            yOffset = ajastin2_y / 2;
-                        
-                        if (block.code === EBlockPrototype.BLOCK_SWITCH2)
-                            yOffset = ajastin2_y / 2;
-                        
-                        if (block.code === EBlockPrototype.BLOCK_SWITCH3_GATE_L)
-                            xOffset = ajastin3_x / 2;
-                        
-                        if (block.code === EBlockPrototype.BLOCK_SWITCH3_GATE_R)
-                            xOffset = -ajastin3_x / 2;
-                        
-                        if (block.code === EBlockPrototype.BLOCK_SWITCH3)
-                            yOffset = ajastin3_x / 2;
+                    if (back !== EBlockPrototype.BLOCK_KALLOSEINA) {
+                        Effects.smokeClouds(this._context, i * BLOCK_SIZE + 24, j * BLOCK_SIZE + 6);
                     }
-                    
-                    block.setOffset(xOffset, yOffset);
+                }
+                
+                if (back === EBlockPrototype.BLOCK_KALLOTAUSTA && front === 255) {
+                    this.addBlock(EBlockPrototype.BLOCK_KALLOSEINA, i, j);
                 }
             }
-            //  }
         }
         
-        // if (vesiaste % 2 == 0) {
-        //     Animoi_Tuli();
-        //     Animoi_Vesiputous();
-        //     Animoi_Virta_Ylos();
-        //     Animoi_Vedenpinta();
-        // }
-        //
-        // if (vesiaste % 4 == 0) {
-        //     Animoi_Vesi();
-        //     PisteDraw2_RotatePalette(224, 239);
-        // }
+        // TODO
+        //  Game::vibration = 90;//60
+        //  PisteInput_Vibrate();
         
-        // vesiaste = 1 + vesiaste % 320;
+        // Janne / PK_Start_Info(tekstit->Hae_Teksti(PK_txt.game_locksopen));
+        
+        this.calculateEdges();
     }
 }
