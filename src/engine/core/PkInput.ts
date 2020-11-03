@@ -160,7 +160,7 @@ export class PkInput extends EventEmitter {
         const inputEvent = new PkInputEvent(deviceEvnt, gameActns);
         
         Log.v('[~Input] Device DOWN: "', deviceEvnt.action.fullId, '"');
-        Log.v('         Triggers actions: [', gameActns.join(', '), ']');
+        Log.v('         Triggered actions: [', gameActns.join(', '), ']');
         
         this.emit(PkInput.EV_KEYDOWN, inputEvent);
     }
@@ -174,7 +174,7 @@ export class PkInput extends EventEmitter {
         const gameActns = this.getGameActionsByDeviceActn(deviceEvnt.action);
         
         Log.v('[~Input] Device UP: "', deviceEvnt.action.fullId, '"');
-        Log.v('         Triggers actions: [', gameActns.join(', '), ']');
+        Log.v('         Triggered actions: [', gameActns.join(', '), ']');
         
         if (this._actingDeviceKeys.has(deviceEvnt.action.id)) {
             this._actingDeviceKeys.delete(deviceEvnt.action.id);
