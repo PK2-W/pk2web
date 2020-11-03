@@ -39,6 +39,7 @@ import { PK2wSound } from '@ng/core/PK2wSound';
 import { PkDevice } from '@ng/core/PkDevice';
 import { PkEngine } from '@ng/core/PkEngine';
 import { PkInput } from '@ng/core/PkInput';
+import { PkFilesystem } from '@ng/filesystem/PkFilesystem';
 import { PkFsXHR } from '@ng/filesystem/PkFsXHR';
 import { PkAssetCache } from '@ng/PkAssetCache';
 import { PkLanguage } from '@ng/PkLanguage';
@@ -412,6 +413,9 @@ export class Pekka implements PkTickable, PekkaContext {
     }
     public get input(): PkInput {
         return this._engine.input;
+    }
+    public get fs(): PkFilesystem {
+        return this._engine.fs;
     }
     public get audio(): PK2wSound {
         return this._engine.audio;

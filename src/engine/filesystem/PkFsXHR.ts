@@ -40,24 +40,24 @@ export class PkFsXHR implements PkFs {
     private async _getIndex(rule, uri, isLs: boolean = false): Promise<any> {
         // Get VFS file path for the appropriate solver
         const vfsPath = uri.replace(rule.for, '$1vfs.json');
-        Log.d(`[~Fs/XHR] VFS path is '${ vfsPath }'`);
+        Log.v(`[~Fs/XHR] VFS path is '${ vfsPath }'`);
         
         // Get the tree for the VFS file
         let index = this._vfsIndex.get(vfsPath);
         
         // If an index has not been adquired yet, get and save it
         if (index === undefined) {
-            Log.d(`[~Fs/XHR] VFS index not yet obtained`);
+            Log.v(`[~Fs/XHR] VFS index not yet obtained`);
             try {
                 index = await PkAssetTk.getJSON(this._url + vfsPath);
             } catch (err) {
                 // If the VFS file cannot be downloaded, use NULL (instead of undefiend)
                 index = null;
-                Log.d(`[~Fs/XHR] VFS index at '${ this._url + vfsPath }' cannot be obtained`, err);
+                Log.v(`[~Fs/XHR] VFS index at '${ this._url + vfsPath }' cannot be obtained`, err);
             }
             this._vfsIndex.set(vfsPath, index);
         } else {
-            Log.d(`[~Fs/XHR] VFS index already obtained`);
+            Log.v(`[~Fs/XHR] VFS index already obtained`);
         }
         
         return index;
@@ -94,7 +94,7 @@ export class PkFsXHR implements PkFs {
             
             // UNDEFINED node -> 404
             if (currNode === undefined) {
-                Log.d(`[~Fs/XHR] Node not found`);
+                Log.v(`[~Fs/XHR] Node not found`);
                 return null;
             }
         }
@@ -102,13 +102,13 @@ export class PkFsXHR implements PkFs {
         // NULL node -> FOUND, but is a file
         // Other case -> FOUND, it's a folder
         if (currNode === null) {
-            Log.d(`[~Fs/XHR] Node found; it's a file`);
+            Log.v(`[~Fs/XHR] Node found; it's a file`);
             return {
                 name: currNodeName,
                 type: PkFsNodeType.FILE
             };
         } else {
-            Log.d(`[~Fs/XHR] Node found; it's a folder`);
+            Log.v(`[~Fs/XHR] Node found; it's a folder`);
             return {
                 name: currNodeName,
                 type: PkFsNodeType.FOLDER,
@@ -133,22 +133,22 @@ export class PkFsXHR implements PkFs {
         const ruleUri = isLs ? uri + '/*' : uri;
         const rule = this._vfsRules.filter(rule => rule.for.test(ruleUri))[0];
         if (rule == null) {
-            Log.d(`[~Fs/XHR] No rule found`);
+            Log.v(`[~Fs/XHR] No rule found`);
             throw new AssetNotFoundError(`There is no rule setup to resolve '${ ruleUri }'.`);
         }
-        Log.d(`[~Fs/XHR] Using rule '${ rule.for }'`);
+        Log.v(`[~Fs/XHR] Using rule '${ rule.for }'`);
         
         // Check if the index has been already loaded
         const index = await this._getIndex(rule, ruleUri);
         if (index === null) {
-            Log.d(`[~Fs/XHR] VFS index not available`);
+            Log.v(`[~Fs/XHR] VFS index not available`);
             throw new AssetFetchError(`The VFS index to resolve '${ ruleUri }' cannot be obtained.`);
         }
         
         // Remove sections under the VFS root
         uri = uri.substr(ruleUri.replace(rule.for, '$1').length);
         
-        Log.d(`[~Fs/XHR] Traversing index for '${ uri }'`);
+        Log.v(`[~Fs/XHR] Traversing index for '${ uri }'`);
         const node = this._getNode(index, uri);
         if (node == null) {
             throw new AssetNotFoundError(`The resource '${ uri }' couldn't be found in the responsible filesystem.`);

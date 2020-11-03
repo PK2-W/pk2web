@@ -4,6 +4,7 @@ import { GameTimer } from '@ng/core/GameTimer';
 import { PK2wSound } from '@ng/core/PK2wSound';
 import { PkDevice } from '@ng/core/PkDevice';
 import { PkInput } from '@ng/core/PkInput';
+import { PkFilesystem } from '@ng/filesystem/PkFilesystem';
 import { PkAssetCache } from '@ng/PkAssetCache';
 import { PkFont } from '@ng/types/font/PkFont';
 import { PkParameters } from '@ng/types/PkParameters';
@@ -25,6 +26,7 @@ export interface PekkaContext extends PkUIContext {
     /** @deprecated */
     readonly clock: GameTimer;
     readonly input: PkInput;
+    readonly fs: PkFilesystem;
     readonly audio: PK2wSound;
     
     readonly stuff: PkAssetCache;
