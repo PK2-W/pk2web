@@ -13,6 +13,7 @@ export abstract class PkUIComponent<T extends PkUIContext = PkUIContext>
     implements PkTickable {
     
     public readonly context: T;
+    private readonly _metadata: Map<string, string | number | boolean>;
     private readonly _effects: Set<PkUiEffect>;
     private _focusable: boolean;
     
@@ -22,6 +23,7 @@ export abstract class PkUIComponent<T extends PkUIContext = PkUIContext>
         super(new DwContainer());
         
         this.context = context;
+        this._metadata = new Map();
         this._effects = new Set();
         this._focusable = false;
         
@@ -233,6 +235,14 @@ export abstract class PkUIComponent<T extends PkUIContext = PkUIContext>
     /** Sets the {@link globalAlpha} property. */
     public setGlobalAlpha(alpha: number): this {
         this._dw.globalAlpha = minmax(alpha, 0, 1);
+        return this;
+    }
+    
+    public getMetadata(key: string): string | number | boolean {
+        return this._metadata.get(key);
+    }
+    public setMetadata(key: string, content: string | number | boolean): this {
+        this._metadata.set(key, content);
         return this;
     }
     
