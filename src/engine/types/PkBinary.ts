@@ -24,7 +24,7 @@ export class PkBinary {
     }
     
     public clone(): PkBinary {
-        return new PkBinary(cloneArrayBuffer(this._ab.slice(0)));
+        return new PkBinary(cloneArrayBuffer(this._ab));
     }
     
     ///
