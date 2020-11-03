@@ -109,11 +109,14 @@ export abstract class PkUIComponent<T extends PkUIContext = PkUIContext>
     
     /**
      * Sets {@link visible} and {@link renderable} properties FALSE.<br>
-     * Returns instance.
+     * Also blurs the component if it has the focus.
      */
     public hide(): this {
-        this.renderable = false;
-        this.visible = false;
+        if (this.visible || this.renderable) {
+            this.blur();
+            this.renderable = false;
+            this.visible = false;
+        }
         return this;
     }
     
@@ -143,6 +146,11 @@ export abstract class PkUIComponent<T extends PkUIContext = PkUIContext>
     /** Returns the parent component which this component is child of. */
     public get parent(): PkUIComponentContainer {
         return this._parent;
+    }
+    
+    public isInside(component: PkUIComponent): boolean {
+        return this._parent === component
+            || (parent != null && this._parent.isInside(component));
     }
     
     /**

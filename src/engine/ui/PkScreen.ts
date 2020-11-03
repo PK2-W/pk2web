@@ -236,7 +236,7 @@ export abstract class PkScreen<T extends PkUIContext = PkUIContext> extends PkUI
      */
     protected focusPrevious() {
         // Get ordered list of focusable elements
-        const list = [...this].filter(cmp => cmp.canBeFocused());
+        const list = [...this].filter(component => component.canBeFocused());
         
         // If there aren't focusable elements, no element can have the focus currently
         if (list.length === 0) {
@@ -262,8 +262,8 @@ export abstract class PkScreen<T extends PkUIContext = PkUIContext> extends PkUI
      * Change focus to the next focusable component.
      * If there is no element currently focused, it focuses the first focusable element available.
      */
-    protected focusNext() {
-        const list = [...this].filter(cmp => cmp.canBeFocused());
+    public focusNext() {
+        const list = [...this].filter(component => component.canBeFocused());
         
         // If there aren't focusable elements, no element can have the focus currently
         if (list.length === 0) {
