@@ -34,12 +34,12 @@ export abstract class PkScreen<T extends PkUIContext = PkUIContext> extends PkUI
         this.setActive(false);
         
         this.on(PkInput.EV_KEYDOWN, (ev: PkInputEvent) => {
-            if (ev.gameActns.includes(InputAction.UI_NEXT)) {
+            if (ev.gameActns.includes(InputAction.UI_RIGHT) || ev.gameActns.includes(InputAction.UI_DOWN) || ev.gameActns.includes(InputAction.UI_NEXT)) {
                 this.focusNext();
             }
         });
         this.on(PkInput.EV_KEYDOWN, (ev: PkInputEvent) => {
-            if (ev.gameActns.includes(InputAction.UI_PREV)) {
+            if (ev.gameActns.includes(InputAction.UI_LEFT) || ev.gameActns.includes(InputAction.UI_UP)) {
                 this.focusPrevious();
             }
         });

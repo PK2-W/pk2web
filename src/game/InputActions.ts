@@ -4,7 +4,7 @@ export enum InputAction {
     UI_UP = 'UI_UP',
     UI_DOWN = 'UI_DOWN',
     UI_PREV = 'UI_TAB_PREV',
-    UI_NEXT = 'UI_TAB_NEXT',
+    UI_NEXT = 'UI_TAB_NEXT',  // FOR COMPATIBILITY
     UI_ACTUATE = 'UI_ACTUATE',
     UI_BACKSPACE = 'UI_BACKSPACE',
     ESCAPE = 'ESCAPE',

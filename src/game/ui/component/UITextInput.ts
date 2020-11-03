@@ -109,8 +109,13 @@ export class UITextInput extends PkUIComponent<PekkaContext> {
                 ev.preventBubbling();
                 return;
             }
+            // UI_ACTUATE blurs
+            if (ev.gameActns.includes(InputAction.UI_ACTUATE)) {
+                this.screen.focusNext();
+                return;
+            }
             // Printable character
-            if (ev.deviceEvent.action.isPrintable()) {
+            if (ev.deviceEvent.action.isPrintable() && !ev.gameActns.includes(InputAction.UI_NEXT)) {
                 const value = ev.deviceEvent.action.getPrintable().toLowerCase();
                 
                 if (/^[a-z0-9.?! ]+$/.test(value) && this.length + value.length <= this._maxLength) {
