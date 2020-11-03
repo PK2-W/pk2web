@@ -1,0 +1,94 @@
+body {
+    background: #416175;
+    font-family: 'Roboto', sans-serif;
+}
+
+.btn {
+    color: #333;
+    border: 0;
+    border-radius: 2px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 7px;
+    text-decoration: none;
+    outline: 0;
+    position: relative;
+    user-select: none;
+    padding: 7px 13px;
+    overflow: hidden;
+    white-space: nowrap;
+    background: #70c8c4;
+    transition: all 0.08s linear 0s;
+    /* TODO: Mover aquí inline-block */
+    /* TODO: Quitar el margin-top */
+}
+
+.btn-ic {
+    background-image: url('data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHZpZXdCb3g9IjAgMCAxNzIgMTcyIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9Im5vbnplcm8iIHN0cm9rZT0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIxIiBzdHJva2UtbGluZWNhcD0iYnV0dCIgc3Ryb2tlLWxpbmVqb2luPSJtaXRlciIgc3Ryb2tlLW1pdGVybGltaXQ9IjEwIiBzdHJva2UtZGFzaGFycmF5PSIiIHN0cm9rZS1kYXNob2Zmc2V0PSIwIiBmb250LWZhbWlseT0ibm9uZSIgZm9udC13ZWlnaHQ9Im5vbmUiIGZvbnQtc2l6ZT0ibm9uZSIgdGV4dC1hbmNob3I9Im5vbmUiIHN0eWxlPSJtaXgtYmxlbmQtbW9kZTogbm9ybWFsIj48cGF0aCBkPSJNMCwxNzJ2LTE3MmgxNzJ2MTcyeiIgZmlsbD0ibm9uZSI+PC9wYXRoPjxnPjxwYXRoIGQ9Ik04NiwxNC4zMzMzM2MtMzkuNTgwNDEsMCAtNzEuNjY2NjcsMzIuMDg2MjYgLTcxLjY2NjY3LDcxLjY2NjY3YzAsMzkuNTgwNDEgMzIuMDg2MjYsNzEuNjY2NjcgNzEuNjY2NjcsNzEuNjY2NjdjMzkuNTgwNDEsMCA3MS42NjY2NywtMzIuMDg2MjYgNzEuNjY2NjcsLTcxLjY2NjY3YzAsLTM5LjU4MDQxIC0zMi4wODYyNiwtNzEuNjY2NjcgLTcxLjY2NjY3LC03MS42NjY2N3oiIGZpbGw9IiNjODFiMWIiPjwvcGF0aD48cGF0aCBkPSJNODYsMzkuNDE2NjdjMTMuNjA1OTIsMCAyNi4yNjk0Miw1Ljg3NjY3IDM1LjEzODE3LDE2LjEwNzA4bC02LjQ3MTUsNS4zOTI5MmwyMS41LDMuNTgzMzN2LTIxLjVsLTYuNzc5NjcsNS42NTA5MmMtMTAuOTE4NDIsLTEyLjY4ODU4IC0yNi41NjMyNSwtMTkuOTg0MjUgLTQzLjM4NywtMTkuOTg0MjVjLTEzLjcwOTgzLDAgLTI2Ljk3NTMzLDQuOTE2MzMgLTM3LjM1NjI1LDEzLjg0MjQybDcuMDA5LDguMTQ4NWM4LjQzMTU4LC03LjI0OTA4IDE5LjIxMDI1LC0xMS4yNDA5MiAzMC4zNDcyNSwtMTEuMjQwOTJ6TTE0Mi40NjI1OCw3Ni4wNDE5MmwtMTAuNTg1MTcsMS44NzA1YzEuOTM1LDEwLjk1MDY3IC0wLjEyNTQyLDIyLjI1OTY3IC01LjgwNSwzMS44Mzc5MmMtNi45NDA5MiwxMS43MDY3NSAtMTguNDUwNTgsMTkuNjAwODMgLTMxLjc3MzQyLDIyLjAxMjQybC0xLjM0MDE3LC04LjMxNjkybC0xNC4wNDY2NywxNi42NjYwOGwxOC40OTM1OCwxMC45NjVsLTEuNDAxMDgsLTguNzExMDhjMTYuNDgzMzMsLTIuOTI0IDMwLjczNDI1LC0xMi42NjM1IDM5LjMxMjc1LC0yNy4xMzNjNi45OTEwOCwtMTEuNzg1NTggOS41MjgwOCwtMjUuNzA2ODMgNy4xNDUxNywtMzkuMTkwOTJ6TTQ1Ljg1MjMzLDEwOS42Mjg1Yy02LjkwMTUsLTExLjcyODI1IC04LjI1NiwtMjUuNjIwODMgLTMuOTQxNjcsLTM4LjQ1Mjc1bDcuOTI5OTIsMi44NDE1OGwtNy44MTUyNSwtMjAuMzQ2MTdsLTE4LjUyOTQyLDEwLjkwNDA4bDguMzA2MTcsMi45Nzc3NWMtNS4zOTY1LDE1Ljg0NTUgLTMuNzQ4MTcsMzMuMDI3NTggNC43ODczMyw0Ny41MjkzM2M2Ljk1MTY3LDExLjgxNDI1IDE3LjkxNjY3LDIwLjc1NDY3IDMwLjg3NCwyNS4xNzI5MmwzLjQ3MjI1LC0xMC4xNzMwOGMtMTAuNTI3ODMsLTMuNTk0MDggLTE5LjQzMjQyLC0xMC44NTc1IC0yNS4wODMzMywtMjAuNDUzNjd6IiBmaWxsPSIjZmZjZGQyIj48L3BhdGg+PC9nPjwvZz48L3N2Zz4=');
+    background-size: auto 76%;
+    background-repeat: no-repeat;
+    padding-left: 36px;
+    background-position: 9px 50%;
+}
+
+.btn:not(:disabled):not(.btn-disabled):hover {
+    outline: 0;
+    color: #222;
+    background-color: #99e3e0;
+}
+
+.btn:disabled, .btn.btn-disabled {
+    opacity: 0.45;
+}
+
+#pekka {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    bottom: 55px;
+    background: #000;
+    border-radius: 2px;
+    overflow: hidden;
+    border: 2px solid #000;
+}
+#pekka canvas {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    image-rendering: pixelated;
+    transform: translateX(-50%) translateY(-50%);
+}
+
+footer {
+    height: 46px;
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    padding: 0 8px;
+    right: 4px;
+}
+
+footer .mid {
+    position: absolute;
+    left: 50%;
+    font-weight: 400;
+    line-height: 46px;
+    font-size: 16px;
+    pointer-events: none;
+    transform: translateX(-50%);
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.75);
+    top: 0;
+}
+
+footer .right {
+    float: right;
+    font-size: 14px;
+    pointer-events: none;
+    color: rgba(255, 255, 255, 0.75);
+    line-height: 46px;
+    padding: 0 12px;
+}
