@@ -1,6 +1,6 @@
 import { uint } from '@sp/types';
 
-export const WEB_CANVAS_QS = '#pk-canvas';
+export const WEB_CONTAINER = '#pekka';
 
 export const GAME_NAME = 'Pekka Kana 2';
 export const PK2_VERSION = 'r3';
