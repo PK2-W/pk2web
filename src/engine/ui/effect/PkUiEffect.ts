@@ -9,6 +9,7 @@ export abstract class PkUiEffect extends EventEmitter implements PkTickable {
     private readonly _thenActions: Set<(component: PkUIComponent) => void>;
     protected _easingFn: TEasingFunction;
     protected _elapsed: number;
+    protected _cancelled: boolean;
     
     protected constructor() {
         super();
@@ -35,19 +36,31 @@ export abstract class PkUiEffect extends EventEmitter implements PkTickable {
         this._started();
     }
     
+    
     protected _started(): void { }
     
+    
     public tick(delta: number, time: number) {
-        // Prevent artifacts for long first tick
-        if (this._elapsed === 0) {
-            this._elapsed = 0.1;
-        } else {
-            this._elapsed += delta;
+        if (!this._cancelled) {
+            // Prevent artifacts for long first tick
+            if (this._elapsed === 0) {
+                this._elapsed = 0.1;
+            } else {
+                this._elapsed += delta;
+            }
         }
     }
     
-    protected _finished(): void {
+    protected _whenFinished(): void {
         this.emit(PkUiEffect.EV_FINISHED, this, [...this._thenEffects], [...this._thenActions]);
+    }
+    
+    public cancel(): void {
+        this._cancelled = true;
+        this.removeAllListeners();
+        this._thenEffects.forEach(effect => effect.cancel());
+        this._thenEffects.clear();
+        this._thenActions.clear();
     }
     
     protected get component(): PkUIComponent {

@@ -27,7 +27,7 @@ export class PkUIEffectFadeIn extends PkUiEffect {
         this.component.globalAlpha = this._easingFn(this._elapsed / this._duration);
         
         if (this._elapsed >= this._duration) {
-            this._finished();
+            this._whenFinished();
         }
     }
 }

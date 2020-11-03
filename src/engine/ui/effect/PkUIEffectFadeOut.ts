@@ -22,8 +22,8 @@ export class PkUIEffectFadeOut extends PkUiEffect {
         this.component.show();
     }
     
-    protected _finished(): void {
-        super._finished();
+    protected _whenFinished(): void {
+        super._whenFinished();
         
         this.component.hide();
     }
@@ -33,7 +33,7 @@ export class PkUIEffectFadeOut extends PkUiEffect {
         this.component.globalAlpha = this._easingFn(1 - (this._elapsed / this._duration));
         
         if (this._elapsed >= this._duration) {
-            this._finished();
+            this._whenFinished();
         }
     }
 }

@@ -17,7 +17,7 @@ export class PkUIEffectDelay extends PkUiEffect {
         super.tick(delta, time);
         
         if (this._elapsed >= this._duration) {
-            this._finished();
+            this._whenFinished();
         }
     }
 }
