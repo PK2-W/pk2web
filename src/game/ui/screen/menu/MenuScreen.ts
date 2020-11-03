@@ -254,6 +254,8 @@ export class MenuScreen extends Screen {
     ///  Actions  ///
     
     public acNewGame(): void {
+        Log.d('[MenuScreen] Showing new game menu')
+        
         this._mainMenu.hide();
         
         this._square.setTarget(90, 150, 640 - 90, 480 - 100);
@@ -261,7 +263,8 @@ export class MenuScreen extends Screen {
         this._nameMenu
             .reset()
             .applyEffect(PkUIEffectDelay.for(60)
-                .then(PkUIEffectFadeIn.for(200)));
+                .then(PkUIEffectFadeIn.for(200))
+                .thenDo(component => component.screen.focusNext()));
     }
     
     public acNewGameNameSelected(name: string): void {
@@ -270,28 +273,37 @@ export class MenuScreen extends Screen {
         this._square.setTarget(40, 62, 640 - 40, 408);
         this._episodesMenu
             .applyEffect(PkUIEffectDelay.for(60)
-                .then(PkUIEffectFadeIn.for(200)));
+                .then(PkUIEffectFadeIn.for(200))
+                .thenDo(component => component.screen.focusNext()));
     }
     
     public acGoToGraphicsMenu(): void {
+        Log.d('[MenuScreen] Showing graphics menu')
+        
         this._mainMenu.hide();
         
         this._square.setTarget(40, 62, 640 - 40, 408);
         this._graphicsMenu
             .applyEffect(PkUIEffectDelay.for(60)
-                .then(PkUIEffectFadeIn.for(200)));
+                .then(PkUIEffectFadeIn.for(200))
+                .thenDo(component => component.screen.focusNext()));
     }
     
     public acGoToSoundsMenu(): void {
+        Log.d('[MenuScreen] Showing audio menu')
+        
         this._mainMenu.hide();
         
         this._square.setTarget(40, 62, 640 - 40, 408);
         this._soundsMenu
             .applyEffect(PkUIEffectDelay.for(60)
-                .then(PkUIEffectFadeIn.for(200)));
+                .then(PkUIEffectFadeIn.for(200))
+                .thenDo(component => component.screen.focusNext()));
     }
     
     public acBackToMain(): void {
+        Log.d('[MenuScreen] Showing main menu')
+
         this._hideAny();
         
         this._square.setTarget(147, 195, 640 - 180, 415);
@@ -299,7 +311,8 @@ export class MenuScreen extends Screen {
         
         this._mainMenu
             .applyEffect(PkUIEffectDelay.for(60)
-                .then(PkUIEffectFadeIn.for(200)));
+                .then(PkUIEffectFadeIn.for(200))
+                .thenDo(component => component.screen.focusNext()));
     }
     
     public _hideAny(): void {

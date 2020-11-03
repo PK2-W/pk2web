@@ -18,7 +18,7 @@ export class PkUIEffectFadeIn extends PkUiEffect {
     protected _started(): void {
         super._started();
         
-        this.component.globalAlpha = 0;
+        this.component.globalAlpha = 0.0001;
         this.component.show();
     }
     
