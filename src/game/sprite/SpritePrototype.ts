@@ -101,7 +101,7 @@ export class SpritePrototype {
     private _causedDamageType: CBYTE;									// mink� tyyppist� vahinkoa tekee (1.1)
     private _suojaus: CBYTE;										// mink� tyyppiselt� vahingolta on suojattu (1.1)
     /**
-     * See: {@link score}.
+     * See {@link score}.
      */
     private _score: int;
     

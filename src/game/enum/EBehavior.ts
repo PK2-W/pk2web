@@ -33,7 +33,13 @@ export enum EAi { //AI
     
     AI_HEITTOASE = 35,
     AI_TIPPUU_TARINASTA,
+    /**
+     * CHANGE IF skulls knocked out
+     */
     AI_VAIHDA_KALLOT_JOS_TYRMATTY,
+    /**
+     * REPLACE SKULLS IF YOU HI
+     */
     AI_VAIHDA_KALLOT_JOS_OSUTTU,
     AI_TUHOUTUU_JOS_EMO_TUHOUTUU,
     

@@ -58,6 +58,16 @@ export class DwContainer extends Dw<PIXI.Container> {
         return this;
     }
     
+    public countRenderable(): number {
+        if (this.renderable) {
+            return 1 + this._children.reduce((prv, c) => {
+                return prv + c.countRenderable();
+            }, 0);
+        } else {
+            return 0;
+        }
+    }
+    
     
     /// Interaction  ///
     

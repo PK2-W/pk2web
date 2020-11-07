@@ -213,13 +213,13 @@ export class Sprite extends DwObjectBase<DwSprite> {
             this._ammo2Proto = proto.ammo2Proto;
             
             /*this._drawable.removeChildren();
-            const graphics = new PIXI.Graphics();
-            if (isPlayer)
-                graphics.lineStyle(3, 0xbb0000, 1);
-            else
-                graphics.lineStyle(2, 0xce1de5, 1);
-            graphics.drawRect(-proto.width / 2, -proto.height / 2, proto.width, proto.height);
-            this._drawable.addChild(graphics);*/
+             const graphics = new PIXI.Graphics();
+             if (isPlayer)
+             graphics.lineStyle(3, 0xbb0000, 1);
+             else
+             graphics.lineStyle(2, 0xce1de5, 1);
+             graphics.drawRect(-proto.width / 2, -proto.height / 2, proto.width, proto.height);
+             this._drawable.addChild(graphics);*/
             
             // const frame = this.proto.getFrame(0);
             // if (frame == null) {
@@ -656,7 +656,7 @@ export class Sprite extends DwObjectBase<DwSprite> {
         // New internal clock
         this._iclk1.incr(1);
         /* if (this._iclk1 > 31320) {  //-> divisible by 360
-             this._iclk1 = 0;
+         this._iclk1 = 0;
          }*/
     }
     

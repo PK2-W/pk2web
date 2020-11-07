@@ -255,6 +255,10 @@ export abstract class Dw<T extends PIXI.DisplayObject> extends EventEmitter {
     
     }
     
+    public countRenderable(): number {
+        return this.renderable ? 1 : 0;
+    }
+    
     
     ///  Debug  ///
     

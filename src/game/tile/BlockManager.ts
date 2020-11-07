@@ -473,7 +473,6 @@ export class BlockManager {
     }
     
     /**
-     * Updates position offset for blocks that can move.
      * SDL: PK_Calculate_MovableBlocks_Position.
      */
     public updateMovement(): void {

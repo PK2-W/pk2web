@@ -61,6 +61,17 @@ export class PkColor {
         return ((1 << 24) + (this.r << 16) + (this.g << 8) + this.b);
     }
     
+    public equalsRGB(other: PkColor): boolean {
+        return this._red === other._red
+            && this._green === other._green
+            && this._blue === other._blue;
+    }
+    
+    public equalsRGBA(other: PkColor): boolean {
+        return this.equalsRGB(other)
+            && this._alpha === other._alpha;
+    }
+    
     public clone(): PkColor {
         return PkColor.rgba(this.r, this.g, this.b, this.a255);
     }

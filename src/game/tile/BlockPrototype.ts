@@ -156,7 +156,7 @@ export class BlockPrototype {
             while (y >= 0 && this._texture.getPixelColor(x, y).a255 === 0)
                 y--;
             
-            this._topMask[x] = BLOCK_SIZE - 1 - y;
+            this._topMask[x] = (BLOCK_SIZE - 1) - y;
         }
     }
     

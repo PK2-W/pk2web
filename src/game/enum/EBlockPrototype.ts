@@ -26,7 +26,13 @@ export enum EBlockPrototype {
     BLOCK_SWITCH3_GATE_R = 46,
     /** Lock. */
     BLOCK_LUKKO = 47,
+    /**
+     * Foreground skull block.
+     * SRC: BLOCK_KALLOSEINA */
     BLOCK_KALLOSEINA = 48,
+    /**
+     * Background skull block.
+     * SRC: BLOCK_KALLOTAUSTA */
     BLOCK_KALLOTAUSTA = 49,
     /** Animated block 1 (60..64). */
     BLOCK_ANIM1 = 60,
@@ -41,6 +47,7 @@ export enum EBlockPrototype {
     BLOCK_VIRTA_YLOS = 142,
     /** Hideout. */
     BLOCK_PIILO = 143,
+    /** Fire. */
     BLOCK_TULI = 144,
     /**
      * Switch button 1.<br>
