@@ -116,15 +116,6 @@ enum MENU {
     MENU_LANGUAGE
 }
 
-export enum FONT {
-    F1 = 1,
-    F2,
-    F3,
-    F4,
-    F5,
-}
-
-
 //#### Structs
 type PK2LEVEL = {
     // 	char	tiedosto[PE_PATH_SIZE];
@@ -220,9 +211,6 @@ export class Pekka implements PkTickable, PekkaContext {
     //
     private item_paneeli_x: int = 10;
     //
-    private info_timer: int = 0;
-    // char info[80] = " ";
-    //
     
     // MAPA
     
@@ -233,8 +221,6 @@ export class Pekka implements PkTickable, PekkaContext {
     // //PELIN MUUTTUJAT
     /** @deprecated */
     private tyohakemisto: string;
-    private game_screen: int = SCREEN.SCREEN_NOT_SET;
-    private game_next_screen: int = SCREEN.SCREEN_BASIC_FORMAT;
     private episode_started: boolean = false;
     private going_to_game: boolean = false;
     private siirry_pistelaskusta_karttaan: boolean = false;
@@ -242,11 +228,6 @@ export class Pekka implements PkTickable, PekkaContext {
     //Fade Text
     private fadetekstit: CVect<PK2FADETEXT> = cvect(MAX_FADETEKSTEJA, () => new PK2FADETEXT());
     private fadeteksti_index: int = 0;
-    
-    //Screen Buffers
-    // int  kuva_peli  = -1;
-    // int  kuva_peli2 = -1;
-    // int  kuva_tausta = -1;
     
     // Controls
     private hiiri_x: int = 10;
@@ -299,10 +280,6 @@ export class Pekka implements PkTickable, PekkaContext {
     private menu_valinta_id: int = 1;
     //private menunelio: RECT;
     
-    // Framerate
-    private fps: number = 0;
-    private show_fps: boolean = false;
-    
     // LANGUAGE AND TEXTS OF THE GAME
     
     private tekstit: PkLanguage;
@@ -349,7 +326,6 @@ export class Pekka implements PkTickable, PekkaContext {
         this._font3 = new PkFontHolder('3');
         this._font4 = new PkFontHolder('4');
         this._font5 = new PkFontHolder('5');
-        
         
         this._screens = new Map();
         
