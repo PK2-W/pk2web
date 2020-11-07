@@ -1,149 +1,173 @@
 import { PekkaContext } from '@game/PekkaContext';
 import { int } from '@game/support/types';
 import { TX } from '@game/texts';
-import { IntroText } from '@game/ui/screen/intro/IntroText';
+import { UIDwBoard } from '@game/ui/component/UIDwBoard';
+import { UIPanel } from '@game/ui/component/UIPanel';
+import { UIPlainText } from '@game/ui/component/UIPlainText';
 import { Screen } from '@game/ui/screen/Screen';
+import { PkInputEvent } from '@ng/core/input/PkInputEvent';
+import { PkInput } from '@ng/core/PkInput';
 import { DwSprite } from '@ng/drawable/dw/DwSprite';
-import { Log } from '@ng/support/log/LoggerImpl';
-import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
-import { PkFont } from '@ng/types/font/PkFont';
-import { PkBaseTexture } from '@ng/types/image/PkBaseTexture';
+import { PkEasing } from '@ng/support/PkEasing';
 import { PkRectangle } from '@ng/types/PkRectangle';
-import { PkTexture } from '@ng/types/PkTexture';
 import { PkUIEffectDelay } from '@ng/ui/effect/PkUIEffectDelay';
 import { PkUIEffectFadeIn } from '@ng/ui/effect/PkUIEffectFadeIn';
 import { PkUIEffectFadeOut } from '@ng/ui/effect/PkUIEffectFadeOut';
-import { INTRO_DURATION, RESOURCES_PATH } from '@sp/constants';
+import { PkUIEffectMove } from '@ng/ui/effect/PkUIEffectMove';
+import { PkIntent } from '@ng/ui/PkScreen';
+import { GAMELOOP_TIME } from '@sp/computed';
 
-// Setup
-const PISTE_LOGO_INI = 3000;
-const PISTE_LOGO_END = 5000;
-const AUTHORS_INI = PISTE_LOGO_END + 800;
-const AUTHORS_END = AUTHORS_INI + 7200;
-const TESTERS_INI = AUTHORS_END + 800;
-const TESTERS_END = TESTERS_INI + 7000;
-const TRANSLATOR_INI = TESTERS_END + 1000;
-const TRANSLATOR_END = TRANSLATOR_INI + 3000;
+// Time table
+const FADE = 1000;
+const LOGO_F = 250 * GAMELOOP_TIME;
+const LOGO_T = 500 * GAMELOOP_TIME;
+const DEVS_F = LOGO_T + 80 * GAMELOOP_TIME;
+const DEVS_T = DEVS_F + 720 * GAMELOOP_TIME;
+const TESTERS_F = DEVS_T + 80 * GAMELOOP_TIME;
+const TESTERS_T = TESTERS_F + 700 * GAMELOOP_TIME;
+const TRANSLATORS_F = TESTERS_T + 100 * GAMELOOP_TIME;
+const TRANSLATORS_T = TRANSLATORS_F + 300 * GAMELOOP_TIME;
 
 export class IntroScreen extends Screen {
-    private startTime: number;
+    private readonly _island: UIDwBoard;
+    private readonly _logo: UIDwBoard;
+    private readonly _credits: UIPanel;
+    private _blinkTimer;
     
-    private _bgBaseTexture: PkTexture<PkBaseTexture>;
-    
-    
-    private _tmpObjs = [];
-    
-    
-    public static create(context: PekkaContext) {
-        return new IntroScreen(context);
+    public static async create(context: PekkaContext) {
+        return await (new IntroScreen(context))._inialize();
     }
     
-    public show() {
-        //super.show();
-        this.start();
+    private constructor(context: PekkaContext) {
+        super(context);
+        
+        this._island = new UIDwBoard(context);
+        this._logo = new UIDwBoard(context);
+        this._credits = new UIPanel(context);
+        
+        this._blinkTimer = 0;
+        
+        this.on(PkInput.EV_KEYDOWN, (ev: PkInputEvent) => {
+            this.suspend(1000);
+        });
+    }
+    
+    private async _inialize(): Promise<this> {
+        // Prepare graphics
+        const bitmap = await this.context.fs.getBitmap('/assets/gfx/intro.bmp');
+        
+        const bgTex = bitmap.getTexture(PkRectangle.$(280, 80, 360, 400));
+        const blinkEyesTex = bitmap.getTexture(PkRectangle.$(242, 313, 33, 119));
+        this._island
+            .add(new DwSprite().setTexture(bgTex))
+            .add(new DwSprite().setTexture(blinkEyesTex).setPosition(73, 233))
+            .setVisible(false)
+            .addTo(this);
+        
+        const logoTex = bitmap.getTexture(PkRectangle.$(37, 230, 157, 212));
+        this._logo.add(new DwSprite().setTexture(logoTex))
+            .setVisible(false)
+            .addTo(this);
+        
+        // Add a container for the credits for cleaning purposes
+        this._credits.addTo(this);
         
         return this;
     }
     
-    public async start() {
-        this.startTime = this.context.clock.now();
+    public async resume(): Promise<this> {
+        // Call super without fade
+        await super.resume(0);
         
-        Log.d(`[${ IntroScreen.name }] Initializing intro screen`);
+        // Reset and star animation
+        this._play();
+        // Play the music
+        this.context.audio.playXM('music/intro.xm');
         
-        // 		kuva_tausta = PisteDraw2_Image_Load("gfx/intro.bmp", true);
-        // const ld = await PK2wImageLoader.load('gfx/intro.bmp');
-        const image = await PkAssetTk.getImage(RESOURCES_PATH + 'gfx/intro.bmp');
-        this._bgBaseTexture = image.getTexture(PkRectangle.$(280, 80, 640 - 280, 480 - 80));
-        
-        //Log.d(`[${ IntroScreen.name }] Loading music: music/INTRO.XM`);
-        
-        // this._context.audio.playXM('music/intro.xm');
-        // {
-        // 	PK2_error = true;
-        // 	PK2_error_msg = "Can't load intro.xm";
-        // }
-        
-        // 		this.introCounter = 0;
-        // 		siirry_pistelaskusta_karttaan = false;
-        //
-        // 		PisteDraw2_FadeIn(PD_FADE_FAST);
-        
-        this.arrange();
-        
-        this.resume(1000);
+        return this;
     }
     
-    protected doSuspend() {
+    public async suspend(ms: number = 0, intent?: PkIntent): Promise<this> {
+        await super.suspend(ms, intent);
+        // Stop the music
         this.context.audio.stopMusic();
+        return this;
     }
     
     
     ///  Graphics  ///
     
+    /**
+     * @inheritDoc
+     */
     public tick(delta: number, time: number) {
         super.tick(delta, time);
         
-        const elapsed = time - this.lastResumeTime;
-        
-        // Update childs
-        for (const obj of this._tmpObjs) {
-            obj.tick(elapsed);
-        }
-        
-        if (elapsed > INTRO_DURATION && !this.isSuspending()) {
-            this.suspend(1000);
+        // Pekka blinks eyes for 10 ticks every 8 secons aprox
+        this._blinkTimer++;
+        if (Math.floor(this._blinkTimer / 10) % 50 === 0) {
+            this._island.get(1).setVisible(true);
+        } else {
+            this._island.get(1).setVisible(false);
         }
     }
     
-    public arrange() {
-        const font = this.context.font1;
+    private _play() {
+        // Reset
+        this._blinkTimer = 0;
+        this._island.cancelEffects().hide().setPosition(280, 80);
+        this._logo.cancelEffects().hide().setPosition(60, 230);
+        this._credits.clean();
         
-        // let black = new PIXI.Graphics();
-        // black.beginFill(0x000000);
-        // black.drawRect(0, 0, 640, 480);
-        // this.addChil(black);
+        // Show island
+        this._island.applyEffect(PkUIEffectFadeIn.for(1000));
         
-        // 	PisteDraw2_Image_CutClip(kuva_tausta, 280, 80, 280, 80, 640, 480);
-        // const island = clipTSprite(this._bgBaseTexture, 280, 80, 640, 480);
-        const spr: DwSprite = new DwSprite()
-            .setTexture(this._bgBaseTexture)
-            .addTo(this._dw, 280, 80);
+        // Animate logo
+        this._logo.applyEffect(
+            PkUIEffectDelay.for(LOGO_F)
+                .then(
+                    PkUIEffectFadeIn.for(800),
+                    PkUIEffectMove.for(1500, 60, 0, PkEasing.outCubic),
+                    PkUIEffectDelay.for(LOGO_T - LOGO_F - 1000)
+                        .then(PkUIEffectFadeOut.for(1000, PkEasing.inCubic))));
+        
+        // Presents...
+        this.introText(230, 400, TX.INTRO_PRESENTS, true, LOGO_F, LOGO_T - 20 * 16.6);
         
         // Authors
-        this.createText(this.tx.get(TX.INTRO_A_GAME_BY), font, 120, 200, AUTHORS_INI, AUTHORS_END);
-        this.createText('janne kivilahti 2003', font, 120, 220, AUTHORS_INI + 200, AUTHORS_END + 200);
-        this.createText(this.tx.get(TX.INTRO_ORIGINAL), font, 120, 245, AUTHORS_INI + 400, AUTHORS_END + 400);
-        this.createText('antti suuronen 1998', font, 120, 265, AUTHORS_INI + 500, AUTHORS_END + 500);
-        this.createText('sdl porting by', font, 120, 290, AUTHORS_INI + 700, AUTHORS_END + 700);
-        this.createText('samuli tuomola 2010', font, 120, 310, AUTHORS_INI + 800, AUTHORS_END + 800);
-        this.createText('sdl2 port and bug fixes', font, 120, 335, AUTHORS_INI + 900, AUTHORS_END + 900);
-        this.createText('danilo lemos 2017', font, 120, 355, AUTHORS_INI + 1000, AUTHORS_END + 1000);
-        this.createText('web porting by', font, 120, 380, AUTHORS_INI + 1100, AUTHORS_END + 1100);
-        this.createText('juande martos 2019', font, 120, 400, AUTHORS_INI + 1200, AUTHORS_END + 1200);
+        this.introText(120, 200, TX.INTRO_A_GAME_BY, true, DEVS_F, DEVS_T);
+        this.introText(120, 216, 'janne kivilahti 2003', false, DEVS_F + 200, DEVS_T + 200);
+        this.introText(120, 245, TX.INTRO_ORIGINAL, true, DEVS_F + 400, DEVS_T + 400);
+        this.introText(120, 261, 'antti suuronen 1998', false, DEVS_F + 500, DEVS_T + 500);
+        this.introText(120, 290, 'sdl porting by', false, DEVS_F + 700, DEVS_T + 700);
+        this.introText(120, 306, 'samuli tuomola 2010', false, DEVS_F + 800, DEVS_T + 800);
+        this.introText(120, 335, 'sdl2 port and bug fixes', false, DEVS_F + 900, DEVS_T + 900);
+        this.introText(120, 351, 'danilo lemos 2017', false, DEVS_F + 1000, DEVS_T + 1000);
+        this.introText(120, 380, 'web version by', false, DEVS_F + 1100, DEVS_T + 1100);
+        this.introText(120, 396, 'juande martos 2020', false, DEVS_F + 1200, DEVS_T + 1200);
         
         // Testers
-        this.createText(this.tx.get(TX.INTRO_TESTED_BY), font, 120, 230, TESTERS_INI, TESTERS_END);
-        this.createText('antti suuronen', font, 120, 250, TESTERS_INI + 100, TESTERS_END + 100);
-        this.createText('toni hurskainen', font, 120, 260, TESTERS_INI + 200, TESTERS_END + 200);
-        this.createText('juho rytkönen', font, 120, 270, TESTERS_INI + 300, TESTERS_END + 300);
-        this.createText('annukka korja', font, 120, 280, TESTERS_INI + 400, TESTERS_END + 400);
-        this.createText(this.tx.get(TX.INTRO_THANKS_TO), font, 120, 300, TESTERS_INI + 700, TESTERS_END + 700);
-        this.createText('oskari raunio', font, 120, 310, TESTERS_INI + 700, TESTERS_END + 700);
-        this.createText('assembly organization', font, 120, 320, TESTERS_INI + 700, TESTERS_END + 700);
+        this.introText(120, 230, TX.INTRO_TESTED_BY, true, TESTERS_F, TESTERS_T);
+        this.introText(120, 246, 'antti suuronen', false, TESTERS_F + 100, TESTERS_T + 100);
+        this.introText(120, 259, 'toni hurskainen', false, TESTERS_F + 200, TESTERS_T + 200);
+        this.introText(120, 272, 'juho rytkönen', false, TESTERS_F + 300, TESTERS_T + 300);
+        this.introText(120, 285, 'annukka korja', false, TESTERS_F + 400, TESTERS_T + 400);
+        this.introText(120, 315, TX.INTRO_THANKS_TO, true, TESTERS_F + 700, TESTERS_T + 700);
+        this.introText(120, 331, 'oskari raunio', false, TESTERS_F + 700, TESTERS_T + 700);
+        this.introText(120, 344, 'assembly organization', false, TESTERS_F + 700, TESTERS_T + 700);
         
         // Translator
-        this.createText(this.tx.get(TX.INTRO_TRANSLATION), font, 120, 230, TRANSLATOR_INI, TRANSLATOR_END);
-        this.createText(this.tx.get(TX.INTRO_TRANSLATOR), font, 120, 250, TRANSLATOR_INI + 200, TRANSLATOR_END + 200);
+        this.introText(120, 230, TX.INTRO_TRANSLATION, true, TRANSLATORS_F, TRANSLATORS_T);
+        this.introText(120, 246, TX.INTRO_TRANSLATOR, true, TRANSLATORS_F + 200, TRANSLATORS_T + 200);
     }
     
-    public createText(str: string, font: PkFont, x: int, y: int, iT: int, eT: int) {
-        let component = IntroText
-            .create(this.context, str, font, x, y, iT, eT)
-            .applyEffect(PkUIEffectDelay.for(iT)
-                .then(PkUIEffectFadeIn.for(6000)
-                    .then(PkUIEffectDelay.for(eT - iT - 6000)
-                        .then(PkUIEffectFadeOut.for(6000)))));
-        
-        this.add(component);
+    public introText(x: int, y: int, text: string, translate: boolean, from: int, to: int) {
+        new UIPlainText(this.context, text, this.context.font1, translate, x, y)
+            .setVisible(false)
+            .applyEffect(PkUIEffectDelay.for(from)
+                .then(PkUIEffectFadeIn.for(FADE)
+                    .then(PkUIEffectDelay.for((to - from) - (FADE * 2))
+                        .then(PkUIEffectFadeOut.for(FADE, PkEasing.inCubic)))))
+            .addTo(this._credits);
     }
 }
