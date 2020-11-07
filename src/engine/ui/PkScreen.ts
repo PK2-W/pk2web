@@ -10,6 +10,11 @@ import { PkUIEffectFadeIn } from '@ng/ui/effect/PkUIEffectFadeIn';
 import { PkUIEffectFadeOut } from '@ng/ui/effect/PkUIEffectFadeOut';
 import { PkUIContext } from '@ng/ui/PkUIContext';
 
+export interface PkIntent {
+    actn: string,
+    data: object
+}
+
 export abstract class PkScreen<T extends PkUIContext = PkUIContext> extends PkUIComponentContainer<T> {
     // LCS
     private readonly _creationTime: number;
@@ -107,7 +112,7 @@ export abstract class PkScreen<T extends PkUIContext = PkUIContext> extends PkUI
         this.emit(PkScreen.EV_RESUMED);
     }
     
-    public suspend(ms: number = 0): Promise<this> {
+    public suspend(ms: number = 0, intent?: PkIntent): Promise<this> {
         return new Promise((resolve) => {
             if (this.isSuspended() || this.isSuspending()) {
                 resolve(this);
@@ -122,20 +127,20 @@ export abstract class PkScreen<T extends PkUIContext = PkUIContext> extends PkUI
             if (ms > 0) {
                 this.applyEffect(PkUIEffectFadeOut.for(ms)
                     .thenDo(() => {
-                        this._suspend();
+                        this._suspend(intent);
                         resolve();
                     }));
             } else {
-                this._suspend();
+                this._suspend(intent);
                 resolve();
             }
         });
     }
-    private _suspend(): void {
+    private _suspend(intent: PkIntent): void {
         this.renderable = false;
         
         this._status = PkScreenLCS.SUSPENDED;
-        this.emit(PkScreen.EV_SUSPENDED);
+        this.emit(PkScreen.EV_SUSPENDED, intent);
     }
     
     public isResuming(): boolean {

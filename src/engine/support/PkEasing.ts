@@ -10,6 +10,10 @@ export const PkEasing = {
     },
     outCubic: function(x: number): number {
         return Math.sqrt(1 - Math.pow(x - 1, 2));
+    },
+    outQuart: function(x: number): number {
+        return 1 - Math.pow(1 - x, 4);
+        
     }
 };
 

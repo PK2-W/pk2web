@@ -57,7 +57,7 @@ export class MenuScreen extends Screen {
         return await tmp.inialize();
     }
     
-    private async inialize(): Promise<MenuScreen> {
+    private async inialize(): Promise<this> {
         Log.d('[MenuScreen] Initializing menu screen');
         
         // Load and prepare background
@@ -107,6 +107,11 @@ export class MenuScreen extends Screen {
         return this;
     }
     
+    /**
+     * An alias for "resume & show main menu".
+     *
+     * @param ms
+     */
     public async showMainMenu(ms?: number): Promise<void> {
         //this.acBackToMain();
         await this.resume(ms);
@@ -165,66 +170,6 @@ export class MenuScreen extends Screen {
         //PisteDraw2_Font_Write(fontti1,tekstit->hae_Teksti(PK_txt.episodes_get_more),140,440);
     }
     
-    ///  Controls Menu  ///
-    
-    private layoutControlsMenu(): void {
-        const ctx = this.context;
-        const fontFg = FONT.F2;
-        const fontBg = FONT.F4;
-        let y = 40;
-        
-        this._menu.controls.titleLabel = new UIPlainText(ctx, TX.CONTROLS_TITLE, fontFg, TITLE_X, TITLE_Y)
-            .addTo(this)
-            .setVisible(false);
-        
-        //if (menu_lue_kontrollit == 0) {
-        this._menu.controls.editActn = new UIWaveText(ctx, TX.CONTROLS_EDIT, fontFg, 100, 90 + y)
-            .addTo(this)
-            .setVisible(false)
-            .setFocusable();
-        //}
-        y += 30;
-        
-        this._menu.controls.kbDefActn = new UIWaveText(ctx, TX.CONTROLS_KBDEF, fontFg, 100, 90 + y)
-            .addTo(this)
-            .setVisible(false)
-            .setFocusable();
-        y += 20;
-        
-        this._menu.controls.gp4DefActn = new UIWaveText(ctx, TX.CONTROLS_GP4DEF, fontFg, 100, 90 + y)
-            .addTo(this)
-            .setVisible(false)
-            .setFocusable();
-        y += 20;
-        
-        this._menu.controls.gp6DefActn = new UIWaveText(ctx, TX.CONTROLS_GP6DEF, fontFg, 100, 90 + y)
-            .addTo(this)
-            .setVisible(false)
-            .setFocusable();
-        
-        this._menu.controls.backActn = new UIWaveText(ctx, TX.MAINMENU_RETURN, fontFg, 180, 400)
-            .addTo(this)
-            .setVisible(false)
-            .setFocusable()
-            .on(PkUIComponentImpl.EV_ACTION, () => {
-                this.showMainMenu();
-            });
-    }
-    
-    public showControlsMenu(ms?: number): void {
-        this.preShowMenu();
-        
-        this._square.setTarget(40, 70, 640 - 40, 410);
-        
-        this._menu.controls.titleLabel.show();
-        this._menu.controls.editActn.show();
-        this._menu.controls.kbDefActn.show();
-        this._menu.controls.gp4DefActn.show();
-        this._menu.controls.gp6DefActn.show();
-        this._menu.controls.backActn.show();
-    }
-    
-    
     public tick(delta: number, time: number) {
         super.tick(delta, time);
         
@@ -275,6 +220,16 @@ export class MenuScreen extends Screen {
             .applyEffect(PkUIEffectDelay.for(60)
                 .then(PkUIEffectFadeIn.for(200))
                 .thenDo(component => component.screen.focusNext()));
+    }
+    
+    public acNewGameEpisodeSelected(episodeName:string):void {
+        // TODO: PLACEHOLDER CONTENT
+        this.suspend(100,{
+            actn: 'GAME_EPISODE_SELECTED',
+            data: {
+                name: episodeName
+            }
+        })
     }
     
     public acGoToGraphicsMenu(): void {

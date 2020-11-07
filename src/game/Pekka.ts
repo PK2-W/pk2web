@@ -21,6 +21,7 @@
 
 import { Entropy } from '@game/Entropy';
 import { Episode } from '@game/episodes/Episode';
+import { EpisodeManager } from '@game/episodes/EpisodeManager';
 import { Game } from '@game/game/Game';
 import { InputAction } from '@game/InputActions';
 import { LevelMap } from '@game/map/LevelMap';
@@ -39,6 +40,7 @@ import { PK2wSound } from '@ng/core/PK2wSound';
 import { PkDevice } from '@ng/core/PkDevice';
 import { PkEngine } from '@ng/core/PkEngine';
 import { PkInput } from '@ng/core/PkInput';
+import { PkError } from '@ng/error/PkError';
 import { PkFilesystem } from '@ng/filesystem/PkFilesystem';
 import { PkFsXHR } from '@ng/filesystem/PkFsXHR';
 import { PkAssetCache } from '@ng/PkAssetCache';
@@ -51,7 +53,7 @@ import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { PkFont } from '@ng/types/font/PkFont';
 import { PkFontHolder } from '@ng/types/font/PkFontHolder';
 import { PkParameters } from '@ng/types/PkParameters';
-import { PkScreen } from '@ng/ui/PkScreen';
+import { PkScreen, PkIntent } from '@ng/ui/PkScreen';
 import {
     RESOURCES_PATH,
     STUFF_CKEY,
@@ -78,8 +80,6 @@ PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
 //Episode
 const EPISODI_MAX_LEVELS: int = 100; //50;
 const MAX_EPISODEJA: int = 300;
-
-const MAX_ILMOITUKSENNAYTTOAIKA: int = 700;
 
 type PK2EPISODESCORES = {
     // 	uint best_score[EPISODI_MAX_LEVELS];        // the best score of each level in episode
@@ -256,6 +256,10 @@ export class Pekka implements PkTickable, PekkaContext {
     
     // Screens
     private readonly _screens: Map<int, PkScreen>;
+    private _introScreen: IntroScreen;
+    private _menuScreen: MenuScreen;
+    private _mapScreen: MapScreen;
+    private _gameScreen: GameScreen;
     
     // INTRO
     
@@ -309,10 +313,14 @@ export class Pekka implements PkTickable, PekkaContext {
     // Algebra
     private readonly _entropy: Entropy;
     
-    // Game engine
-    private _engine: PkEngine;
+    // Game framework
+    private _framework: PkEngine;
     // User interface (TODO move)
+    /** @deprecated */
     private renderer: PkRenderer;
+    
+    //
+    private _episodes: EpisodeManager;
     // Current episode and game
     private _episode: Episode;
     private _game: Game;
@@ -337,11 +345,11 @@ export class Pekka implements PkTickable, PekkaContext {
     ///  Accessors  ///
     
     public get entropy(): Entropy { return this._entropy; }
-    protected get ng(): PkEngine {
-        return this._engine;
+    protected get fwk(): PkEngine {
+        return this._framework;
     }
     
-    public get device(): PkDevice { return this.ng.device; };
+    public get device(): PkDevice { return this.fwk.device; };
     
     public get font1(): PkFont { return this._font1; }
     public get font2(): PkFont { return this._font2; }
@@ -354,16 +362,16 @@ export class Pekka implements PkTickable, PekkaContext {
     }
     /** @deprecated */
     public get clock(): GameTimer {
-        return this._engine.clock;
+        return this._framework.clock;
     }
     public get input(): PkInput {
-        return this._engine.input;
+        return this._framework.input;
     }
     public get fs(): PkFilesystem {
-        return this._engine.fs;
+        return this._framework.fs;
     }
     public get audio(): PK2wSound {
-        return this._engine.audio;
+        return this._framework.audio;
     }
     
     public get stuff(): PkAssetCache {
@@ -371,6 +379,10 @@ export class Pekka implements PkTickable, PekkaContext {
     }
     public get gameStuff(): PkAssetCache {
         return this._gameStuff;
+    }
+    
+    public get episodes(): EpisodeManager {
+        return this._episodes;
     }
     
     
@@ -573,59 +585,6 @@ export class Pekka implements PkTickable, PekkaContext {
         return false;
     }
     
-    private PK_Draw_Menu_Main(): void {
-        let my: int = 240; // 250;
-        
-        this.PK_Draw_Menu_Square(160, 200, 640 - 180, 410, 224);
-        
-        if (this.episode_started) {
-            // 		if (PK_Draw_Menu_Text(true,tekstit->Hae_Teksti(PK_txt.mainmenu_continue),180,my)){
-            // 			if ((!peli_ohi && !jakso_lapaisty) || lopetusajastin > 1)
-            // 				game_next_screen = SCREEN_GAME;
-            // 			else
-            // 				game_next_screen = SCREEN_MAP;
-            //
-            // 		}
-            // 		my += 20;
-        }
-        
-        if (this.PK_Draw_Menu_Text(true, this.tx.get(TX.MAINMENU_NEW_GAME), 180, my)) {
-            // 	nimiedit = true;
-            // 	menu_name_index = strlen(pelaajan_nimi);//   0;
-            // 	menu_name_last_mark = ' ';
-            // 	menu_nyt = MENU_NAME;
-            // 	key_delay = 30;
-        }
-        my += 20;
-        
-        if (this.episode_started) {
-            // 		if (PK_Draw_Menu_Text(true,tekstit->Hae_Teksti(PK_txt.mainmenu_save_game),180,my)){
-            // 			menu_nyt = MENU_TALLENNA;
-            // 		}
-            my += 20;
-        }
-        
-        // 	if (PK_Draw_Menu_Text(true,tekstit->Hae_Teksti(PK_txt.mainmenu_load_game),180,my)){
-        // 		menu_nyt = MENU_LOAD;
-        // 	}
-        my += 20;
-        
-        // 	if (PK_Draw_Menu_Text(true,"load language",180,my)){
-        // 		menu_nyt = MENU_LANGUAGE;
-        // 	}
-        my += 20;
-        
-        // 	if (PK_Draw_Menu_Text(true,tekstit->Hae_Teksti(PK_txt.mainmenu_graphics),180,my)){
-        // 		menu_nyt = MENU_GRAPHICS;
-        // 	}
-        my += 20;
-        
-        // 	if (PK_Draw_Menu_Text(true,tekstit->Hae_Teksti(PK_txt.mainmenu_sounds),180,my)){
-        // 		menu_nyt = MENU_SOUNDS;
-        // 	}
-        my += 20;
-    }
-    
     private PK_Draw_Menu(): void {
         // 	PisteDraw2_ScreenFill(0);
         // 	PisteDraw2_Image_Clip(kuva_tausta, (episode_started && settings.isWide)? -80 : 0, 0);
@@ -650,77 +609,33 @@ export class Pekka implements PkTickable, PekkaContext {
         // 	PK_Draw_Cursor(hiiri_x,hiiri_y);
     }
     
-    private PK_Draw_Intro(): void {
-        let pistelogoIni: uint = 300;
-        let pistelogoEnd: uint = pistelogoIni + 500;
-        let tekijat_alku: uint = pistelogoEnd + 80;
-        let tekijat_loppu: uint = tekijat_alku + 720;
-        let testaajat_alku: uint = tekijat_loppu + 80;
-        let testaajat_loppu: uint = testaajat_alku + 700;
-        let kaantaja_alku: uint = testaajat_loppu + 100;
-        
-        
-        // if ((this.introCounter / 10) % 50 == 0)
-        // 	PisteDraw2_Image_CutClip(kuva_tausta,353, 313, 242, 313, 275, 432);
-        
-        if (this.introCounter > pistelogoIni && this.introCounter < pistelogoEnd) {
-            
-            //int x = this.introCounter - pistelogoIni - 194;
-            let kerroin: int = 120 / (this.introCounter - pistelogoIni);
-            let x: int = 120 - kerroin;
-            
-            if (x > 120)
-                x = 120;
-            
-            // 		PisteDraw2_Image_CutClip(kuva_tausta,/*120*/x,230, 37, 230, 194, 442);
-            
-            // 		PK_Draw_Intro_Text(tekstit->Hae_Teksti(PK_txt.intro_presents), fontti1, 230, 400, pistelogoIni, pistelogoEnd-20);
-            
+    private async prepareScreens(): Promise<void> {
+        // Create UI screens
+        try {
+            await Promise.all([
+                IntroScreen.create(this).then(scr => this._introScreen = scr),
+                MenuScreen.create(this).then(scr => this._menuScreen = scr),
+                MapScreen.create(this).then(scr => this._mapScreen = scr),
+                GameScreen.create(this).then(scr => this._gameScreen = scr)
+            ]);
+        } catch (err) {
+            throw new PkError(`Error while preparing UI.`, err);
         }
         
-        if (this.introCounter > tekijat_alku) {
-            // 		PK_Draw_Intro_Text(tekstit->Hae_Teksti(PK_txt.intro_a_game_by),fontti1, 120, 200, tekijat_alku, tekijat_loppu);
-            // 		PK_Draw_Intro_Text("janne kivilahti 2003",		            fontti1, 120, 220, tekijat_alku+20, tekijat_loppu+20);
-            // 		PK_Draw_Intro_Text(tekstit->Hae_Teksti(PK_txt.intro_original), fontti1, 120, 245, tekijat_alku+40, tekijat_loppu+40);
-            // 		PK_Draw_Intro_Text("antti suuronen 1998",		            fontti1, 120, 265, tekijat_alku+50, tekijat_loppu+50);
-            // 		PK_Draw_Intro_Text("sdl porting by",		                fontti1, 120, 290, tekijat_alku+70, tekijat_loppu+70);
-            // 		PK_Draw_Intro_Text("samuli tuomola 2010",		            fontti1, 120, 310, tekijat_alku+80, tekijat_loppu+80);
-            // 		PK_Draw_Intro_Text("sdl2 port and bug fixes",               fontti1, 120, 335, tekijat_alku + 90, tekijat_loppu + 90);
-            // 		PK_Draw_Intro_Text("danilo lemos 2017",                     fontti1, 120, 355, tekijat_alku + 100, tekijat_loppu + 100);
-        }
+        // Then, add to the scene in order of depth
+        this.fwk.rendr.add2(
+            this._introScreen,
+            this._gameScreen,
+            this._mapScreen,
+            this._menuScreen
+        );
         
-        if (this.introCounter > testaajat_alku) {
-            // 		PK_Draw_Intro_Text(tekstit->Hae_Teksti(PK_txt.intro_tested_by),fontti1, 120, 230, testaajat_alku, testaajat_loppu);
-            // 		PK_Draw_Intro_Text("antti suuronen",			fontti1, 120, 250, testaajat_alku+10, testaajat_loppu+10);
-            // 		PK_Draw_Intro_Text("toni hurskainen",			fontti1, 120, 260, testaajat_alku+20, testaajat_loppu+20);
-            // 		PK_Draw_Intro_Text("juho rytk�nen",				fontti1, 120, 270, testaajat_alku+30, testaajat_loppu+30);
-            // 		PK_Draw_Intro_Text("annukka korja",				fontti1, 120, 280, testaajat_alku+40, testaajat_loppu+40);
-            // 		PK_Draw_Intro_Text(tekstit->Hae_Teksti(PK_txt.intro_thanks_to),fontti1, 120, 300, testaajat_alku+70, testaajat_loppu+70);
-            // 		PK_Draw_Intro_Text("oskari raunio",				fontti1, 120, 310, testaajat_alku+70, testaajat_loppu+70);
-            // 		PK_Draw_Intro_Text("assembly organization",		fontti1, 120, 320, testaajat_alku+70, testaajat_loppu+70);
-        }
-        
-        if (this.introCounter > kaantaja_alku) {
-            // 		PK_Draw_Intro_Text(tekstit->Hae_Teksti(PK_txt.intro_translation), fontti1, 120, 230, kaantaja_alku, kaantaja_loppu);
-            // 		PK_Draw_Intro_Text(tekstit->Hae_Teksti(PK_txt.intro_translator),  fontti1, 120, 250, kaantaja_alku+20, kaantaja_loppu+20);
-        }
-    }
-    
-    
-    private async createScreens(): Promise<void> {
-        // Intro screen
-        this._screens.set(SCREEN.SCREEN_INTRO, await IntroScreen.create(this));
-        // Menu screen
-        this._screens.set(SCREEN.SCREEN_MENU, await MenuScreen.create(this));
-        // Map screen
-        this._screens.set(SCREEN.SCREEN_MAP, await MapScreen.create(this));
-        // Game screen
-        this._screens.set(SCREEN.SCREEN_GAME, await GameScreen.create(this));
-        
-        this._engine.rendr.add(SCREEN.SCREEN_INTRO, this._screens.get(SCREEN.SCREEN_INTRO));
-        this._engine.rendr.add(SCREEN.SCREEN_MENU, this._screens.get(SCREEN.SCREEN_MENU));
-        this._engine.rendr.add(SCREEN.SCREEN_MAP, this._screens.get(SCREEN.SCREEN_MAP));
-        this._engine.rendr.add(SCREEN.SCREEN_GAME, this._screens.get(SCREEN.SCREEN_GAME));
+        this._introScreen.on(PkScreen.EV_SUSPENDED, this.changeToMenu, this);
+        this._menuScreen.on(PkScreen.EV_SUSPENDED, (intent: PkIntent) => {
+            if (intent.actn === 'GAME_EPISODE_SELECTED') {
+                this.uiActionNewGame();
+            }
+        });
     }
     
     private PK_MainScreen_Intro(): void {
@@ -818,12 +733,8 @@ export class Pekka implements PkTickable, PekkaContext {
         // 			menu_nyt = MENU_MAIN;
         // 		}
         // 	}
-        //
-        // 	if (key_delay > 0)
-        // 		key_delay--;
-        //
-        // 	if (key_delay == 0){
-        // 		if (PisteInput_Keydown(PI_RETURN) && pistelaskuvaihe == 5){
+        
+        
         // 			siirry_pistelaskusta_karttaan = true;
         // 			music_volume = 0;
         // 			PisteDraw2_FadeOut(PD_FADE_SLOW);
@@ -1429,31 +1340,25 @@ export class Pekka implements PkTickable, PekkaContext {
         
     }
     
-    private changeToIntro() {
-        const screen = this._screens.get(SCREEN.SCREEN_INTRO);
-        //  screen.on(PkScreen.EV_SUSPENDED, this.changeToMenu, this);
-        //screen.on(PkScreen.EVT_SUSPENDED, this.changeToMap, this);
-        (screen as IntroScreen).start();
-        this.renderer.setActiveScreen(screen);
+    private async changeToIntro() {
+        await this._introScreen.resume();
+        this.fwk.rendr.setActive(this._introScreen);
     }
     
     private async changeToMenu() {
-        const screen = this._screens.get(SCREEN.SCREEN_MENU);
-        await (screen as MenuScreen).showMainMenu(600);
-        this.renderer.setActive(SCREEN.SCREEN_MENU);
+        await this._menuScreen.showMainMenu(600);
+        this.fwk.rendr.setActive(this._menuScreen);
     }
     
-    private changeToMap() {
-        const screen = this._screens.get(SCREEN.SCREEN_MAP);
-        (screen as MapScreen).resume(500);
-        this.renderer.setActiveScreen(screen);
+    private async changeToMap() {
+        await this._mapScreen.resume(500);
+        this.fwk.rendr.setActive(this._mapScreen);
     }
     
-    private changeToGame(game: Game) {
-        const screen = this._screens.get(SCREEN.SCREEN_GAME) as GameScreen;
-        screen.display(game);
-        screen.resume(500);
-        this.renderer.setActive(SCREEN.SCREEN_GAME);
+    private async changeToGame(game: Game) {
+        this._gameScreen.display(game);
+        await this._gameScreen.resume(500);
+        this.fwk.rendr.setActive(this._gameScreen);
     }
     
     private async prepare(): Promise<void> {
@@ -1466,13 +1371,13 @@ export class Pekka implements PkTickable, PekkaContext {
     private async quit(ret: int): Promise<void> {
         await this.settings.save();
         // REPL this.PK_Unload();
-        this._engine.destroy();
+        this._framework.destroy();
         if (!ret) console.log('Exited correctely\n');
         // exit(ret);
     }
     
     public tick(delta: number, time: number): void {
-        this._engine.clock.add(this.tick.bind(this));
+        this._framework.clock.add(this.tick.bind(this));
         
         //const diff = delta / 16; //--> 1pt every 10ms
         
@@ -1487,7 +1392,7 @@ export class Pekka implements PkTickable, PekkaContext {
      */
     private async _loadStuff(): Promise<void> {
         Log.d('[Pekka] Preparing game\'s stuff bitmap');
-        const stuffBmp = await this._engine.fs.getBitmap('/assets/gfx/pk2stuff.bmp');
+        const stuffBmp = await this._framework.fs.getBitmap('/assets/gfx/pk2stuff.bmp');
         stuffBmp.makeColorTransparent();
         await this._stuff.addBitmap(STUFF_CKEY, stuffBmp);
         
@@ -1502,7 +1407,6 @@ export class Pekka implements PkTickable, PekkaContext {
         await this._stuff.addSound(LAND_SOUND_CKEY, await PkAssetTk.getSound(pathJoin(RESOURCES_PATH, 'sfx/pump.wav')));
         await this._stuff.addSound(pistelaskuri_SOUND_CKEY, await PkAssetTk.getSound(pathJoin(RESOURCES_PATH, 'sfx/counter.wav')));
     }
-    
     
     public async main(/*int argc, char *argv[]*/): Promise<void> {
         // 	char* test_path = NULL;
@@ -1554,14 +1458,14 @@ export class Pekka implements PkTickable, PekkaContext {
         this.settings = await PekkaSettings.loadFromClient();
         Log.dg(['Settings', ...Object.entries(this.settings)]);
         
-        this._engine = new PkEngine();
-        this._engine.setDebug(this.dev_mode);
+        this._framework = new PkEngine();
+        this._framework.setDebug(this.dev_mode);
         
         // Setup FS
-        this._engine.fs.add('/assets', new PkFsXHR('./pk2w/resources', [
+        this._framework.fs.add('/assets', new PkFsXHR('./pk2w/resources', [
             { for: /^(\/).+$/, check: '/vfs.json' }
         ]));
-        this._engine.fs.add('/community', new PkFsXHR(
+        this._framework.fs.add('/community', new PkFsXHR(
             'https://pk2-w.github.io/community-episodes/episodes',
             [
                 { for: /^(\/)[^/]+$/, check: '/vfs.json' },
@@ -1569,7 +1473,7 @@ export class Pekka implements PkTickable, PekkaContext {
             ]));
         //this._engine.fs.addMountpoint('/browser', new PkFsBrowser());
         
-        this.renderer = this._engine.getRenderer();
+        this.renderer = this._framework.getRenderer();
         
         // Load language
         await this._loadLanguage();
@@ -1586,38 +1490,34 @@ export class Pekka implements PkTickable, PekkaContext {
         await this._loadStuff();
         
         // setup input
-        this._engine.input.associateAction([kbAction(KbCode.ArrowLeft)], [InputAction.UI_PREV, InputAction.UI_LEFT]);
-        this._engine.input.associateAction([kbAction(KbCode.ArrowRight)], [InputAction.UI_NEXT, InputAction.UI_RIGHT]);
-        this._engine.input.associateAction([kbAction(KbCode.ArrowUp)], [InputAction.UI_UP]);
-        this._engine.input.associateAction([kbAction(KbCode.ArrowDown)], [InputAction.UI_DOWN]);
-        this._engine.input.associateAction([kbAction(KbCode.Enter), kbAction(KbCode.Space)], [InputAction.UI_ACTUATE]);
-        this._engine.input.associateAction([kbAction(KbCode.Backspace)], [InputAction.UI_BACKSPACE]);
-        this._engine.input.associateAction([kbAction(KbCode.Escape)], [InputAction.ESCAPE]);
-        this._engine.input.associateAction([kbAction(KbCode.Tab)], [InputAction.UI_NEXT]);
+        this.fwk.input.associateAction([kbAction(KbCode.ArrowLeft)], [InputAction.UI_PREV, InputAction.UI_LEFT]);
+        this.fwk.input.associateAction([kbAction(KbCode.ArrowRight)], [InputAction.UI_NEXT, InputAction.UI_RIGHT]);
+        this.fwk.input.associateAction([kbAction(KbCode.ArrowUp)], [InputAction.UI_UP]);
+        this.fwk.input.associateAction([kbAction(KbCode.ArrowDown)], [InputAction.UI_DOWN]);
+        this.fwk.input.associateAction([kbAction(KbCode.Enter), kbAction(KbCode.Space)], [InputAction.UI_ACTUATE]);
+        this.fwk.input.associateAction([kbAction(KbCode.Backspace)], [InputAction.UI_BACKSPACE]);
+        this.fwk.input.associateAction([kbAction(KbCode.Escape)], [InputAction.ESCAPE]);
+        this.fwk.input.associateAction([kbAction(KbCode.Tab)], [InputAction.UI_NEXT]);
         
-        this._engine.input.associateAction([kbAction(KbCode.ArrowLeft)], [InputAction.GAME_LEFT]);
-        this._engine.input.associateAction([kbAction(KbCode.ArrowRight)], [InputAction.GAME_RIGHT]);
-        this._engine.input.associateAction([kbAction(KbCode.ArrowUp)], [InputAction.GAME_JUMP]);
-        this._engine.input.associateAction([kbAction(KbCode.ArrowDown)], [InputAction.GAME_CROUCH]);
-        this._engine.input.associateAction([kbAction(KbCode.AltRight)], [InputAction.GAME_WALK_SLOW]);
-        this._engine.input.associateAction([kbAction(KbCode.ControlLeft)], [InputAction.GAME_ATTACK1]);
-        this._engine.input.associateAction([kbAction(KbCode.AltLeft)], [InputAction.GAME_ATTACK2]);
-        this._engine.input.associateAction([kbAction(KbCode.Tab)], [InputAction.GAME_GIFT_NEXT]);
-        this._engine.input.associateAction([kbAction(KbCode.Space)], [InputAction.GAME_GIFT_USE]);
-        this._engine.input.associateAction([kbAction(KbCode.Delete)], [InputAction.GAME_SUICIDE]);
-        this._engine.input.associateAction([kbAction(KbCode.KeyP)], [InputAction.GAME_PAUSE]);
+        this.fwk.input.associateAction([kbAction(KbCode.ArrowLeft)], [InputAction.GAME_LEFT]);
+        this.fwk.input.associateAction([kbAction(KbCode.ArrowRight)], [InputAction.GAME_RIGHT]);
+        this.fwk.input.associateAction([kbAction(KbCode.ArrowUp)], [InputAction.GAME_JUMP]);
+        this.fwk.input.associateAction([kbAction(KbCode.ArrowDown)], [InputAction.GAME_CROUCH]);
+        this.fwk.input.associateAction([kbAction(KbCode.AltRight)], [InputAction.GAME_WALK_SLOW]);
+        this.fwk.input.associateAction([kbAction(KbCode.ControlLeft)], [InputAction.GAME_ATTACK1]);
+        this.fwk.input.associateAction([kbAction(KbCode.AltLeft)], [InputAction.GAME_ATTACK2]);
+        this.fwk.input.associateAction([kbAction(KbCode.Tab)], [InputAction.GAME_GIFT_NEXT]);
+        this.fwk.input.associateAction([kbAction(KbCode.Space)], [InputAction.GAME_GIFT_USE]);
+        this.fwk.input.associateAction([kbAction(KbCode.Delete)], [InputAction.GAME_SUICIDE]);
+        this.fwk.input.associateAction([kbAction(KbCode.KeyP)], [InputAction.GAME_PAUSE]);
         
+        this.fwk.clock.add(this.tick.bind(this));
         
-        this._engine.clock.add(this.tick.bind(this));
+        // Episode management
+        this._episodes = new EpisodeManager(this);
         
         //
-        await this.createScreens();
-        
-        
-        // await this.load
-        
-        
-        // this.PK_MainScreen_Change();
+        await this.prepareScreens();
         
         
         // if (test_level) {
@@ -1630,11 +1530,11 @@ export class Pekka implements PkTickable, PekkaContext {
         // }
         
         // The game loop calls PK_MainScreen().
-        this._engine.start(this.PK_MainScreen, this);
+        this.fwk.start(this.PK_MainScreen, this);
         
         //console.log('RENDER IS DISABLED');
-        //this.changeToIntro();
-        this.changeToMenu();
+        await this.changeToIntro();
+        //this.changeToMenu();
         
         //this.uiActionNewGame();
         
@@ -1677,7 +1577,7 @@ export class Pekka implements PkTickable, PekkaContext {
         
         const gameTick = (delta, time) => {
             // Schedule next tick
-            this._engine.clock.add(gameTick.bind(this));
+            this._framework.clock.add(gameTick.bind(this));
             
             // Exec game loop
             this._game.tick(delta, time);
@@ -1687,7 +1587,7 @@ export class Pekka implements PkTickable, PekkaContext {
             }
         };
         
-        this._engine.clock.add(gameTick.bind(this));
+        this._framework.clock.add(gameTick.bind(this));
     }
     
     
@@ -1695,10 +1595,16 @@ export class Pekka implements PkTickable, PekkaContext {
     
     }
     
+    /**
+     * Stops and releases the current game, if any.
+     */
     public async _clearCurrentGame(): Promise<void> {
     
     }
     
+    /**
+     * Start a new game for the specified episode and level id.
+     */
     public async _prepareNewGame(): Promise<Game> {
         Log.l('[Pekka] Preparing new game');
         

@@ -1,4 +1,5 @@
 import { Entropy } from '@game/Entropy';
+import { EpisodeManager } from '@game/episodes/EpisodeManager';
 import { ISettingsView } from '@game/settings/ISettingsView';
 import { GameTimer } from '@ng/core/GameTimer';
 import { PK2wSound } from '@ng/core/PK2wSound';
@@ -31,4 +32,6 @@ export interface PekkaContext extends PkUIContext {
     
     readonly stuff: PkAssetCache;
     readonly gameStuff: PkAssetCache;
+    
+    readonly episodes: EpisodeManager;
 }

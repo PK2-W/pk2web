@@ -33,6 +33,7 @@ export class EpisodesMenuGroup extends PkUIComponentContainer<PekkaContext> {
         
         new UIWaveText(context, 'rooster island 1', fontFg, true)
             .setFocusable()
+            .on(PkUIComponent.EV_ACTUATED, () => this._menu.acNewGameEpisodeSelected('rooster island 1'))
             .addTo(stack);
         
         new UIWaveText(context, 'rooster island 2', fontFg, true)
@@ -56,11 +57,12 @@ export class EpisodesMenuGroup extends PkUIComponentContainer<PekkaContext> {
     }
     
     private async placeholder() {
-        const ls = await this.context.fs.ls('/community');
-        for (let entry of ls) {
-            new UIWaveText(this.context, entry.name, this.context.font1, true)
+        // TODO: Caould fail
+        const episodes = await this.context.episodes.getCommunityEpisodes();
+        for (let episode of episodes) {
+            new UIWaveText(this.context, episode, this.context.font1, true)
                 .setFocusable()
-                .setMetadata('nameEpisode', entry.name)
+                .setMetadata('nameEpisode', episode)
                 .setMetadata('communityEpisode', true)
                 .on(PkUIComponent.EV_ACTUATED, (uic) => {alert('Lets play ' + uic.getMetadata('nameEpisode'));})
                 .addTo(this._stack);

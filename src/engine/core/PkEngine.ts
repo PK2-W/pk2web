@@ -76,7 +76,6 @@ export class PkEngine {
     public destroy() {
         this.clock.stop();
         
-        this.rendr.destroy();
         // 	PisteInput_Exit();
         // 	PisteSound_End();
         // 	SDL_Quit();

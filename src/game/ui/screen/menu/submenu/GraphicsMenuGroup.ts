@@ -1,9 +1,7 @@
 import { PekkaContext } from '@game/PekkaContext';
 import { TX } from '@game/texts';
 import { UICheckbox } from '@game/ui/component/UICheckbox';
-import { UIPanel } from '@game/ui/component/UIPanel';
 import { UIPlainText } from '@game/ui/component/UIPlainText';
-import { UIProgressBar } from '@game/ui/component/UIProgressBar';
 import { UIStackLayout } from '@game/ui/component/UIStackLayout';
 import { UIText } from '@game/ui/component/UIText';
 import { UIWaveText } from '@game/ui/component/UIWaveText';
