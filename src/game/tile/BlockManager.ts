@@ -681,9 +681,9 @@ export class BlockManager {
         
         // PisteDraw2_DrawImage_Start(palikat_buffer,*&buffer,(DWORD &)leveys);
         
-        for (y = 448; y < 479; y++) {
-            for (x = 128; x < 160; x++) {
-                index = this._spritesheet.getPixelIndex(x, y);
+        for (x = 128; x < 160; x++) {
+            for (y = 448; y < 479; y++) {
+                index = this._spritesheet.getPixelIndex(x, y + 1);
                 
                 if (index != 255) {
                     index %= 32;
