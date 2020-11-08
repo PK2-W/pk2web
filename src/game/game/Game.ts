@@ -1224,7 +1224,7 @@ export class Game extends GameContext implements PkTickable {
                 }
                 
                 if (sprite.hasBehavior(EAi.AI_VAIHDA_KALLOT_JOS_OSUTTU)) {
-                    this._blocks.changeSkullBlocks();
+                    this._blocks.toggleSkullBlocks();
                 }
                 
                 if (sprite.hasBehavior(EAi.AI_HYOKKAYS_1_JOS_OSUTTU)) {
@@ -1256,7 +1256,7 @@ export class Game extends GameContext implements PkTickable {
                                     future.x - 11 + (10 - rand() % 20), future.bottom - 16 - (10 + rand() % 20), sprite, true);
                     
                     if (sprite.hasBehavior(EAi.AI_VAIHDA_KALLOT_JOS_TYRMATTY) && !sprite.hasBehavior(EAi.AI_VAIHDA_KALLOT_JOS_OSUTTU)) {
-                        this._blocks.changeSkullBlocks();
+                        this._blocks.toggleSkullBlocks();
                     }
                     
                     if (tuhoutuminen >= EDestructionType.TUHOUTUMINEN_ANIMAATIO)
