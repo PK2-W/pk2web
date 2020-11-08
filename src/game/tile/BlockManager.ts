@@ -4,6 +4,7 @@ import { TEXTURE_ID_BLOCKS } from '@game/game/Game';
 import { GameContext } from '@game/game/GameContext';
 import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, KYTKIN_ALOITUSARVO } from '@game/map/LevelMap';
 import { int, CVect, cvect } from '@game/support/types';
+import { TX } from '@game/texts';
 import { Block } from '@game/tile/Block';
 import { BlockCollider } from '@game/tile/BlockCollider';
 import { BLOCK_SIZE, BLOCKSHEET_WIDTH } from '@game/tile/BlockConstants';
@@ -1114,15 +1115,25 @@ export class BlockManager {
     
     ///  Locks  ////
     
+    /**
+     * Unlock the lock blocks ({@link EBlockPrototype.BLOCK_LUKKO}).
+     *
+     * @src-cpp PK_Kartta_Avaa_Lukot
+     * @src-sdl PK2Kartta::Open_Locks
+     * @stable
+     */
     public openLocks(): void {
         let code: number;
         
-        for (let i = 0; i < PK2KARTTA_KARTTA_LEVEYS; i++) {
-            for (let j = 0; j < PK2KARTTA_KARTTA_KORKEUS; j++) {
+        Log.v('[BlockManager] Opening locks...');
+        
+        for (let j = 0; j < PK2KARTTA_KARTTA_KORKEUS; j++) {
+            for (let i = 0; i < PK2KARTTA_KARTTA_LEVEYS; i++) {
                 code = this.getFgBlockCode(i, j);
                 
                 if (code === EBlockPrototype.BLOCK_LUKKO) {
                     this.removeFg(i, j);
+                    
                     Effects.smokeClouds(this._context,
                         i * BLOCK_SIZE + Math.floor(BLOCK_SIZE * 6 / 32),
                         j * BLOCK_SIZE + Math.floor(BLOCK_SIZE * 6 / 32));
@@ -1130,10 +1141,10 @@ export class BlockManager {
             }
         }
         
-        // Game::vibration = 90;//60
-        // PisteInput_Vibrate();
+        this._context._vibration = 90; // Janne / 60
+        // TODO: PisteInput_Vibrate();
         
-        // PK_Start_Info(tekstit->Hae_Teksti(PK_txt.game_locksopen));
+        this._context.ui.showInfo(TX.GAME_LOCKSOPEN);
         
         this.calculateEdges();
     }

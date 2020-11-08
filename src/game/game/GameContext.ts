@@ -34,6 +34,7 @@ export abstract class GameContext {
     protected readonly _particles: ParticleSystem;
     protected _camera: { x: number, y: number };
     protected _sound: PKSound;
+    public _vibration: int;
     
     protected _swichTimer1: number;
     protected _swichTimer2: number;

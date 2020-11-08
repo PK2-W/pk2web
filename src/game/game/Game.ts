@@ -76,7 +76,7 @@ export class Game extends GameContext implements PkTickable {
     // PK2Kartta* current_map;
     // char map_path[PE_PATH_SIZE];
     //
-    private _vibration: int;
+    public _vibration: int;
     
     private _dcameraX: number;
     private _dcameraY: number;
@@ -132,6 +132,8 @@ export class Game extends GameContext implements PkTickable {
         this._flies = new Set();
         
         this._paused = false;
+        
+        this._vibration = 0;
         
         this._sprites.onSpriteCreated((sprite) => {
             if (sprite.proto.type === ESpriteType.TYYPPI_TAUSTA) {
