@@ -1150,17 +1150,23 @@ export class BlockManager {
     }
     
     /**
+     * Lock/unlock the skull blocks ({@link EBlockPrototype.BLOCK_KALLOSEINA}).
      *
-     * SDL: Change_SkullBlocks
+     * @src-cpp PK_Kartta_Vaihda_Kallopalikat
+     * @src-sdl Change_SkullBlocks
+     * @stable
      */
-    public changeSkullBlocks(): void {
+    public toggleSkullBlocks(): void {
         let front: TBlockProtoCode, back: TBlockProtoCode;
+        
+        Log.v('[BlockManager] Toggling skull blocks...');
         
         for (let j = 0; j < PK2KARTTA_KARTTA_KORKEUS; j++) {
             for (let i = 0; i < PK2KARTTA_KARTTA_LEVEYS; i++) {
                 front = this.getFgBlockCode(i, j);
                 back = this.getBgBlockCode(i, j);
                 
+                // Remove from foreground
                 if (front === EBlockPrototype.BLOCK_KALLOSEINA) {
                     this.removeFg(i, j);
                     
@@ -1169,15 +1175,15 @@ export class BlockManager {
                     }
                 }
                 
+                // Add to background
                 if (back === EBlockPrototype.BLOCK_KALLOTAUSTA && front === 255) {
                     this.addBlock(EBlockPrototype.BLOCK_KALLOSEINA, i, j);
                 }
             }
         }
         
-        // TODO
-        //  Game::vibration = 90;//60
-        //  PisteInput_Vibrate();
+        this._context._vibration = 90; // Janne / 60
+        // TODO: PisteInput_Vibrate();
         
         // Janne / PK_Start_Info(tekstit->Hae_Teksti(PK_txt.game_locksopen));
         
