@@ -99,12 +99,29 @@ export class Game implements GameContext, PkTickable {
     // PK2Kartta* current_map;
     // char map_path[PE_PATH_SIZE];
     
-    private _shackingTimer: int;
+    
+    //> Camera
     
     private _dcameraX: number;
     private _dcameraY: number;
     private _dcameraA: number;
     private _dcameraB: number;
+    
+    /**
+     * While this timer > 0, camera shakes violently.
+     *
+     * @ctype int
+     * @src-cpp jaristys
+     */
+    private _mainShakingTimer: number;
+    /**
+     * While this timer > 0, camera shakes slightly.<br>
+     * Used when a switch is actuated.
+     *
+     * @ctype int
+     * @src-cpp kytkin_tarina
+     */
+    private _switchShakingTimer: int = 0;
     
     
     /// >  Timing
@@ -138,7 +155,7 @@ export class Game implements GameContext, PkTickable {
     private _gameOver: boolean = false;
     private _paused: boolean;
     
-    private _kytkin_tarina: int = 0; // "shaking switch", here for now
+    
     private _nakymattomyys: int = 0;
     
     /** ++ timeout */
@@ -174,7 +191,7 @@ export class Game implements GameContext, PkTickable {
         
         this._paused = false;
         
-        this._shackingTimer = 0;
+        this._mainShakingTimer = 0;
         
         this._sprites.onSpriteCreated((sprite) => {
             if (sprite.proto.type === ESpriteType.TYYPPI_TAUSTA) {
@@ -636,13 +653,19 @@ export class Game implements GameContext, PkTickable {
     }
     
     /**
-     * SDL: PK_Update_Camera.
+     * Updates the camera position on each tick to focus the player.
+     *
+     * @stable
+     * @src-cpp PK_Kamera
+     * @src-sdl PK_Update_Camera
      */
     private _updateCamera(): void {
-        this._camera.x = Math.floor(this._sprites.player.x - this.device.screenWidth / 2);
-        this._camera.y = Math.floor(this._sprites.player.y - this.device.screenHeight / 2);
+        let tmp: number;
         
-        // Source comment:
+        this._camera.x = Math.floor(this._sprites.player.x) - Math.floor(this.device.screenWidth / 2);
+        this._camera.y = Math.floor(this._sprites.player.y) - Math.floor(this.device.screenHeight / 2);
+        
+        // Janne:
         // if (!PisteInput_Hiiri_Vasen()) {
         //    Game::camera_x = (int)player->x-screen_width/2;
         //    Game::camera_y = (int)player->y-screen_height/2;
@@ -651,18 +674,20 @@ export class Game implements GameContext, PkTickable {
         //    Game::camera_y += PisteInput_Hiiri_Y(0)*5;
         // }
         
-        if (this._shackingTimer > 0) {
-            this._dcameraX += (rand() % this._shackingTimer - rand() % this._shackingTimer) / 5;
-            this._dcameraY += (rand() % this._shackingTimer - rand() % this._shackingTimer) / 5;
+        // Shake camera with locks opening / skull blocks opening / ...
+        if (this._mainShakingTimer > 0) {
+            this._dcameraX += (rand() % this._mainShakingTimer - rand() % this._mainShakingTimer) / 5;
+            this._dcameraY += (rand() % this._mainShakingTimer - rand() % this._mainShakingTimer) / 5;
             
-            this._shackingTimer--;
+            this._mainShakingTimer--;
         }
-        
-        if (this._kytkin_tarina > 0) {
+    
+        // Shake camera with switchs activation
+        if (this._switchShakingTimer > 0) {
             this._dcameraX += (rand() % 9 - rand() % 9); //3
             this._dcameraY += (rand() % 9 - rand() % 9);
             
-            this._kytkin_tarina--;
+            this._switchShakingTimer--;
         }
         
         if (this._dcameraX !== this.cameraX)
@@ -686,14 +711,17 @@ export class Game implements GameContext, PkTickable {
         if (this.cameraY < 0)
             this._camera.y = 0;
         
-        if (this.cameraX > Math.floor(PK2KARTTA_KARTTA_LEVEYS - this.device.screenWidth / 32) * 32)
-            this._camera.x = Math.floor(PK2KARTTA_KARTTA_LEVEYS - this.device.screenWidth / 32) * 32;
+        tmp = Math.floor(PK2KARTTA_KARTTA_LEVEYS - this.device.screenWidth / 32) * 32;
+        if (this.cameraX > tmp) {
+            this._camera.x = tmp;
+        }
         
-        if (this.cameraY > Math.floor(PK2KARTTA_KARTTA_KORKEUS - this.device.screenHeight / 32) * 32)
-            this._camera.y = Math.floor(PK2KARTTA_KARTTA_KORKEUS - this.device.screenHeight / 32) * 32;
+        tmp = Math.floor(PK2KARTTA_KARTTA_KORKEUS - this.device.screenHeight / 32) * 32;
+        if (this.cameraY > tmp) {
+            this._camera.y = tmp;
+        }
         
         // Apply
-        //this.composition.getDrawable().setPosition(-this.cameraX, -this.cameraY);
         this.camera.setPosition(this.cameraX, this.cameraY);
     }
     
@@ -1364,7 +1392,7 @@ export class Game implements GameContext, PkTickable {
                         }
                         
                         if (sprite.weight > 1)
-                            this._shackingTimer = 34 + Math.floor(sprite.weight * 20);
+                            this._mainShakingTimer = 34 + Math.floor(sprite.weight * 20);
                     }
                     
                     sprite.jumpTimer = 0;
@@ -1653,7 +1681,7 @@ export class Game implements GameContext, PkTickable {
                     // 													break;
                     //
                     case EAi.AI_TIPPUU_TARINASTA:
-                        sprite.AI_Tippuu_Tarinasta(this._shackingTimer + this._kytkin_tarina);
+                        sprite.AI_Tippuu_Tarinasta(this._mainShakingTimer + this._switchShakingTimer);
                         break;
                     case EAi.AI_LIIKKUU_ALAS_JOS_KYTKIN1_PAINETTU:
                         sprite.AI_MovesWhenSwitchPressed(this.switchTimer1, 0, 1);
@@ -1961,7 +1989,7 @@ export class Game implements GameContext, PkTickable {
         
         // Hyppyyn liittyv�t seikat
         
-        if (this._kytkin_tarina + this._shackingTimer > 0 && sprite.jumpTimer == 0)
+        if (this._switchShakingTimer + this._mainShakingTimer > 0 && sprite.jumpTimer == 0)
             sprite.jumpTimer = sprite.proto.maxJump / 2;
         
         if (sprite.jumpTimer > 0 && sprite.jumpTimer < sprite.proto.maxJump) {
@@ -2314,7 +2342,7 @@ export class Game implements GameContext, PkTickable {
                     break;
                 
                 case EAi.AI_TIPPUU_TARINASTA:
-                    sprite.AI_Tippuu_Tarinasta(this._shackingTimer + this._kytkin_tarina);
+                    sprite.AI_Tippuu_Tarinasta(this._mainShakingTimer + this._switchShakingTimer);
                     break;
                 
                 default:
@@ -2697,7 +2725,7 @@ export class Game implements GameContext, PkTickable {
                         if (sprite.kytkinpaino >= 1) { // Sprite can press the buttons
                             if (block.code === EBlockPrototype.BLOCK_SWITCH1 && this.switchTimer1 === 0) {
                                 this._swichTimer1 = KYTKIN_ALOITUSARVO;
-                                this._kytkin_tarina = 64;
+                                this._switchShakingTimer = 64;
                                 
                                 this.playSound(this.stuff.getSound(SWITCH_SOUND_CKEY), 1, future.x, future.y);
                                 
@@ -2706,7 +2734,7 @@ export class Game implements GameContext, PkTickable {
                             
                             if (block.code === EBlockPrototype.BLOCK_SWITCH2 && this.switchTimer2 === 0) {
                                 this._swichTimer2 = KYTKIN_ALOITUSARVO;
-                                this._kytkin_tarina = 64;
+                                this._switchShakingTimer = 64;
                                 
                                 this.playSound(this.stuff.getSound(SWITCH_SOUND_CKEY), 1, future.x, future.y);
                                 
@@ -2715,7 +2743,7 @@ export class Game implements GameContext, PkTickable {
                             
                             if (block.code === EBlockPrototype.BLOCK_SWITCH3 && this.switchTimer3 === 0) {
                                 this._swichTimer3 = KYTKIN_ALOITUSARVO;
-                                this._kytkin_tarina = 64;
+                                this._switchShakingTimer = 64;
                                 
                                 this.playSound(this.stuff.getSound(SWITCH_SOUND_CKEY), 1, future.x, future.y);
                                 
@@ -2884,7 +2912,7 @@ export class Game implements GameContext, PkTickable {
     }
     
     public shakeCamera(ticks: uint): this {
-        this._shackingTimer = ticks;
+        this._mainShakingTimer = ticks;
         // TODO: PisteInput_Vibrate();
         return this;
     }
