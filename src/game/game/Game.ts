@@ -75,8 +75,8 @@ export class Game extends GameContext implements PkTickable {
     
     // PK2Kartta* current_map;
     // char map_path[PE_PATH_SIZE];
-    //
-    public _vibration: int;
+
+    private _shackingTimer: int;
     
     private _dcameraX: number;
     private _dcameraY: number;
@@ -133,7 +133,7 @@ export class Game extends GameContext implements PkTickable {
         
         this._paused = false;
         
-        this._vibration = 0;
+        this._shackingTimer = 0;
         
         this._sprites.onSpriteCreated((sprite) => {
             if (sprite.proto.type === ESpriteType.TYYPPI_TAUSTA) {
@@ -610,11 +610,11 @@ export class Game extends GameContext implements PkTickable {
         //    Game::camera_y += PisteInput_Hiiri_Y(0)*5;
         // }
         
-        if (this._vibration > 0) {
-            this._dcameraX += (rand() % this._vibration - rand() % this._vibration) / 5;
-            this._dcameraY += (rand() % this._vibration - rand() % this._vibration) / 5;
+        if (this._shackingTimer > 0) {
+            this._dcameraX += (rand() % this._shackingTimer - rand() % this._shackingTimer) / 5;
+            this._dcameraY += (rand() % this._shackingTimer - rand() % this._shackingTimer) / 5;
             
-            this._vibration--;
+            this._shackingTimer--;
         }
         
         if (this._kytkin_tarina > 0) {
@@ -1323,7 +1323,7 @@ export class Game extends GameContext implements PkTickable {
                         }
                         
                         if (sprite.weight > 1)
-                            this._vibration = 34 + Math.floor(sprite.weight * 20);
+                            this._shackingTimer = 34 + Math.floor(sprite.weight * 20);
                     }
                     
                     sprite.jumpTimer = 0;
@@ -1612,7 +1612,7 @@ export class Game extends GameContext implements PkTickable {
                     // 													break;
                     //
                     case EAi.AI_TIPPUU_TARINASTA:
-                        sprite.AI_Tippuu_Tarinasta(this._vibration + this._kytkin_tarina);
+                        sprite.AI_Tippuu_Tarinasta(this._shackingTimer + this._kytkin_tarina);
                         break;
                     case EAi.AI_LIIKKUU_ALAS_JOS_KYTKIN1_PAINETTU:
                         sprite.AI_MovesWhenSwitchPressed(this.switchTimer1, 0, 1);
@@ -1920,7 +1920,7 @@ export class Game extends GameContext implements PkTickable {
         
         // Hyppyyn liittyv�t seikat
         
-        if (this._kytkin_tarina + this._vibration > 0 && sprite.jumpTimer == 0)
+        if (this._kytkin_tarina + this._shackingTimer > 0 && sprite.jumpTimer == 0)
             sprite.jumpTimer = sprite.proto.maxJump / 2;
         
         if (sprite.jumpTimer > 0 && sprite.jumpTimer < sprite.proto.maxJump) {
@@ -2273,7 +2273,7 @@ export class Game extends GameContext implements PkTickable {
                     break;
                 
                 case EAi.AI_TIPPUU_TARINASTA:
-                    sprite.AI_Tippuu_Tarinasta(this._vibration + this._kytkin_tarina);
+                    sprite.AI_Tippuu_Tarinasta(this._shackingTimer + this._kytkin_tarina);
                     break;
                 
                 default:
@@ -2840,6 +2840,12 @@ export class Game extends GameContext implements PkTickable {
         const fly = new Fly(this.context, text, font, x, y, ticks, translate);
         this._flies.add(fly);
         this.composition.addOverlay(fly);
+    }
+    
+    public shakeCamera(ticks: uint): this {
+        this._shackingTimer = ticks;
+        // TODO: PisteInput_Vibrate();
+        return this;
     }
 }
 

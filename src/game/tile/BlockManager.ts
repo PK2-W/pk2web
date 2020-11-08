@@ -1141,9 +1141,7 @@ export class BlockManager {
             }
         }
         
-        this._context._vibration = 90; // Janne / 60
-        // TODO: PisteInput_Vibrate();
-        
+        this._context.shakeCamera(90); // Janne / 60
         this._context.ui.showInfo(TX.GAME_LOCKSOPEN);
         
         this.calculateEdges();
@@ -1182,9 +1180,7 @@ export class BlockManager {
             }
         }
         
-        this._context._vibration = 90; // Janne / 60
-        // TODO: PisteInput_Vibrate();
-        
+        this._context.shakeCamera(90); // Janne / 60
         // Janne / PK_Start_Info(tekstit->Hae_Teksti(PK_txt.game_locksopen));
         
         this.calculateEdges();

@@ -34,7 +34,6 @@ export abstract class GameContext {
     protected readonly _particles: ParticleSystem;
     protected _camera: { x: number, y: number };
     protected _sound: PKSound;
-    public _vibration: int;
     
     protected _swichTimer1: number;
     protected _swichTimer2: number;
@@ -150,4 +149,6 @@ export abstract class GameContext {
         
         Log.d(`[Game] Playing sound with { volume: ${ volume.toFixed(2) }, pan: ${ pan.toFixed(2) }, frequency: ${ (freq / 22050).toFixed(2) } }.`);
     }
+    
+    public shakeCamera(ticks: uint) { }
 }
