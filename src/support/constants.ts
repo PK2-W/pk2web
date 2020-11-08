@@ -48,5 +48,12 @@ export const VAHINKO_AIKA = 50; //Damage time?
 // Game loop of the original game in ticks per second
 export const PK2GAMELOOP = 60;
 
+/**
+ * Number of off-screen blocks included in the block-culling operation ({@link BlockManager#updateCulling}).<br>
+ * A value of 0 is going to trigger the operation with each tick.<br>
+ * A big value can cause poor performance and freezes every N ticks.
+ */
+export const BLOCK_CULLING = 3;
+
 /** Max. number of items in the gifts inventory. */
 export const MAX_GIFTS = 4;

@@ -14,14 +14,18 @@ import { Log } from '@ng/support/log/LoggerImpl';
 import { pathJoin } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { PkBitmapBT } from '@ng/types/image/PkBitmapBT';
-import { RESOURCES_PATH } from '@sp/constants';
+import { RESOURCES_PATH, BLOCK_CULLING } from '@sp/constants';
 import { uint, uint8, rand } from '@sp/types';
 
 export class BlockManager {
     // Game Environment
     private readonly _context: GameContext;
     
+    /** Area where the currently applied culling is valid. */
     private _prevCulling: { ax: number, ay: number, bx: number, by: number };
+    // (Those are fields to reduce GC impact)
+    private __cullingShow: Set<Block> = new Set();
+    private __cullingHide: Set<Block> = new Set();
     
     private _spritesheet: PkBitmapBT;
     
@@ -1025,6 +1029,11 @@ export class BlockManager {
             && block.y + BLOCK_SIZE > this.ctx.cameraY;
     }
     
+    /**
+     * Makes off-screen blocks not renderables.
+     *
+     * @stable
+     */
     public updateCulling(): void {
         if (this._prevCulling == null ||
             this.ctx.cameraX < this._prevCulling.ax ||
@@ -1034,11 +1043,12 @@ export class BlockManager {
             
             Log.v('[BlockManager] Updating blocks culling...');
             
-            let ai: number, aj: number, bi: number, bj: number;
+            let ai: int, aj: int, bi: int, bj: int;
+            let hideCount: uint = 0;
             let block: Block;
             
-            const show = new Set<Block>();
-            const hide = new Set<Block>();
+            this.__cullingShow.clear();
+            this.__cullingHide.clear();
             
             // Blocks hiding
             if (this._prevCulling != null) {
@@ -1051,22 +1061,22 @@ export class BlockManager {
                     for (let j = aj; j <= bj; j++) {
                         block = this.getBgBlock(i, j);
                         if (block != null && block.renderable) {
-                            hide.add(block);
+                            this.__cullingHide.add(block);
                         }
                         block = this.getFgBlock(i, j);
                         if (block != null && block.renderable) {
-                            hide.add(block);
+                            this.__cullingHide.add(block);
                         }
                     }
                 }
             }
             
-            if (this._prevCulling == null) this._prevCulling = {};
-            
-            this._prevCulling.ax = this.ctx.cameraX - 3 * BLOCK_SIZE;
-            this._prevCulling.ay = this.ctx.cameraY - 3 * BLOCK_SIZE;
-            this._prevCulling.bx = this.ctx.cameraX + this.ctx.device.screenWidth + 3 * BLOCK_SIZE;
-            this._prevCulling.by = this.ctx.cameraY + this.ctx.device.screenHeight + 3 * BLOCK_SIZE;
+            this._prevCulling = {
+                ax: this.ctx.cameraX - BLOCK_CULLING * BLOCK_SIZE,
+                ay: this.ctx.cameraY - BLOCK_CULLING * BLOCK_SIZE,
+                bx: this.ctx.cameraX + this.ctx.device.screenWidth + BLOCK_CULLING * BLOCK_SIZE,
+                by: this.ctx.cameraY + this.ctx.device.screenHeight + BLOCK_CULLING * BLOCK_SIZE
+            };
             
             // Blocks showing
             ai = Math.floor(this._prevCulling.ax / BLOCK_SIZE);
@@ -1078,19 +1088,26 @@ export class BlockManager {
                 for (let j = aj; j <= bj; j++) {
                     block = this.getBgBlock(i, j);
                     if (block != null) {
-                        show.add(block);
+                        this.__cullingShow.add(block);
                     }
                     block = this.getFgBlock(i, j);
                     if (block != null) {
-                        show.add(block);
+                        this.__cullingShow.add(block);
                     }
                 }
             }
             
-            show.forEach(b => b.renderable = true);
-            [...hide].filter(b => !show.has(b)).forEach(b => b.renderable = false);
-        } else {
-            //TODO
+            // Show...
+            this.__cullingShow.forEach(b => b.renderable = true);
+            // Hide...
+            [...this.__cullingHide]
+                .filter(b => !this.__cullingShow.has(b))
+                .forEach(b => {
+                    b.renderable = false;
+                    hideCount++;
+                });
+            
+            Log.fast('Block culling', `${ this.__cullingShow.size } / ${ hideCount }`);
         }
     }
     
