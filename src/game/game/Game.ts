@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/camelcase */
+import { GameComposition } from '@game/display/GameComposition';
 import { Effects } from '@game/effects/Effects';
+import { Entropy } from '@game/Entropy';
 import { ESound } from '@game/enum';
 import { EAnimation } from '@game/enum/EAnimation';
 import { EAi } from '@game/enum/EBehavior';
@@ -11,6 +13,8 @@ import { ESpriteType } from '@game/enum/ESpriteType';
 import { Episode } from '@game/episodes/Episode';
 import { GameContext } from '@game/game/GameContext';
 import { Fly } from '@game/game/overlay/Fly';
+import { TextureCache } from '@game/game/TextureCache';
+import { UIGame } from '@game/game/ui/UIGame';
 import { GiftManager } from '@game/gift/GiftManager';
 import { InputAction } from '@game/InputActions';
 import {
@@ -23,6 +27,7 @@ import {
     ILMA_LUMISADE
 } from '@game/map/LevelMap';
 import { EParticle } from '@game/particle/Particle';
+import { ParticleSystem } from '@game/particle/ParticleSystem';
 import { PekkaContext } from '@game/PekkaContext';
 import { Sprite } from '@game/sprite/Sprite';
 import { SpriteFuture } from '@game/sprite/SpriteFuture';
@@ -31,12 +36,18 @@ import { TX } from '@game/texts';
 import { BlockCollider } from '@game/tile/BlockCollider';
 import { BLOCK_SIZE } from '@game/tile/BlockConstants';
 import { BlockManager } from '@game/tile/BlockManager';
+import { PkDevice } from '@ng/core/PkDevice';
+import { PKSound } from '@ng/core/PKSound';
 import { DwTilingSprite } from '@ng/drawable/dwo/DwTilingSprite';
+import { PkError } from '@ng/error/PkError';
+import { PkAssetCache } from '@ng/PkAssetCache';
+import { PkCamera } from '@ng/render/PkCamera';
 import { Log } from '@ng/support/log/LoggerImpl';
 import { PkTickable } from '@ng/support/PkTickable';
 import { pathJoin, minmax } from '@ng/support/utils';
 import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
 import { PkFont } from '@ng/types/font/PkFont';
+import { PkSound } from '@ng/types/PkSound';
 import { PkTexture } from '@ng/types/PkTexture';
 import {
     MAX_SPRITES,
@@ -46,13 +57,25 @@ import {
     SWITCH_SOUND_CKEY,
     JUMP_SOUND_CKEY,
     LOCK_OPEN_SOUND_CKEY,
-    LAND_SOUND_CKEY
+    LAND_SOUND_CKEY,
+    SOUND_SAMPLERATE
 } from '@sp/constants';
 import { uint } from '@sp/types';
-import { int, rand, DWORD } from '../support/types';
+import { int, rand, DWORD } from '@game/support/types';
 
-export class Game extends GameContext implements PkTickable {
-    private _episodeName: string;
+export class Game implements GameContext, PkTickable {
+    private readonly _context: PekkaContext;
+    
+    public readonly map: LevelMap;
+    public readonly episode: Episode;
+    
+    public readonly ui: UIGame;
+    public readonly textureCache: TextureCache;
+    public readonly composition: GameComposition;
+    public readonly camera: PkCamera;
+    private readonly _particles: ParticleSystem;
+    private _camera: { x: number, y: number };
+    private _sound: PKSound;
     
     private _bgTexture: PkTexture;
     private _bgImage: DwTilingSprite;
@@ -75,7 +98,7 @@ export class Game extends GameContext implements PkTickable {
     
     // PK2Kartta* current_map;
     // char map_path[PE_PATH_SIZE];
-
+    
     private _shackingTimer: int;
     
     private _dcameraX: number;
@@ -123,8 +146,26 @@ export class Game extends GameContext implements PkTickable {
     /** player invisible timeout */
     private nakymattomyys: number;
     
+    //> Switches
+    private _swichTimer1: number;
+    private _swichTimer2: number;
+    private _swichTimer3: number;
+    
     public constructor(context: PekkaContext, episode: Episode, map: LevelMap) {
-        super(context, episode, map);
+        this._context = context;
+        this.episode = episode;
+        this.map = map;
+        
+        this.composition = new GameComposition();
+        this.camera = new PkCamera(this.composition.getDrawable());
+        this.ui = new UIGame(context, this.camera);
+        
+        this._particles = new ParticleSystem(this);
+        this._camera = { x: 0, y: 0 };
+        this._sound = new PKSound();
+        this._swichTimer1 = 0;
+        this._swichTimer2 = 0;
+        this._swichTimer3 = 0;
         
         this._sprites = new SpriteManager(this);
         this._gifts = new GiftManager(this);
@@ -2478,7 +2519,7 @@ export class Game extends GameContext implements PkTickable {
             }
         }
     }
-
+    
     /**
      * Check if the specified *sprite* is going to collide with the provided *block*,
      * updating the given *future* as necessary.
@@ -2846,6 +2887,103 @@ export class Game extends GameContext implements PkTickable {
         this._shackingTimer = ticks;
         // TODO: PisteInput_Vibrate();
         return this;
+    }
+    
+    
+    ///  Accessors  ////
+    
+    public get entropy(): Entropy {
+        return this._context.entropy;
+    }
+    
+    public get cameraX(): number {
+        return this._camera.x;
+    }
+    public get cameraY(): number {
+        return this._camera.y;
+    }
+    
+    public get device(): PkDevice { return this._context.device; };
+    
+    public get stuff(): PkAssetCache {
+        return this._context.stuff;
+    }
+    public get gameStuff(): PkAssetCache {
+        return this._context.gameStuff;
+    }
+    public get sound(): PKSound { return this._sound; }
+    
+    
+    ///  Switches  ////
+    
+    /** Returns {@link _swichTimer1}. */
+    public get switchTimer1() {
+        return this._swichTimer1;
+    }
+    /** @deprecated */ public get kytkin1() { return this.switchTimer1; }
+    /** @deprecated */ public get ajastin1() { return this.switchTimer1; }
+    
+    /** Returns {@link _swichTimer2}. */
+    public get switchTimer2() {
+        return this._swichTimer2;
+    }
+    /** @deprecated */ public get kytkin2() { return this.switchTimer2; }
+    /** @deprecated */ public get ajastin2() { return this.switchTimer2; }
+    
+    /** Returns {@link _swichTimer3}. */
+    public get switchTimer3() {
+        return this._swichTimer3;
+    }
+    /** @deprecated */ public get kytkin3() { return this.switchTimer3; }
+    /** @deprecated */ public get ajastin3() { return this.switchTimer3; }
+    
+    
+    ///  Sound  ///
+    
+    public playSpriteSound(sprite: Sprite, soundIndex: int, intensity): void {
+        const sound = sprite.proto.getSound(soundIndex);
+        
+        if (sound == null) {
+            Log.d(new PkError(`The sound to play (${ sprite.proto.name }:${ soundIndex }) was not found.`).stack);
+            return;
+        }
+        
+        this.playSound(sound, intensity, Math.floor(sprite.x), Math.floor(sprite.y),
+            sprite.proto.soundFreq, sprite.proto.soundRandomFreq);
+    }
+    
+    public playMenuSound(sound: PkSound, intensity): void {
+        if (sound == null) {
+            Log.w(new Error(`The sound to play was not found.`));
+            return;
+        }
+        
+        sound.play();
+    }
+    
+    public playSound(sound: PkSound, intensity: uint, x: number, y: number, freq: number = SOUND_SAMPLERATE, randomFreq: boolean = false): void {
+        if (sound == null) {
+            Log.w(new Error(`The sound to play was not found.`));
+            return;
+        }
+        
+        const w2 = this.context.device.screenWidth / 2;
+        
+        let volume = Math.abs(x - (this.cameraX + w2)); // x from middle of the screen
+        volume = 1 - (volume / (w2 * 2)); // normalized value [0..1] with a total pan of 2*screenWidth
+        volume = minmax(volume, 0.15, 1); // minmax
+        
+        let pan = x - (this.cameraX + w2); // x from middle of the screen
+        pan = pan / (w2 * 3); // normalized value [-1..1] with a total pan of 1.5*screenWidth
+        pan = minmax(pan, -0.75, 0.75); // minmax
+        
+        if (randomFreq) {
+            freq = freq + rand() % 4000 - rand() % 2000;
+        }
+        
+        sound.play(volume, pan, freq / 22050);
+        
+        Log.d(`[Game] Playing sound with { volume: ${ volume.toFixed(2) }, pan: ${ pan.toFixed(2) }, frequency: ${ (freq / 22050).toFixed(2) } }.`);
     }
 }
 
