@@ -1,4 +1,4 @@
-import { PkRectangle } from '@ng/types/PkRectangle';
+import { PkRectangle } from '@fwk/types/PkRectangle';
 import * as PIXI from 'pixi.js';
 
 export class PkRectangleImpl extends PkRectangle {

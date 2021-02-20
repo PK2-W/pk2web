@@ -1,6 +1,6 @@
-import { TEasingFunction } from '@ng/support/PkEasing';
-import { PkTickable } from '@ng/support/PkTickable';
-import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
+import { TEasingFunction } from '@fwk/support/PkEasing';
+import { PkTickable } from '@fwk/support/PkTickable';
+import { PkUIComponent } from '@fwk/ui/component/PkUIComponent';
 import { EventEmitter } from 'eventemitter3';
 
 export abstract class PkUiEffect extends EventEmitter implements PkTickable {

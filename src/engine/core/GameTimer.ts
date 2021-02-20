@@ -1,6 +1,6 @@
 /**
  */
-import { Log } from '@ng/support/log/LoggerImpl';
+import { Log } from '@fwk/support/log/LoggerImpl';
 
 export class GameTimer {
     // Contador nativo utilizado (setTimeout o requestAnimationFrame)
@@ -49,6 +49,10 @@ export class GameTimer {
         
         // this._timer = setTimeout(this._trigger.bind(this), 1);
         this._timer = setTimeout(this._trigger.bind(this), this._tickT);
+    }
+    
+    public step() {
+        this._trigger(false);
     }
     
     public stop() {
@@ -103,9 +107,11 @@ export class GameTimer {
      * Disparo del contador nativo. Comprueba si han trascurrido el número de periodos para ejecutar la cola de tareas.
      * De no ser así, planifica el siguiente disparo.
      */
-    private _trigger() {
+    private _trigger(plan: boolean = true) {
         // Planificar siguiente disparo
-        this._plan();
+        if (plan) {
+            this._plan();
+        }
         
         // TODO: Will be replaced by PAUSE
         if (document.hidden) return;

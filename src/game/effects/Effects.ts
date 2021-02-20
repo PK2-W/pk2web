@@ -1,8 +1,9 @@
 import { EDestructionType } from '@game/enum/EDestructionType';
+import { uint, int } from '@fwk/shared/bx-ctypes';
+import { rand } from '@fwk/support/utils';
 import { SPLASH_SOUND_CKEY, SOUND_SAMPLERATE } from '@sp/constants';
 import { GameContext } from '../game/GameContext';
 import { EParticle } from '../particle/Particle';
-import { uint, rand, int } from '../support/types';
 
 export class Effects {
     

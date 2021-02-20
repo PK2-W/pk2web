@@ -19,6 +19,8 @@
 //	Starts the level13.map on dev mode
 //#########################
 
+import { PkURI } from '@fwk/resource/PkURI';
+import { Bitmap3Palette } from '@fwk/types/bitmap/Bitmap3Palette';
 import { Entropy } from '@game/Entropy';
 import { Episode } from '@game/episodes/Episode';
 import { EpisodeManager } from '@game/episodes/EpisodeManager';
@@ -33,27 +35,28 @@ import { GameScreen } from '@game/ui/screen/game/GameScreen';
 import { IntroScreen } from '@game/ui/screen/intro/IntroScreen';
 import { MapScreen } from '@game/ui/screen/map/MapScreen';
 import { MenuScreen } from '@game/ui/screen/menu/MenuScreen';
-import { GameTimer } from '@ng/core/GameTimer';
-import { kbAction } from '@ng/core/input/action/PkKeyboardAction';
-import { KbCode } from '@ng/core/input/enum/KbCode';
-import { PK2wSound } from '@ng/core/PK2wSound';
-import { PkDevice } from '@ng/core/PkDevice';
-import { PkEngine } from '@ng/core/PkEngine';
-import { PkInput } from '@ng/core/PkInput';
-import { PkError } from '@ng/error/PkError';
-import { PkFilesystem } from '@ng/filesystem/PkFilesystem';
-import { PkFsXHR } from '@ng/filesystem/PkFsXHR';
-import { PkAssetCache } from '@ng/PkAssetCache';
-import { PkLanguage } from '@ng/PkLanguage';
-import { PkRenderer, FADE } from '@ng/render/PkRenderer';
-import { Log } from '@ng/support/log/LoggerImpl';
-import { PkTickable } from '@ng/support/PkTickable';
-import { pathJoin } from '@ng/support/utils';
-import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
-import { PkFont } from '@ng/types/font/PkFont';
-import { PkFontHolder } from '@ng/types/font/PkFontHolder';
-import { PkParameters } from '@ng/types/PkParameters';
-import { PkScreen, PkIntent } from '@ng/ui/PkScreen';
+import { PkAudioChannel } from '@fwk/audio/PkAudioChannel';
+import { GameTimer } from '@fwk/core/GameTimer';
+import { kbAction } from '@fwk/core/input/action/PkKeyboardAction';
+import { KbCode } from '@fwk/core/input/enum/KbCode';
+import { PK2wSound } from '@fwk/core/PK2wSound';
+import { PkDevice } from '@fwk/core/PkDevice';
+import { PkEngine } from '@fwk/core/PkEngine';
+import { PkInput } from '@fwk/core/PkInput';
+import { PkError } from '@fwk/error/PkError';
+import { PkFilesystem } from '@fwk/filesystem/PkFilesystem';
+import { PkFsXHR } from '@fwk/filesystem/PkFsXHR';
+import { PkAssetCache } from '@fwk/PkAssetCache';
+import { PkLanguage } from '@fwk/PkLanguage';
+import { PkRenderer, FADE } from '@fwk/render/PkRenderer';
+import { Log } from '@fwk/support/log/LoggerImpl';
+import { PkTickable } from '@fwk/support/PkTickable';
+import { pathJoin } from '@fwk/support/utils';
+import { PkAssetTk } from '@fwk/toolkit/PkAssetTk';
+import { PkFont } from '@fwk/types/font/PkFont';
+import { PkFontHolder } from '@fwk/types/font/PkFontHolder';
+import { PkParameters } from '@fwk/types/PkParameters';
+import { PkScreen, PkIntent } from '@fwk/ui/PkScreen';
 import {
     RESOURCES_PATH,
     STUFF_CKEY,
@@ -272,7 +275,7 @@ export class Pekka implements PkTickable, PekkaContext {
     private siirry_lopusta_menuun: boolean = false;
     
     // GRAPHICS
-    
+    private _gamePalette: Bitmap3Palette;
     private doublespeed: boolean = false;
     
     // Menus
@@ -1391,7 +1394,7 @@ export class Pekka implements PkTickable, PekkaContext {
      * CPP: ~PK_Alusta_Tilat
      */
     private async _loadStuff(): Promise<void> {
-        Log.d('[Pekka] Preparing game\'s stuff bitmap');
+        Log.d(`[Pekka] Preparing game's stuff bitmap`);
         const stuffBmp = await this._framework.fs.getBitmap('/assets/gfx/pk2stuff.bmp');
         stuffBmp.makeColorTransparent();
         await this._stuff.addBitmap(STUFF_CKEY, stuffBmp);
@@ -1461,7 +1464,7 @@ export class Pekka implements PkTickable, PekkaContext {
         this._framework = new PkEngine();
         this._framework.setDebug(this.dev_mode);
         
-        // Setup FS
+        // Setup filesystem
         this._framework.fs.add('/assets', new PkFsXHR('./pk2w/resources', [
             { for: /^(\/).+$/, check: '/vfs.json' }
         ]));

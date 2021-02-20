@@ -1,7 +1,7 @@
-import { PkUIComponentImpl } from '@ng/ui/PkUIComponentImpl';
+import { PkUIComponentImpl } from '@fwk/ui/PkUIComponentImpl';
 import * as PIXI from 'pixi.js';
 import { TColor } from '../../support/types';
-import { minmax } from '@ng/support/utils';
+import { minmax } from '@fwk/support/utils';
 import { PekkaContext } from '../../PekkaContext';
 
 export class UIProgressBar extends PkUIComponentImpl {

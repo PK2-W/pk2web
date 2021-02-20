@@ -1,4 +1,4 @@
-import { Log } from '@ng/support/log/LoggerImpl';
+import { Log } from '@fwk/support/log/LoggerImpl';
 
 export class PkSound {
     private readonly _audioCtx: AudioContext;

@@ -1,5 +1,5 @@
-import { PkEasing, TEasingFunction } from '@ng/support/PkEasing';
-import { PkUiEffect } from '@ng/ui/effect/PkUiEffect';
+import { PkEasing, TEasingFunction } from '@fwk/support/PkEasing';
+import { PkUiEffect } from '@fwk/ui/effect/PkUiEffect';
 
 export class PkUIEffectMove extends PkUiEffect {
     private readonly _duration: number;

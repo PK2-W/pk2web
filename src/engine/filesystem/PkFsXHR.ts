@@ -1,9 +1,9 @@
-import { AssetFetchError } from '@ng/error/AssetFetchError';
-import { AssetNotFoundError } from '@ng/error/AssetNotFoundError';
-import { PkFs } from '@ng/filesystem/PkFs';
-import { PkFsNodeType, PkFsNode } from '@ng/filesystem/PkFsNode';
-import { Log } from '@ng/support/log/LoggerImpl';
-import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
+import { AssetFetchError } from '@fwk/error/AssetFetchError';
+import { AssetNotFoundError } from '@fwk/error/AssetNotFoundError';
+import { PkFs } from '@fwk/filesystem/PkFs';
+import { PkFsNodeType, PkFsNode } from '@fwk/filesystem/PkFsNode';
+import { Log } from '@fwk/support/log/LoggerImpl';
+import { PkAssetTk } from '@fwk/toolkit/PkAssetTk';
 
 export class PkFsXHR implements PkFs {
     private static readonly _EMPTY_INDEX = {};

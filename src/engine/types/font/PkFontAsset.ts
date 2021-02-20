@@ -1,13 +1,13 @@
-import { DwContainer } from '@ng/drawable/dw/DwContainer';
-import { DwSprite } from '@ng/drawable/dw/DwSprite';
-import { pathJoin } from '@ng/support/utils';
-import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
-import { PkFont } from '@ng/types/font/PkFont';
-import { PkBaseTexture } from '@ng/types/image/PkBaseTexture';
-import { PkBitmapBT } from '@ng/types/image/PkBitmapBT';
-import { PkParameters } from '@ng/types/PkParameters';
-import { PkRectangle } from '@ng/types/PkRectangle';
-import { PkTexture } from '@ng/types/PkTexture';
+import { DwContainer } from '@fwk/drawable/dw/DwContainer';
+import { DwSprite } from '@fwk/drawable/dw/DwSprite';
+import { pathJoin } from '@fwk/support/utils';
+import { PkAssetTk } from '@fwk/toolkit/PkAssetTk';
+import { PkFont } from '@fwk/types/font/PkFont';
+import { PkBaseTexture } from '@fwk/types/image/PkBaseTexture';
+import { PkBitmapBT } from '@fwk/types/image/PkBitmapBT';
+import { PkParameters } from '@fwk/types/PkParameters';
+import { PkRectangle } from '@fwk/types/PkRectangle';
+import { PkTexture } from '@fwk/types/PkTexture';
 
 export class PkFontAsset implements PkFont {
     private readonly _url: string;

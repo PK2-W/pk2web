@@ -1,8 +1,12 @@
-import { FONT } from '@game/Pekka';
+import { DwSprite } from '@fwk/drawable/dw/DwSprite';
+import { Log } from '@fwk/support/log/LoggerImpl';
+import { pathJoin } from '@fwk/support/utils';
+import { PkAssetTk } from '@fwk/toolkit/PkAssetTk';
+import { PkAudio, PkAudioType } from '@fwk/types/audio/PkAudio';
+import { PkBitmapBT } from '@fwk/types/image/PkBitmapBT';
+import { PkUIEffectDelay } from '@fwk/ui/effect/PkUIEffectDelay';
+import { PkUIEffectFadeIn } from '@fwk/ui/effect/PkUIEffectFadeIn';
 import { PekkaContext } from '@game/PekkaContext';
-import { TX } from '@game/texts';
-import { UIPlainText } from '@game/ui/component/UIPlainText';
-import { UIWaveText } from '@game/ui/component/UIWaveText';
 import { EpisodesMenuGroup } from '@game/ui/screen/menu/submenu/EpisodesMenuGroup';
 import { GraphicsMenuGroup } from '@game/ui/screen/menu/submenu/GraphicsMenuGroup';
 import { MainMenuGroup } from '@game/ui/screen/menu/submenu/MainMenuGroup';
@@ -10,13 +14,6 @@ import { NameMenuGroup } from '@game/ui/screen/menu/submenu/NameMenuGroup';
 import { SoundsMenuGroup } from '@game/ui/screen/menu/submenu/SoundsMenuGroup';
 import { UIMenuSquare } from '@game/ui/screen/menu/UIMenuSquare';
 import { Screen } from '@game/ui/screen/Screen';
-import { DwSprite } from '@ng/drawable/dw/DwSprite';
-import { Log } from '@ng/support/log/LoggerImpl';
-import { pathJoin } from '@ng/support/utils';
-import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
-import { PkBitmapBT } from '@ng/types/image/PkBitmapBT';
-import { PkUIEffectDelay } from '@ng/ui/effect/PkUIEffectDelay';
-import { PkUIEffectFadeIn } from '@ng/ui/effect/PkUIEffectFadeIn';
 import { RESOURCES_PATH } from '@sp/constants';
 
 //Menu ID
@@ -36,6 +33,7 @@ const TITLE_X = 79;
 const TITLE_Y = 90;
 
 export class MenuScreen extends Screen {
+    private _music: PkAudio;
     private _bgImage: PkBitmapBT;
     private _bgDrawable: DwSprite;
     
@@ -54,11 +52,15 @@ export class MenuScreen extends Screen {
     
     public static async create(context: PekkaContext): Promise<MenuScreen> {
         const tmp = new MenuScreen(context);
+        tmp.dbgName = MenuScreen.name;
         return await tmp.inialize();
     }
     
     private async inialize(): Promise<this> {
         Log.d('[MenuScreen] Initializing menu screen');
+        
+        // Load music
+        this._music = await this.context.fs.getAudio('/assets/music/song09.xm', PkAudioType.MOD);
         
         // Load and prepare background
         this._bgImage = await PkAssetTk.getBitmap(pathJoin(RESOURCES_PATH, 'gfx/menu.bmp'));
@@ -114,6 +116,7 @@ export class MenuScreen extends Screen {
      */
     public async showMainMenu(ms?: number): Promise<void> {
         //this.acBackToMain();
+        //this.context.music.play(this._music);
         await this.resume(ms);
     }
     
@@ -124,10 +127,10 @@ export class MenuScreen extends Screen {
     ///  Episodes Menu  ///
     
     private layoutEpisodesMenu(): void {
-        const ctx = this.context;
-        const fontFg = FONT.F2;
-        const fontBg = FONT.F4;
-        let y = TITLE_Y + 40;
+        // const ctx = this.context;
+        // const fontFg = FONT.F2;
+        // const fontBg = FONT.F4;
+        // let y = TITLE_Y + 40;
         
         
         // PAGINATION
@@ -199,7 +202,7 @@ export class MenuScreen extends Screen {
     ///  Actions  ///
     
     public acNewGame(): void {
-        Log.d('[MenuScreen] Showing new game menu')
+        Log.d('[MenuScreen] Showing new game menu');
         
         this._mainMenu.hide();
         
@@ -233,7 +236,7 @@ export class MenuScreen extends Screen {
     }
     
     public acGoToGraphicsMenu(): void {
-        Log.d('[MenuScreen] Showing graphics menu')
+        Log.d('[MenuScreen] Showing graphics menu');
         
         this._mainMenu.hide();
         
@@ -245,7 +248,7 @@ export class MenuScreen extends Screen {
     }
     
     public acGoToSoundsMenu(): void {
-        Log.d('[MenuScreen] Showing audio menu')
+        Log.d('[MenuScreen] Showing audio menu');
         
         this._mainMenu.hide();
         
@@ -257,8 +260,8 @@ export class MenuScreen extends Screen {
     }
     
     public acBackToMain(): void {
-        Log.d('[MenuScreen] Showing main menu')
-
+        Log.d('[MenuScreen] Showing main menu');
+        
         this._hideAny();
         
         this._square.setTarget(147, 195, 640 - 180, 415);

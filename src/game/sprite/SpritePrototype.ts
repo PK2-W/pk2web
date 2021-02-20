@@ -1,3 +1,5 @@
+import { NewTexture } from '@fwk/texture/NewTexture';
+import { PkPaletteBitmapResource } from '@fwk/texture/PkPaletteBitmapResource';
 import { EAi } from '@game/enum/EBehavior';
 import { EColor } from '@game/enum/EColor';
 import { EDamageType } from '@game/enum/EDamageType';
@@ -5,16 +7,16 @@ import { EDestructionType } from '@game/enum/EDestructionType';
 import { ESpriteType } from '@game/enum/ESpriteType';
 import { GameContext } from '@game/game/GameContext';
 import { SpriteAnimation } from '@game/sprite/SpriteAnimation';
-import { AssetFetchError } from '@ng/error/AssetFetchError';
-import { PkError } from '@ng/error/PkError';
-import { Log } from '@ng/support/log/LoggerImpl';
-import { pathJoin, ifempty } from '@ng/support/utils';
-import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
-import { PkBitmapBT } from '@ng/types/image/PkBitmapBT';
-import { PkBinary } from '@ng/types/PkBinary';
-import { PkRectangle } from '@ng/types/PkRectangle';
-import { PkSound } from '@ng/types/PkSound';
-import { PkTexture } from '@ng/types/PkTexture';
+import { AssetFetchError } from '@fwk/error/AssetFetchError';
+import { PkError } from '@fwk/error/PkError';
+import { Log } from '@fwk/support/log/LoggerImpl';
+import { pathJoin, ifempty } from '@fwk/support/utils';
+import { PkAssetTk } from '@fwk/toolkit/PkAssetTk';
+import { PkBitmapBT } from '@fwk/types/image/PkBitmapBT';
+import { PkBinary } from '@fwk/types/PkBinary';
+import { PkRectangle } from '@fwk/types/PkRectangle';
+import { PkSound } from '@fwk/types/PkSound';
+import { PkTexture } from '@fwk/types/PkTexture';
 import {
     SPRITE_MAX_AI,
     SPRITE_MAX_FRAMEJA,
@@ -67,7 +69,7 @@ export class SpritePrototype {
      * Sprite frames.<br>
      * Replacement of _framet.
      */
-    private _frames: PkTexture[] = cvect(SPRITE_MAX_FRAMEJA);
+    private _frames: NewTexture<PkPaletteBitmapResource>[] = cvect(SPRITE_MAX_FRAMEJA);
     /**
      * Sprite frames flipped horizontaly.<br>
      * @deprecated Use _frames.
@@ -370,7 +372,7 @@ export class SpritePrototype {
         // Load the sprite descriptor from the provided location
         // If this fails, raise the error
         try {
-            bin = await PkAssetTk.getBinary(pathJoin(fpath, fname));
+            bin = await this._context.fs.getBinaryX(pathJoin(fpath, fname));
         } catch (err) {
             if (err instanceof AssetFetchError)
                 throw new SpritePrototypeLoadError(`Unable to get the sprite descriptor {${ fname }}.`, err);
@@ -428,10 +430,10 @@ export class SpritePrototype {
         
         // Get the spritesheet bitmap
         // The same spritesheet can be used by multiple sprites, so let's use cache
-        let bitmap: PkBitmapBT;
+        let bitmap: PkPaletteBitmapResource;
         try {
-            bitmap = await PkAssetTk.getBitmap(pathJoin(fpath, this._spritesheetName));
-            bitmap.makeColorTransparent();
+            bitmap = await this._context.fs.getPaletteBitmap(pathJoin(fpath, this._spritesheetName));
+            //bitmap.makeColorTransparent();
         } catch (err) {
             // Register and notify the error, but don't raise it
             err = new SpritePrototypeMinorError(`Unable to get spritesheet bitmap for sprite {${ this.name }}.`, err);
@@ -447,18 +449,19 @@ export class SpritePrototype {
             // BYTE vari;
             // int x,y,w,h;
             
-            if (this._vari !== EColor.VARI_NORMAALI) { //Change sprite colors
-                bitmap = bitmap.clone();
-                
-                for (let j = 0; j < bitmap.height; j++) {
-                    for (let i = 0; i < bitmap.width; i++) {
-                        const index = bitmap.getPixelIndex(i, j);
-                        if (index != 255) {
-                            bitmap.setPixelIndex(i, j, (index % 32) + this._vari);
-                        }
-                    }
-                }
-            }
+            // TODO
+            // if (this._vari !== EColor.VARI_NORMAALI) { //Change sprite colors
+            //     bitmap = bitmap.clone();
+            //
+            //     for (let j = 0; j < bitmap.height; j++) {
+            //         for (let i = 0; i < bitmap.width; i++) {
+            //             const index = bitmap.getPixelIndex(i, j);
+            //             if (index != 255) {
+            //                 bitmap.setPixelIndex(i, j, (index % 32) + this._vari);
+            //             }
+            //         }
+            //     }
+            // }
             
             // Get each animation frame of the sprite from the spritesheet ¬
             
@@ -475,7 +478,9 @@ export class SpritePrototype {
                 // Get each frame slicing the spritesheet
                 // Flipped frames are generated dynamically
                 try {
-                    this._frames[f] = bitmap.getTexture(PkRectangle.$(frame_x, frame_y, this._frameWidth, this._frameHeight));
+                    this._frames[f] = bitmap
+                        .crop(PkRectangle.$(frame_x, frame_y, this._frameWidth, this._frameHeight))
+                        .getTexture();
                 } catch (err) {
                     // Register and notify the error, but don't raise it
                     err = new SpritePrototypeMinorError(`Unable to get frame {${ f }} for sprite {${ this.name }}.`, err);
@@ -833,7 +838,7 @@ export class SpritePrototype {
      *
      * @param i - Index of the required frame.
      */
-    public getFrame(i: int): PkTexture {
+    public getFrame(i: int): NewTexture<PkPaletteBitmapResource> {
         return this._frames[i];
     }
     

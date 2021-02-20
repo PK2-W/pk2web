@@ -1,9 +1,9 @@
-import { PkDeviceAction } from '@ng/core/input/action/PkDeviceAction';
-import { PkKeyboardAction } from '@ng/core/input/action/PkKeyboardAction';
-import { PkKeyboardEvent } from '@ng/core/input/event/PkKeyboardEvent';
-import { PkInputEvent } from '@ng/core/input/PkInputEvent';
-import type { PkEngine } from '@ng/core/PkEngine';
-import { Log } from '@ng/support/log/LoggerImpl';
+import { PkDeviceAction } from '@fwk/core/input/action/PkDeviceAction';
+import { PkKeyboardAction } from '@fwk/core/input/action/PkKeyboardAction';
+import { PkKeyboardEvent } from '@fwk/core/input/event/PkKeyboardEvent';
+import { PkInputEvent } from '@fwk/core/input/PkInputEvent';
+import type { PkEngine } from '@fwk/core/PkEngine';
+import { Log } from '@fwk/support/log/LoggerImpl';
 import { EventEmitter } from 'eventemitter3';
 import { Key } from 'ts-key-enum';
 

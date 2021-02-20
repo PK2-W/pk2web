@@ -1,4 +1,4 @@
-import { PkInputDevices } from '@ng/core/input/enum/PkInputDevices';
+import { PkInputDevices } from '@fwk/core/input/enum/PkInputDevices';
 
 /**
  * PkDeviceAction is a generic representation of a physical action performed by a physical or virtual device.<br>

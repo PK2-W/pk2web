@@ -1,4 +1,4 @@
-import { PkBaseTexture } from '@ng/types/image/PkBaseTexture';
+import { PkBaseTexture } from '@fwk/types/image/PkBaseTexture';
 
 export interface ParticleContext {
     stuffSheet: PkBaseTexture

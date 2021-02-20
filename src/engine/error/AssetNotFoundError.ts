@@ -1,4 +1,4 @@
-import { AssetFetchError } from '@ng/error/AssetFetchError';
+import { AssetFetchError } from '@fwk/error/AssetFetchError';
 
 export class AssetNotFoundError extends AssetFetchError {
     public constructor(uri: string) {

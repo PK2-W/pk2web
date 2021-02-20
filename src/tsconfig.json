@@ -17,7 +17,7 @@
       "@game/*": ["./game/*"],
 //      "@s:be/*": ["../src/backend/*"],
 //      "@s:fe/*": ["../src/frontend/*"],
-      "@ng/*": ["./engine/*"],
+      "@fwk/*": ["./engine/*"],
 //      "@s:sp/*": ["../src/support/*"],
 //
 //      "@c:app/*": ["./app/*"],

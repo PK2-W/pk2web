@@ -1,4 +1,4 @@
-import { PkRectangle } from '@ng/types/PkRectangle';
+import { PkRectangle } from '@fwk/types/PkRectangle';
 
 export interface PkImageTexture {
     frame: PkRectangle;

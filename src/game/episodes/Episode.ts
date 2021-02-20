@@ -1,4 +1,4 @@
-import { pathJoin } from '@ng/support/utils';
+import { pathJoin } from '@fwk/support/utils';
 import { COMMUNITY_PATH, RESOURCES_PATH } from '@sp/constants';
 
 export class Episode {

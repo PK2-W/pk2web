@@ -1,5 +1,5 @@
-import type { Dw } from '@ng/drawable/dw/Dw';
-import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
+import type { Dw } from '@fwk/drawable/dw/Dw';
+import { PkUIComponent } from '@fwk/ui/component/PkUIComponent';
 import type * as PIXI from 'pixi.js';
 import type { PekkaContext } from '../../PekkaContext';
 

@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/camelcase */
+import { PkFilesystem } from '@fwk/filesystem/PkFilesystem';
 import { GameComposition } from '@game/display/GameComposition';
 import { Effects } from '@game/effects/Effects';
 import { Entropy } from '@game/Entropy';
@@ -36,19 +37,20 @@ import { TX } from '@game/texts';
 import { BlockCollider } from '@game/tile/BlockCollider';
 import { BLOCK_SIZE } from '@game/tile/BlockConstants';
 import { BlockManager } from '@game/tile/BlockManager';
-import { PkDevice } from '@ng/core/PkDevice';
-import { PKSound } from '@ng/core/PKSound';
-import { DwTilingSprite } from '@ng/drawable/dwo/DwTilingSprite';
-import { PkError } from '@ng/error/PkError';
-import { PkAssetCache } from '@ng/PkAssetCache';
-import { PkCamera } from '@ng/render/PkCamera';
-import { Log } from '@ng/support/log/LoggerImpl';
-import { PkTickable } from '@ng/support/PkTickable';
-import { pathJoin, minmax } from '@ng/support/utils';
-import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
-import { PkFont } from '@ng/types/font/PkFont';
-import { PkSound } from '@ng/types/PkSound';
-import { PkTexture } from '@ng/types/PkTexture';
+import { PkDevice } from '@fwk/core/PkDevice';
+import { PKSound } from '@fwk/core/PKSound';
+import { DwTilingSprite } from '@fwk/drawable/dwo/DwTilingSprite';
+import { PkError } from '@fwk/error/PkError';
+import { PkAssetCache } from '@fwk/PkAssetCache';
+import { PkCamera } from '@fwk/render/PkCamera';
+import { uint, int, DWORD } from '@fwk/shared/bx-ctypes';
+import { Log } from '@fwk/support/log/LoggerImpl';
+import { PkTickable } from '@fwk/support/PkTickable';
+import { pathJoin, minmax, rand } from '@fwk/support/utils';
+import { PkAssetTk } from '@fwk/toolkit/PkAssetTk';
+import { PkFont } from '@fwk/types/font/PkFont';
+import { PkSound } from '@fwk/types/PkSound';
+import { PkTexture } from '@fwk/types/PkTexture';
 import {
     MAX_SPRITES,
     RESOURCES_PATH,
@@ -60,8 +62,6 @@ import {
     LAND_SOUND_CKEY,
     SOUND_SAMPLERATE
 } from '@sp/constants';
-import { uint } from '@sp/types';
-import { int, rand, DWORD } from '@game/support/types';
 
 export class Game implements GameContext, PkTickable {
     private readonly _context: PekkaContext;
@@ -218,7 +218,7 @@ export class Game implements GameContext, PkTickable {
         /////  Source: PK_Map_Open --------
         
         try {
-            await this._loadBgImage(this.map.fpath, this.map.bgImageFilename);
+            await this._loadBgImage(this.map.uri.path, this.map.bgImageFilename);
         } catch (err) {
             Log.w(`[Game] The background image for the game could not be loaded`);
             Log.d(err.message);
@@ -271,7 +271,7 @@ export class Game implements GameContext, PkTickable {
         this._addBackground();
         
         // Prepare blocks (load textures, generate prototypes and masks)
-        await this._blocks.loadTextures(this.map.fpath, this.map.getBlockTexturesLocation());
+        await this._blocks.loadTextures(this.map.uri.path, this.map.getBlockTexturesLocation());
         this._blocks.generatePrototypes();
         
         // BG Blocks
@@ -292,7 +292,7 @@ export class Game implements GameContext, PkTickable {
     }
     
     private async _loadBgImage(fpath: string, fname: string): Promise<void> {
-        const bt = await PkAssetTk.getImage(
+        const bt = await PkAssetTk.getBitmap(
             ...(this.episode.isCommunity() ? [pathJoin(this.episode.homePath, 'gfx/scenery/', fname)] : []),
             pathJoin(fpath, fname),
             pathJoin(RESOURCES_PATH, 'gfx/scenery/', fname));
@@ -2940,6 +2940,8 @@ export class Game implements GameContext, PkTickable {
         return this._context.gameStuff;
     }
     public get sound(): PKSound { return this._sound; }
+    
+    public get fs(): PkFilesystem { return this._context.fs; }
     
     
     ///  Switches  ////

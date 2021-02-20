@@ -1,3 +1,6 @@
+import { int } from '@game/support/types';
+
+const RAND_MAX = 3276700;
 const TRIM_RX = /(^\s+|\s+$)/g;
 const DUPL_SLASH_RX = /\/{2,}/g;
 
@@ -13,6 +16,11 @@ export function str2num(str: string): number {
         throw new Error(`Failed parsing "${ str }" as a number.`);
     
     return num;
+}
+
+// TODO: En cada ejecución debería devolver lo mismo
+export function rand(): int {
+    return Math.round(Math.random() * RAND_MAX);
 }
 
 export function mod(n: number, m: number): number {

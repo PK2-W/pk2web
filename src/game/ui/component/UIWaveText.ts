@@ -2,12 +2,12 @@ import { InputAction } from '@game/InputActions';
 import { PekkaContext } from '@game/PekkaContext';
 import { TTextId } from '@game/support/types';
 import { UIText } from '@game/ui/component/UIText';
-import { PkInputEvent } from '@ng/core/input/PkInputEvent';
-import { PkInput } from '@ng/core/PkInput';
-import { DwContainer } from '@ng/drawable/dw/DwContainer';
-import { PkFont } from '@ng/types/font/PkFont';
-import { PkRectangle } from '@ng/types/PkRectangle';
-import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
+import { PkInputEvent } from '@fwk/core/input/PkInputEvent';
+import { PkInput } from '@fwk/core/PkInput';
+import { DwContainer } from '@fwk/drawable/dw/DwContainer';
+import { PkFont } from '@fwk/types/font/PkFont';
+import { PkRectangle } from '@fwk/types/PkRectangle';
+import { PkUIComponent } from '@fwk/ui/component/PkUIComponent';
 
 export class UIWaveText extends UIText {
     private _fast: boolean;

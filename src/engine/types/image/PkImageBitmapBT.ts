@@ -1,7 +1,7 @@
-import { PkBaseTexture } from '@ng/types/image/PkBaseTexture';
-import { PkColor } from '@ng/types/PkColor';
-import { PkRectangle } from '@ng/types/PkRectangle';
-import { PkTexture } from '@ng/types/PkTexture';
+import { PkBaseTexture } from '@fwk/types/image/PkBaseTexture';
+import { PkColor } from '@fwk/types/PkColor';
+import { PkRectangle } from '@fwk/types/PkRectangle';
+import { PkTexture } from '@fwk/types/PkTexture';
 import * as PIXI from 'pixi.js';
 
 export class PkImageBitmapBT implements PkBaseTexture {

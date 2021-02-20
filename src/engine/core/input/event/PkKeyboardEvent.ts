@@ -1,7 +1,7 @@
-import { PkDeviceAction } from '@ng/core/input/action/PkDeviceAction';
-import { PkKeyboardAction, kbAction } from '@ng/core/input/action/PkKeyboardAction';
-import { PkInputEventType } from '@ng/core/input/enum/PkInputEventType';
-import { PkDeviceEvent } from '@ng/core/input/event/PkDeviceEvent';
+import { PkDeviceAction } from '@fwk/core/input/action/PkDeviceAction';
+import { PkKeyboardAction, kbAction } from '@fwk/core/input/action/PkKeyboardAction';
+import { PkInputEventType } from '@fwk/core/input/enum/PkInputEventType';
+import { PkDeviceEvent } from '@fwk/core/input/event/PkDeviceEvent';
 
 export class PkKeyboardEvent extends PkDeviceEvent {
     protected _keyboardEvent: KeyboardEvent;

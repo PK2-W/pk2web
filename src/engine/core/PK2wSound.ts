@@ -137,7 +137,7 @@ export class PK2wSound {
         
         try {
             this._music = new Audio(RESOURCES_PATH + uri);
-            await this._music.play();
+            //await this._music.play();
         } catch (err) {
             console.warn(`PS     - Can\'t play "${ uri }"`);
             console.warn(err);
@@ -197,6 +197,7 @@ export class PK2wSound {
     
     public stopMusic(): void {
         try {
+            XMPlayer.stop();
             this._music.pause();
             this._music = null;
             this._musicUri = null;

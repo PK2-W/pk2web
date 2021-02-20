@@ -1,12 +1,12 @@
-import { Dw } from '@ng/drawable/dw/Dw';
-import { DwContainer } from '@ng/drawable/dw/DwContainer';
-import { DwObjectBase } from '@ng/drawable/dwo/DwObjectBase';
-import type { PkTickable } from '@ng/support/PkTickable';
-import { minmax } from '@ng/support/utils';
-import type { PkUIComponentContainer } from '@ng/ui/component/PkUIComponentContainer';
-import { PkUiEffect } from '@ng/ui/effect/PkUiEffect';
-import type { PkScreen } from '@ng/ui/PkScreen';
-import type { PkUIContext } from '@ng/ui/PkUIContext';
+import { Dw } from '@fwk/drawable/dw/Dw';
+import { DwContainer } from '@fwk/drawable/dw/DwContainer';
+import { DwObjectBase } from '@fwk/drawable/dwo/DwObjectBase';
+import type { PkTickable } from '@fwk/support/PkTickable';
+import { minmax } from '@fwk/support/utils';
+import type { PkUIComponentContainer } from '@fwk/ui/component/PkUIComponentContainer';
+import { PkUiEffect } from '@fwk/ui/effect/PkUiEffect';
+import type { PkScreen } from '@fwk/ui/PkScreen';
+import type { PkUIContext } from '@fwk/ui/PkUIContext';
 
 export abstract class PkUIComponent<T extends PkUIContext = PkUIContext>
     extends DwObjectBase<DwContainer>

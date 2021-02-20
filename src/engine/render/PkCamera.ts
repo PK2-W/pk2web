@@ -1,5 +1,5 @@
-import { Dw } from '@ng/drawable/dw/Dw';
-import { DwContainer } from '@ng/drawable/dw/DwContainer';
+import { Dw } from '@fwk/drawable/dw/Dw';
+import { DwContainer } from '@fwk/drawable/dw/DwContainer';
 
 export class PkCamera extends Dw<WorldContainer> {
     protected _child: DwContainer;

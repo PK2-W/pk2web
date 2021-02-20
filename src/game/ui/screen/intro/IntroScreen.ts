@@ -1,3 +1,14 @@
+import { PkInputEvent } from '@fwk/core/input/PkInputEvent';
+import { PkInput } from '@fwk/core/PkInput';
+import { DwSprite } from '@fwk/drawable/dw/DwSprite';
+import { PkEasing } from '@fwk/support/PkEasing';
+import { PkAudio, PkAudioType } from '@fwk/types/audio/PkAudio';
+import { PkRectangle } from '@fwk/types/PkRectangle';
+import { PkUIEffectDelay } from '@fwk/ui/effect/PkUIEffectDelay';
+import { PkUIEffectFadeIn } from '@fwk/ui/effect/PkUIEffectFadeIn';
+import { PkUIEffectFadeOut } from '@fwk/ui/effect/PkUIEffectFadeOut';
+import { PkUIEffectMove } from '@fwk/ui/effect/PkUIEffectMove';
+import { PkIntent } from '@fwk/ui/PkScreen';
 import { PekkaContext } from '@game/PekkaContext';
 import { int } from '@game/support/types';
 import { TX } from '@game/texts';
@@ -5,16 +16,6 @@ import { UIDwBoard } from '@game/ui/component/UIDwBoard';
 import { UIPanel } from '@game/ui/component/UIPanel';
 import { UIPlainText } from '@game/ui/component/UIPlainText';
 import { Screen } from '@game/ui/screen/Screen';
-import { PkInputEvent } from '@ng/core/input/PkInputEvent';
-import { PkInput } from '@ng/core/PkInput';
-import { DwSprite } from '@ng/drawable/dw/DwSprite';
-import { PkEasing } from '@ng/support/PkEasing';
-import { PkRectangle } from '@ng/types/PkRectangle';
-import { PkUIEffectDelay } from '@ng/ui/effect/PkUIEffectDelay';
-import { PkUIEffectFadeIn } from '@ng/ui/effect/PkUIEffectFadeIn';
-import { PkUIEffectFadeOut } from '@ng/ui/effect/PkUIEffectFadeOut';
-import { PkUIEffectMove } from '@ng/ui/effect/PkUIEffectMove';
-import { PkIntent } from '@ng/ui/PkScreen';
 import { GAMELOOP_TIME } from '@sp/computed';
 
 // Time table

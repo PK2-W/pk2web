@@ -1,5 +1,5 @@
-import { Dw } from '@ng/drawable/dw/Dw';
-import { DwObject } from '@ng/drawable/dwo/DwObject';
+import { Dw } from '@fwk/drawable/dw/Dw';
+import { DwObject } from '@fwk/drawable/dwo/DwObject';
 import { EventEmitter } from 'eventemitter3';
 
 export abstract class DwObjectBase<T extends Dw<PIXI.DisplayObject>> extends EventEmitter implements DwObject {
@@ -17,6 +17,13 @@ export abstract class DwObjectBase<T extends Dw<PIXI.DisplayObject>> extends Eve
     
     public getDrawable(): Dw<PIXI.DisplayObject> {
         return this._dw;
+    }
+    
+    
+    ///  Debug  ///
+    
+    public set dbgName(name: string) {
+        this.dw.dbgName = name;
     }
     
     

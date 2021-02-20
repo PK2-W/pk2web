@@ -1,16 +1,15 @@
 import { InputAction } from '@game/InputActions';
 import type { PekkaContext } from '@game/PekkaContext';
-import { rand } from '@game/support/types';
 import { UIWaveText } from '@game/ui/component/UIWaveText';
-import { KbCode } from '@ng/core/input/enum/KbCode';
-import { PkInputEvent } from '@ng/core/input/PkInputEvent';
-import { PkInput } from '@ng/core/PkInput';
-import { DwCanvas } from '@ng/drawable/dw/DwCanvas';
-import { minmax } from '@ng/support/utils';
-import { PkColor } from '@ng/types/PkColor';
-import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
+import { KbCode } from '@fwk/core/input/enum/KbCode';
+import { PkInputEvent } from '@fwk/core/input/PkInputEvent';
+import { PkInput } from '@fwk/core/PkInput';
+import { DwCanvas } from '@fwk/drawable/dw/DwCanvas';
+import { uint } from '@fwk/shared/bx-ctypes';
+import { minmax, rand } from '@fwk/support/utils';
+import { PkColor } from '@fwk/types/PkColor';
+import { PkUIComponent } from '@fwk/ui/component/PkUIComponent';
 import { JUMP_SOUND_CKEY } from '@sp/constants';
-import { uint } from '@sp/types';
 
 export class UITextInput extends PkUIComponent<PekkaContext> {
     /**
@@ -216,7 +215,7 @@ export class UITextInput extends PkUIComponent<PekkaContext> {
         
         if (this.isFocused()) {
             // Show cursor when focus
-            this._dwCursor.renderable = true;
+            this._dwCursor.visible = true;
         }
         
         return this;
@@ -228,7 +227,7 @@ export class UITextInput extends PkUIComponent<PekkaContext> {
         
         if (!this.isFocused()) {
             // Hide cursor when lose focus
-            this._dwCursor.renderable = false;
+            this._dwCursor.visible = false;
         }
         
         return this;

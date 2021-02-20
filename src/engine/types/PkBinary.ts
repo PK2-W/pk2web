@@ -1,7 +1,6 @@
-import { int, uint8 } from '@game/support/types';
-import { PkError } from '@ng/error/PkError';
-import { cloneArrayBuffer } from '@ng/support/utils';
-import { uint32, uint16 } from '@sp/types';
+import { int, uint8, uint32, uint16 } from '@fwk/shared/bx-ctypes';
+import { PkError } from '@fwk/error/PkError';
+import { cloneArrayBuffer } from '@fwk/support/utils';
 
 export class PkBinary {
     private readonly _ab: ArrayBuffer;

@@ -1,13 +1,14 @@
-import { Dw } from '@ng/drawable/dw/Dw';
-import { ifnul } from '@ng/support/utils';
+import { Dw } from '@fwk/drawable/dw/Dw';
+import { ifnul } from '@fwk/support/utils';
 import * as PIXI from 'pixi.js';
 
 export class DwContainer extends Dw<PIXI.Container> {
     private _children: Dw<PIXI.DisplayObject>[];
     
     
-    public constructor() {
+    public constructor(dbgName?: string) {
         super(new PIXI.Container);
+        this.dbgName = dbgName;
         
         this._children = [];
     }

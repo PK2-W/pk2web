@@ -1,5 +1,5 @@
 import { PekkaContext } from '@game/PekkaContext';
-import { PkFsNodeType } from '@ng/filesystem/PkFsNode';
+import { PkFsNodeType } from '@fwk/filesystem/PkFsNode';
 
 export class EpisodeManager {
     private _context: PekkaContext;

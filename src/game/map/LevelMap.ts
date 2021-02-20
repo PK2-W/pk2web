@@ -1,13 +1,13 @@
+import { PkURI } from '@fwk/resource/PkURI';
+import { Log } from '@fwk/support/log/LoggerImpl';
+import { str2num, pathJoin, rand } from '@fwk/support/utils';
+import { PkBinary } from '@fwk/types/PkBinary';
 import { EBgImageMovement } from '@game/enum/EBgImageMovement';
 import { EBlockPrototype } from '@game/enum/EBlockPrototype';
 import { PekkaContext } from '@game/PekkaContext';
 import { TSpriteProtoCode } from '@game/sprite/SpritePrototype';
-import { str, int, CBYTE, uint, CVect, cvect, DWORD, rand } from '@game/support/types';
+import { str, int, CBYTE, uint, CVect, cvect, DWORD } from '@game/support/types';
 import { TBlockProtoCode } from '@game/tile/BlockPrototype';
-import { Log } from '@ng/support/log/LoggerImpl';
-import { str2num, pathJoin } from '@ng/support/utils';
-import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
-import { PkBinary } from '@ng/types/PkBinary';
 
 export abstract class PK2MapInfo {
 
@@ -15,8 +15,7 @@ export abstract class PK2MapInfo {
 
 export class LevelMap extends PK2MapInfo {
     private _context: PekkaContext;
-    private _fpath: string;
-    private _fname: string;
+    private _uri: PkURI;
     private _raw: PkBinary;
     
     /** Map version. */
@@ -74,8 +73,8 @@ export class LevelMap extends PK2MapInfo {
      * @param fpath
      * @param fname - Resource URI (from source "polku + nimi").
      */
-    public static loadFromFile(ctx: PekkaContext, fpath: string, fname: string): Promise<LevelMap> {
-        return new LevelMap(ctx).loadFromFile(fpath, fname);
+    public static loadFromFile(ctx: PekkaContext, uri: PkURI): Promise<LevelMap> {
+        return new LevelMap(ctx).loadFromFile(uri);
     }
     
     ///
@@ -93,12 +92,10 @@ export class LevelMap extends PK2MapInfo {
      * @param fpath
      * @param fname
      */
-    private async loadFromFile(fpath: string, fname: string): Promise<this> {
-        this._fpath = fpath;
-        this._fname = fname;
+    private async loadFromFile(uri: PkURI): Promise<this> {
+        this._uri = uri;
         
-        const uri = pathJoin(fpath, fname);
-        this._raw = await PkAssetTk.getBinary(uri);
+        this._raw = await this._context.fs.getBinaryX(uri.get());
         
         this._loadInfo();
         
@@ -302,8 +299,7 @@ export class LevelMap extends PK2MapInfo {
     
     ///  Accessors  ///
     
-    public get fpath(): string { return this._fpath; }
-    public get fname(): string { return this._fname; }
+    public get uri(): PkURI { return this._uri; }
     
     public get version(): string { return this._version; }
     public get name(): string {return this._name; }
@@ -311,9 +307,11 @@ export class LevelMap extends PK2MapInfo {
     public get author(): string { return this._author; }
     /** @deprecated */ public get tekija(): string {return this.author; }
     
-    
+    /**
+     * 31/01/2021 - Filename will be always returned in lowercase.
+     */
     public get bgImageFilename(): string {
-        return this._taustakuva;
+        return this._taustakuva.toLowerCase();
     }
     
     public get bgMovement(): EBgImageMovement {
@@ -357,8 +355,11 @@ export class LevelMap extends PK2MapInfo {
         return (code !== 255) ? code : null;
     }
     
+    /**
+     * 31/01/2021 - Filename will be always returned in lowercase.
+     */
     public getBlockTexturesLocation(): string {
-        return this._palikka_bmp;
+        return this._palikka_bmp.toLowerCase();
     }
 }
 

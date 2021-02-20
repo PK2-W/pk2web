@@ -1,14 +1,17 @@
-import { PkError } from '@ng/error/PkError';
-import { Log } from '@ng/support/log/LoggerImpl';
-import { ifnul } from '@ng/support/utils';
-import { PkBaseTexture } from '@ng/types/image/PkBaseTexture';
-import { PkBinary } from '@ng/types/PkBinary';
-import { PkColor } from '@ng/types/PkColor';
-import { PkTexture } from '@ng/types/PkTexture';
+import { PkError } from '@fwk/error/PkError';
+import { Binary } from '@fwk/shared/bx-binary';
+import { Log } from '@fwk/support/log/LoggerImpl';
+import { ifnul } from '@fwk/support/utils';
+import { PkBaseTexture } from '@fwk/types/image/PkBaseTexture';
+import { PkBinary } from '@fwk/types/PkBinary';
+import { PkColor } from '@fwk/types/PkColor';
+import { PkTexture } from '@fwk/types/PkTexture';
 import { OutOfBoundsError } from '@sp/error/OutOfBoundsError';
-import { uint32, uint, uint16, uint8 } from '@sp/types';
+import { uint32, uint, uint16, uint8 } from '@fwk/shared/bx-ctypes';
 import * as PIXI from 'pixi.js';
+import { MIPMAP_MODES } from 'pixi.js';
 
+/** @deprecated */
 export class PkBitmapBT implements PkBaseTexture {
     private _dibBytes: uint32;
     private _width: uint;
@@ -117,10 +120,19 @@ export class PkBitmapBT implements PkBaseTexture {
                     bmp._indexBuffer.streamWriteUint8(index);
                     
                     // Obtain color an save to color buffer
-                    bmp._colorBuffer.streamWriteUint8(bmp.getPaletteColor(index).r);
-                    bmp._colorBuffer.streamWriteUint8(bmp.getPaletteColor(index).g);
-                    bmp._colorBuffer.streamWriteUint8(bmp.getPaletteColor(index).b);
-                    bmp._colorBuffer.streamWriteUint8(255);
+                    // bmp._colorBuffer.streamWriteUint8(bmp.getPaletteColor(index).r);
+                    // bmp._colorBuffer.streamWriteUint8(bmp.getPaletteColor(index).g);
+                    // bmp._colorBuffer.streamWriteUint8(bmp.getPaletteColor(index).b);
+                    // bmp._colorBuffer.streamWriteUint8(255);
+                    
+                    bmp._colorBuffer.streamWriteUint8(index);
+                    bmp._colorBuffer.streamWriteUint8(0);
+                    bmp._colorBuffer.streamWriteUint8(0);
+                    if (index < 255) {
+                        bmp._colorBuffer.streamWriteUint8(255);
+                    } else {
+                        bmp._colorBuffer.streamWriteUint8(0);
+                    }
                 }
             }
         } else {
@@ -335,6 +347,9 @@ export class PkBitmapBT implements PkBaseTexture {
                 color.g === this._colorBuffer.readUint8(i + 1) &&
                 color.b === this._colorBuffer.readUint8(i + 2)) {
                 
+                this._colorBuffer.writeUint8(i + 0, 0);
+                this._colorBuffer.writeUint8(i + 1, 0);
+                this._colorBuffer.writeUint8(i + 2, 0);
                 this._colorBuffer.writeUint8(i + 3, 0);
             }
         }
@@ -386,12 +401,27 @@ export class PkBitmapBT implements PkBaseTexture {
         return this.getPaletteColor(this.paletteSize - 1);
     }
     
+    public getPaletteBuffer(): Binary {
+        const p = new Binary(this.paletteSize * 4);
+        
+        for (let i = 0; i < this.paletteSize; i++) {
+            p.streamWriteUint8(this._palette[i].r);
+            p.streamWriteUint8(this._palette[i].g);
+            p.streamWriteUint8(this._palette[i].b);
+            p.streamWriteUint8(255);
+        }
+        
+        return p;
+    }
+    
     
     ///  PIXI  ///
     
     public get pixi(): PIXI.BaseTexture {
         if (this._xPixiBT == null) {
-             this._xPixiBT = PIXI.BaseTexture.fromBuffer(this._colorBuffer.getUint8Array(), this.width, this.height);
+            this._xPixiBT = PIXI.BaseTexture.fromBuffer(this._colorBuffer.getUint8Array(), this.width, this.height, {
+                scaleMode: PIXI.SCALE_MODES.LINEAR
+            });
         }
         return this._xPixiBT;
     }

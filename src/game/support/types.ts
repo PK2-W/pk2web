@@ -17,14 +17,6 @@ export type DWORD = uint32;
  */
 export type str<N> = string;
 
-const RAND_MAX = 3276700;
-
-// TODO: En cada ejecución debería devolver lo mismo
-export function rand(): int {
-    return Math.round(Math.random() * RAND_MAX);
-}
-
-
 export type CVect<T> = T[] & {
     sizeof: int
 };

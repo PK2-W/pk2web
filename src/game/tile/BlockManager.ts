@@ -1,22 +1,27 @@
+import { NewTexture } from '@fwk/texture/NewTexture';
+import { PkPaletteBitmapResource } from '@fwk/texture/PkPaletteBitmapResource';
+import { Bitmap3 } from '@fwk/types/bitmap/Bitmap3';
+import { BitmapTx } from '@fwk/types/bitmap/BitmapTx';
+import { PkRectangle } from '@fwk/types/PkRectangle';
 import { Effects } from '@game/effects/Effects';
 import { EBlockPrototype } from '@game/enum/EBlockPrototype';
 import { TEXTURE_ID_BLOCKS } from '@game/game/Game';
 import { GameContext } from '@game/game/GameContext';
 import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, KYTKIN_ALOITUSARVO } from '@game/map/LevelMap';
-import { int, CVect, cvect } from '@game/support/types';
-import { TX } from '@game/texts';
+import { CVect, cvect } from '@game/support/types';
 import { Block } from '@game/tile/Block';
 import { BlockCollider } from '@game/tile/BlockCollider';
 import { BLOCK_SIZE, BLOCKSHEET_WIDTH } from '@game/tile/BlockConstants';
 import { BlockContext } from '@game/tile/BlockContext';
 import { BlockPrototype, TBlockProtoCode } from '@game/tile/BlockPrototype';
-import { AssetNotFoundError } from '@ng/error/AssetNotFoundError';
-import { Log } from '@ng/support/log/LoggerImpl';
-import { pathJoin } from '@ng/support/utils';
-import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
-import { PkBitmapBT } from '@ng/types/image/PkBitmapBT';
+import { AssetNotFoundError } from '@fwk/error/AssetNotFoundError';
+import { int, uint, uint8 } from '@fwk/shared/bx-ctypes';
+import { Log } from '@fwk/support/log/LoggerImpl';
+import { pathJoin, rand } from '@fwk/support/utils';
+import { PkAssetTk } from '@fwk/toolkit/PkAssetTk';
+import { PkBitmapBT } from '@fwk/types/image/PkBitmapBT';
+import { TX } from '@game/texts';
 import { RESOURCES_PATH, BLOCK_CULLING } from '@sp/constants';
-import { uint, uint8, rand } from '@sp/types';
 
 export class BlockManager {
     // Game Environment
@@ -28,7 +33,10 @@ export class BlockManager {
     private __cullingShow: Set<Block> = new Set();
     private __cullingHide: Set<Block> = new Set();
     
-    private _spritesheet: PkBitmapBT;
+    /** @deprecated */
+    private _spritesheet_old: PkBitmapBT;
+    private _spritesheet: PkPaletteBitmapResource;
+    private _spritesheetTextures: NewTexture<PkPaletteBitmapResource>[];
     
     //PALIKAT JA MASKIT
     private _palikat: CVect<Block> = cvect(300);
@@ -52,6 +60,7 @@ export class BlockManager {
      */
     private _animWater: number = 0;
     
+    
     public constructor(ctx: GameContext) {
         this._context = ctx;
         
@@ -60,12 +69,15 @@ export class BlockManager {
         this._fgBlocks = new Array(PK2KARTTA_KARTTA_LEVEYS * PK2KARTTA_KARTTA_KORKEUS).fill(null);
         this._edges = new Array(PK2KARTTA_KARTTA_LEVEYS * PK2KARTTA_KARTTA_KORKEUS).fill(null);
         
+        this._spritesheetTextures = [];
+        
         this._animatedBlocks = new Set();
         this._animFrame = 1 / 7;
     }
     
     
     /**
+     * CPP: PK_Kartta_Laske_Reunat.
      * SDL: PK2Kartta::Calculate_Edges.
      */
     public calculateEdges() {
@@ -87,20 +99,24 @@ export class BlockManager {
                 // if (tile1 >= BLOCK_TYPES)
                 //     this->seinat[x+y*PK2KARTTA_KARTTA_LEVEYS] = 255;
                 
-                tile2 = this.getFgBlockCode(x, y + 1);              // Bottom
+                // Bottom
+                tile2 = this.getFgBlockCode(x, y + 1);
                 
                 tile1 = (tile1 > 79 || tile1 === EBlockPrototype.BLOCK_ESTO_ALAS) ? tile1 = 1 : tile1 = 0;
                 tile2 = (tile2 > 79) ? tile2 = 1 : tile2 = 0;
                 
                 if (tile1 === 1 && tile2 === 1) {
-                    tile1 = this.getFgBlockCode(x + 1, y + 1);   // Right bottom
-                    tile2 = this.getFgBlockCode(x - 1, y + 1);   // Left bottom
+                    // Right bottom
+                    tile1 = this.getFgBlockCode(x + 1, y + 1);
+                    // Left bottom
+                    tile2 = this.getFgBlockCode(x - 1, y + 1);
                     
                     tile1 = (tile1 < 80 && !(tile1 < 60 && tile1 > 49)) ? 1 : 0;
                     tile2 = (tile2 < 80 && !(tile2 < 60 && tile2 > 49)) ? 1 : 0;
                     
                     if (tile1 === 1) {
-                        tile3 = this.getFgBlockCode(x + 1, y);      // Right
+                        // Right
+                        tile3 = this.getFgBlockCode(x + 1, y);
                         
                         if (tile3 > 79 || (tile3 < 60 && tile3 > 49) || tile3 === EBlockPrototype.BLOCK_ESTO_ALAS)
                             isEdge = true;
@@ -114,7 +130,7 @@ export class BlockManager {
                     }
                     
                     this.setEdge(x, y, isEdge);
-                    //this->taustat[x+y*PK2KARTTA_KARTTA_LEVEYS] = 49; //Debug
+                    // Janne / this->taustat[x+y*PK2KARTTA_KARTTA_LEVEYS] = 49;
                 }
             }
         }
@@ -251,10 +267,10 @@ export class BlockManager {
     
     /**
      * Performs the procedural generation of the block prototypes.<br>
-     * SDL: PK_Calculate_Tiles.
+     * SDL: PK_Calculate_Tiles
      */
     public generatePrototypes(): void {
-        const xx = BlockPrototype.generatePrototypes(this._spritesheet); //TODO SAVE
+        const xx = BlockPrototype.generatePrototypes(this._spritesheetTextures); //TODO SAVE
         for (let i = 0; i < 150; i++) {
             this._prototypes[i] = xx[i];
         }
@@ -288,11 +304,13 @@ export class BlockManager {
             }
         }
         
+        this._context.composition._lyBgBlocks._pixi.cacheAsBitmap;
+        
         Log.d('[BlockManager] Background blocks placed');
     }
     
     /**
-     * SDL: PK2Kartta::Piirra_Seinat.
+     * SDL: PK2Kartta::Piirra_Seinat
      */
     public placeFgBlocks(): void {
         let code: number;
@@ -329,6 +347,8 @@ export class BlockManager {
         } else {
             this.setFgBlock(block);
         }
+        
+        return block;
     }
     
     /**
@@ -366,7 +386,7 @@ export class BlockManager {
         
         // Add to the scene;
         // (Blocks are added not visible to help the initial culling)
-        block.renderable = false;
+        block.visible = false;
         this.ctx.composition.addBgBlock(block);
     }
     
@@ -405,7 +425,7 @@ export class BlockManager {
         
         // Add to the scene;
         // (Blocks are added not visible to help the initial culling)
-        block.renderable = false;
+        block.visible = false;
         this.ctx.composition.addFgBlock(block);
     }
     
@@ -478,7 +498,7 @@ export class BlockManager {
     }
     
     /**
-     * SDL: PK_Calculate_MovableBlocks_Position.
+     * SDL: PK_Calculate_MovableBlocks_Position
      */
     public updateMovement(): void {
         this._prototypes[EBlockPrototype.BLOCK_ELEVATOR_H].vasen = Math.floor(this._context.entropy.cos(this._context.entropy.degree % 360));
@@ -491,35 +511,36 @@ export class BlockManager {
         let kytkin2_y: int = 0;
         let kytkin3_x: int = 0;
         
-        // if (kytkin1 > 0) {
-        //     kytkin1_y = 64;
-        //
-        //     if (kytkin1 < 64)
-        //         kytkin1_y = kytkin1;
-        //
-        //     if (kytkin1 > KYTKIN_ALOITUSARVO - 64)
-        //         kytkin1_y = KYTKIN_ALOITUSARVO - kytkin1;
-        // }
-        //
-        // if (kytkin2 > 0) {
-        //     kytkin2_y = 64;
-        //
-        //     if (kytkin2 < 64)
-        //         kytkin2_y = kytkin2;
-        //
-        //     if (kytkin2 > KYTKIN_ALOITUSARVO - 64)
-        //         kytkin2_y = KYTKIN_ALOITUSARVO - kytkin2;
-        // }
-        //
-        // if (kytkin3 > 0) {
-        //     kytkin3_x = 64;
-        //
-        //     if (kytkin3 < 64)
-        //         kytkin3_x = kytkin3;
-        //
-        //     if (kytkin3 > KYTKIN_ALOITUSARVO - 64)
-        //         kytkin3_x = KYTKIN_ALOITUSARVO - kytkin3;
-        // }
+        
+        if (this._context.switchTimer1 > 0) {
+            kytkin1_y = 64;
+            
+            if (this._context.switchTimer1 < 64)
+                kytkin1_y = this._context.switchTimer1;
+            
+            if (this._context.switchTimer1 > KYTKIN_ALOITUSARVO - 64)
+                kytkin1_y = KYTKIN_ALOITUSARVO - this._context.switchTimer1;
+        }
+        
+        if (this._context.switchTimer2 > 0) {
+            kytkin2_y = 64;
+            
+            if (this._context.switchTimer2 < 64)
+                kytkin2_y = this._context.switchTimer2;
+            
+            if (this._context.switchTimer2 > KYTKIN_ALOITUSARVO - 64)
+                kytkin2_y = KYTKIN_ALOITUSARVO - this._context.switchTimer2;
+        }
+        
+        if (this._context.switchTimer3 > 0) {
+            kytkin3_x = 64;
+            
+            if (this._context.switchTimer3 < 64)
+                kytkin3_x = this._context.switchTimer3;
+            
+            if (this._context.switchTimer3 > KYTKIN_ALOITUSARVO - 64)
+                kytkin3_x = KYTKIN_ALOITUSARVO - this._context.switchTimer3;
+        }
         
         kytkin1_y /= 2;
         kytkin2_y /= 2;
@@ -668,11 +689,11 @@ export class BlockManager {
         }
         
         if (this._animWater % 4 == 0) {
-            this.animateWater();
+            // this.animateWater();
             //     PisteDraw2_RotatePalette(224, 239);
         }
         
-        this._spritesheet.pixi.update();
+        //this._spritesheet_old.pixi.update();
         
         this._animWater = 1 + this._animWater % 320;
     }
@@ -681,47 +702,46 @@ export class BlockManager {
      * SRC: Animoi_Tuli
      */
     private animateFire(): void {
-        let x: number, y: number;
-        let index: uint8;
+        let x: uint, y: uint;
+        let pcolor: uint8;
         
-        // PisteDraw2_DrawImage_Start(palikat_buffer,*&buffer,(DWORD &)leveys);
+        // Fire texture
+        const texture = this._spritesheetTextures[EBlockPrototype.BLOCK_TULI].resource;
         
-        for (x = 128; x < 160; x++) {
-            for (y = 448; y < 479; y++) {
-                index = this._spritesheet.getPixelIndex(x, y + 1);
+        for (x = 0; x < 32; x++) {
+            for (y = 0; y < 31; y++) {
+                pcolor = texture.bitmap.getPixelIndex(x, y + 1);
                 
-                if (index != 255) {
-                    index %= 32;
-                    index = index - rand() % 4;
+                if (pcolor != 255) {
+                    pcolor %= 32;
+                    pcolor = pcolor - rand() % 4;
                     
-                    if (index < 0) {
-                        index = 255;
+                    if (pcolor < 0) {
+                        pcolor = 255;
                     } else {
-                        if (index > 21) {
-                            index += 128;
+                        if (pcolor > 21) {
+                            pcolor += 128;
                         } else {
-                            index += 64;
+                            pcolor += 64;
                         }
                     }
                 }
                 
-                this._spritesheet.setPixelIndex(x, y, index);
+                texture.bitmap.setPixelIndex(x, y, pcolor);
             }
         }
         
         if (this._context.switchTimer1 < 20) {
-            for (x = 128; x < 160; x++) {
-                this._spritesheet.setPixelIndex(x, y, rand() % 15 + 144);
+            for (x = 0; x < 32; x++) {
+                texture.bitmap.setPixelIndex(x, y, rand() % 15 + 144);
             }
         } else {
-            for (x = 128; x < 160; x++) {
-                this._spritesheet.setPixelIndex(x, y, 255);
+            for (x = 0; x < 32; x++) {
+                texture.bitmap.setPixelIndex(x, y, 255);
             }
         }
         
-        // this._spritesheet.pixi.update();
-        
-        // PisteDraw2_DrawImage_End(palikat_buffer);
+        texture.update();
     }
     
     /**
@@ -732,21 +752,27 @@ export class BlockManager {
         let plus: uint;
         let index: uint8, index2: uint8;
         
+        // Waterfall texture
+        const texture = this._spritesheetTextures[EBlockPrototype.BLOCK_WATERFALL].resource;
+        
+        //const ds= this._spritesheetTextures[]
         const temp = new Array(32 * 32);
         
         // Copy current tile to temporal buffer
-        for (x = 32; x < 64; x++)
-            for (y = 416; y < 448; y++)
-                temp[x - 32 + (y - 416) * 32] = this._spritesheet.getPixelIndex(x, y);
+        for (x = 0; x < 32; x++) {
+            for (y = 0; y < 32; y++) {
+                temp[x + y * 32] = texture.bitmap.getPixelIndex(x, y);
+            }
+        }
         
         // Allow waterfalls of different colors
-        index2 = (temp[0] / 32) * 32;
+        index2 = Math.floor(temp[0] / 32) * 32;
         
-        for (x = 32; x < 64; x++) {
+        for (x = 0; x < 32; x++) {
             plus = rand() % 2 + 2; //...+1
             
-            for (y = 416; y < 448; y++) {
-                index = temp[x - 32 + (y - 416) * 32];
+            for (y = 0; y < 32; y++) {
+                index = temp[x + y * 32];
                 
                 // Allow waterfalls of different widths
                 if (index != 255) {
@@ -757,14 +783,15 @@ export class BlockManager {
                         index = 11 + rand() % 11; //15+rand()%8;//9+rand()%5;
                     if (rand() % 160 == 1)
                         index = 30;
-                    // buffer[x + (416+(y+plus)%32)*leveys] = color+color2;
-                    this._spritesheet.setPixelIndex(x, 416 + (y + plus) % 32, index);
+                    
+                    texture.bitmap.setPixelIndex(x, (416 + y + plus) % 32, index + index2);
                 } else {
-                    // buffer[x + (416+(y+plus)%32)*leveys] = color;
-                    this._spritesheet.setPixelIndex(x, 416 + (y + plus) % 32, index);
+                    texture.bitmap.setPixelIndex(x, (416 + y + plus) % 32, index);
                 }
             }
         }
+        
+        texture.update();
     }
     
     /**
@@ -772,21 +799,26 @@ export class BlockManager {
      */
     private animateFlowUp(): void {
         let x: number, y: number;
+        
+        // Flow up texture
+        const texture = this._spritesheetTextures[EBlockPrototype.BLOCK_VIRTA_YLOS].resource;
         const temp = new Array(32);
         
-        for (x = 64; x < 96; x++)
-            temp[x - 64] = this._spritesheet.getPixelIndex(x, 448);
+        for (x = 0; x < 32; x++) {
+            temp[x] = texture.bitmap.getPixelIndex(x, 0);
+        }
         
-        for (x = 64; x < 96; x++) {
-            for (y = 448; y < 479; y++) {
-                // buffer[x+y*leveys] = buffer[x+(y+1)*leveys];
-                this._spritesheet.setPixelIndex(x, y, this._spritesheet.getPixelIndex(x, y + 1));
+        for (x = 0; x < 32; x++) {
+            for (y = 0; y < 31; y++) {
+                texture.bitmap.setPixelIndex(x, y, texture.bitmap.getPixelIndex(x, y + 1));
             }
         }
         
-        for (x = 64; x < 96; x++)
-            // buffer[x+479*leveys] = temp[x-64];
-            this._spritesheet.setPixelIndex(x, y, temp[x - 64]);
+        for (x = 0; x < 32; x++) {
+            texture.bitmap.setPixelIndex(x, y, temp[x]);
+        }
+        
+        texture.update();
     }
     
     /**
@@ -796,19 +828,24 @@ export class BlockManager {
         let x: number, y: number;
         const temp = new Array(32);
         
-        for (y = 416; y < 448; y++)
-            temp[y - 416] = this._spritesheet.getPixelIndex(0, y);
+        // Water surface texture
+        const texture = this._spritesheetTextures[EBlockPrototype.BLOCK_WATER_SURFACE].resource;
         
-        for (y = 416; y < 448; y++) {
+        for (y = 0; y < 32; y++) {
+            temp[y] = texture.bitmap.getPixelIndex(0, y);
+        }
+        
+        for (y = 0; y < 32; y++) {
             for (x = 0; x < 31; x++) {
-                // buffer[x+y*leveys] = buffer[x+1+y*leveys];
-                this._spritesheet.setPixelIndex(x, y, this._spritesheet.getPixelIndex(x + 1, y));
+                texture.bitmap.setPixelIndex(x, y, texture.bitmap.getPixelIndex(x + 1, y));
             }
         }
         
-        for (y = 416; y < 448; y++)
-            //  buffer[31+y*leveys] = temp[y-416];
-            this._spritesheet.setPixelIndex(31, y, temp[y - 416]);
+        for (y = 0; y < 32; y++) {
+            texture.bitmap.setPixelIndex(31, y, temp[y]);
+        }
+        
+        texture.update();
     }
     
     private buuuf = null;
@@ -832,7 +869,7 @@ export class BlockManager {
             
             for (x = 0; x < sheetWidth; x++)
                 for (y = 416; y < 416 + BLOCK_SIZE; y++)
-                    this.buuuf[x + (y - 416) * sheetWidth] = this._spritesheet.getPixelIndex(x, y);
+                    this.buuuf[x + (y - 416) * sheetWidth] = this._spritesheet_old.getPixelIndex(x, y);
         }
         
         for (y = 0; y < BLOCK_SIZE; y++) {
@@ -880,7 +917,7 @@ export class BlockManager {
                     color1 = this.buuuf[BLOCK_SIZE + vx];
                     color2 = this.buuuf[i + vx];
                     
-                    this._spritesheet.setPixelIndex(i + x, vy2 / sheetWidth, Math.floor((color1 + color2 * 2) / 3));
+                    this._spritesheet_old.setPixelIndex(i + x, vy2 / sheetWidth, Math.floor((color1 + color2 * 2) / 3));
                 }
             }
         }
@@ -900,33 +937,34 @@ export class BlockManager {
     ///  Graphics  ///
     
     /**
-     * SDL: PK2Kartta::Lataa_PalikkaPaletti.
+     * SDL: PK2Kartta::Lataa_PalikkaPaletti
      *
      * @throws AssetNotFoundError
      * @throws ResourceFetchError
      */
-    public async loadTextures(fpath: string, fname: string): Promise<void> {
+    public async loadTextures(mapPath: string): Promise<void> {
+        const filename = this._context.map.getBlockTexturesLocation();
+        
         Log.d('[BlockManager] Loading blocks textures');
         
-        this._spritesheet = await PkAssetTk.getBitmap(
+        // Get spritesheet resource
+        this._spritesheet = await this._context.fs.getPaletteBitmap(
             //> 🧍/episodeid/gfx/tiles/
             ...(this._context.episode.isCommunity() ? [pathJoin(this._context.episode.homePath, 'gfx/tiles/', fname)] : []),
             //> Next to the map file
-            pathJoin(fpath, fname),
+            pathJoin(this._context.map.uri.path, filename),
             //> 🏠/gfx/tiles/
-            pathJoin(RESOURCES_PATH, 'gfx/tiles/', fname));
-        this._spritesheet.makeColorTransparent();
+            pathJoin('/assets/gfx/tiles/', filename));
         
         // Crop final textures
-        /*for (let i = 0; i < 150; i++) {
-         const x = (i % 10) * BLOCK_RAW_SIZE;
-         const y = (Math.floor(i / 10)) * BLOCK_RAW_SIZE;
-         
-         this._textures.push(
-         PkTextureTk.textureFromBaseTexture(baseTexture, x, y, BLOCK_RAW_SIZE));
-         }*/
-        
-        //console.log('Blocks textures cropped.');
+        for (let j = 0; j < 15; j++) {
+            for (let i = 0; i < 10; i++) {
+                this._spritesheetTextures.push(
+                    this._spritesheet
+                        .crop(PkRectangle.$(i * BLOCK_SIZE, j * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE))
+                        .getTexture());
+            }
+        }
         
         // TODO -> post-treat
         // PisteDraw2_Image_Delete(this->palikat_vesi_buffer); //Delete last water buffer
@@ -982,7 +1020,7 @@ export class BlockManager {
     }
     
     /**
-     * SDL: PK_Block_Get.
+     * SDL: PK_Block_Get
      *
      * @param i
      * @param j
@@ -1024,11 +1062,14 @@ export class BlockManager {
     }
     
     public isInCamera(block: Block): boolean {
-        return block.x < this.ctx.cameraX + this.ctx.device.screenWidth
-            && block.y < this.ctx.cameraY + this.ctx.device.screenHeight
-            && block.x + BLOCK_SIZE > this.ctx.cameraX
-            && block.y + BLOCK_SIZE > this.ctx.cameraY;
+        return block.x < this.ctx.camera.x + this.ctx.device.screenWidth
+            && block.y < this.ctx.camera.y + this.ctx.device.screenHeight
+            && block.x + BLOCK_SIZE > this.ctx.camera.x
+            && block.y + BLOCK_SIZE > this.ctx.camera.y;
     }
+    
+    
+    ///  Rendering optimization  ////
     
     /**
      * Makes off-screen blocks not renderables.
@@ -1037,10 +1078,10 @@ export class BlockManager {
      */
     public updateCulling(): void {
         if (this._prevCulling == null ||
-            this.ctx.cameraX < this._prevCulling.ax ||
-            this.ctx.cameraY < this._prevCulling.ay ||
-            this.ctx.cameraX + this.ctx.device.screenWidth > this._prevCulling.bx ||
-            this.ctx.cameraY + this.ctx.device.screenHeight > this._prevCulling.by) {
+            this.ctx.camera.x < this._prevCulling.ax ||
+            this.ctx.camera.y < this._prevCulling.ay ||
+            this.ctx.camera.x + this.ctx.device.screenWidth > this._prevCulling.bx ||
+            this.ctx.camera.y + this.ctx.device.screenHeight > this._prevCulling.by) {
             
             Log.v('[BlockManager] Updating blocks culling...');
             
@@ -1073,10 +1114,10 @@ export class BlockManager {
             }
             
             this._prevCulling = {
-                ax: this.ctx.cameraX - BLOCK_CULLING * BLOCK_SIZE,
-                ay: this.ctx.cameraY - BLOCK_CULLING * BLOCK_SIZE,
-                bx: this.ctx.cameraX + this.ctx.device.screenWidth + BLOCK_CULLING * BLOCK_SIZE,
-                by: this.ctx.cameraY + this.ctx.device.screenHeight + BLOCK_CULLING * BLOCK_SIZE
+                ax: this.ctx.camera.x - BLOCK_CULLING * BLOCK_SIZE,
+                ay: this.ctx.camera.y - BLOCK_CULLING * BLOCK_SIZE,
+                bx: this.ctx.camera.x + this.ctx.device.screenWidth + BLOCK_CULLING * BLOCK_SIZE,
+                by: this.ctx.camera.y + this.ctx.device.screenHeight + BLOCK_CULLING * BLOCK_SIZE
             };
             
             // Blocks showing
@@ -1099,12 +1140,12 @@ export class BlockManager {
             }
             
             // Show...
-            this.__cullingShow.forEach(b => b.renderable = true);
+            this.__cullingShow.forEach(b => b.visible = true);
             // Hide...
             [...this.__cullingHide]
                 .filter(b => !this.__cullingShow.has(b))
                 .forEach(b => {
-                    b.renderable = false;
+                    b.visible = false;
                     hideCount++;
                 });
             

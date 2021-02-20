@@ -1,9 +1,9 @@
-import { DwContainer } from '@ng/drawable/dw/DwContainer';
-import { DwSprite } from '@ng/drawable/dw/DwSprite';
-import { DwObjectBase } from '@ng/drawable/dwo/DwObjectBase';
-import { PkBaseTexture } from '@ng/types/image/PkBaseTexture';
-import { TPoint } from '@ng/types/IPoint';
-import { PkTexture } from '@ng/types/PkTexture';
+import { DwContainer } from '@fwk/drawable/dw/DwContainer';
+import { DwSprite } from '@fwk/drawable/dw/DwSprite';
+import { DwObjectBase } from '@fwk/drawable/dwo/DwObjectBase';
+import { PkBaseTexture } from '@fwk/types/image/PkBaseTexture';
+import { TPoint } from '@fwk/types/IPoint';
+import { PkTexture } from '@fwk/types/PkTexture';
 
 export class DwTilingSprite extends DwObjectBase<DwContainer> {
     private _width: number;

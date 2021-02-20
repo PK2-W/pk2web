@@ -1,6 +1,6 @@
-import { PkBitmapBT } from '@ng/types/image/PkBitmapBT';
-import { PkColor } from '@ng/types/PkColor';
-import { PkRectangle } from '@ng/types/PkRectangle';
+import { PkBitmapBT } from '@fwk/types/image/PkBitmapBT';
+import { PkColor } from '@fwk/types/PkColor';
+import { PkRectangle } from '@fwk/types/PkRectangle';
 
 export class PkImagePixels {
     private readonly _bitmap: PkBitmapBT;

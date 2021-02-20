@@ -1,11 +1,12 @@
-import { TextureSliceError } from '@ng/error/TextureSliceError';
-import { PkBaseTexture } from '@ng/types/image/PkBaseTexture';
-import { PkColor } from '@ng/types/PkColor';
-import { PkRectangle } from '@ng/types/PkRectangle';
+import { TextureSliceError } from '@fwk/error/TextureSliceError';
+import { PkBaseTexture } from '@fwk/types/image/PkBaseTexture';
+import { PkColor } from '@fwk/types/PkColor';
+import { PkRectangle } from '@fwk/types/PkRectangle';
 import { OutOfBoundsError } from '@sp/error/OutOfBoundsError';
 import { uint } from '@sp/types';
 import * as PIXI from 'pixi.js';
 
+/** @deprecated */
 export class PkTexture<T extends PkBaseTexture = PkBaseTexture> {
     private readonly _base: T;
     private readonly _frame: PkRectangle;

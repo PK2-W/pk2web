@@ -3,14 +3,14 @@
  *
  * @version 3.2-stable
  */
-import { Logger, TLogLevel } from '@ng/support/log/Logger';
+import { Logger, TLogLevel } from '@fwk/support/log/Logger';
 
 class LoggerImpl implements Logger {
     // Instancia
     public static readonly instance: Logger = new LoggerImpl();
     
-    public static DEBUG = true;
-    public static VERBOSE = true;
+    public static DEBUG = false;
+    public static VERBOSE = false;
     public static VVERBOSE = false;
     
     // Fast logs

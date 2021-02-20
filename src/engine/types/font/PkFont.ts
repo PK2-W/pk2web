@@ -1,4 +1,4 @@
-import { DwContainer } from '@ng/drawable/dw/DwContainer';
+import { DwContainer } from '@fwk/drawable/dw/DwContainer';
 
 /**
  * A font-like resource able to write text according to their characteristics.

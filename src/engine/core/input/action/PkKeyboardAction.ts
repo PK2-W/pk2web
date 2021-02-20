@@ -1,7 +1,7 @@
-import { PkDeviceAction } from '@ng/core/input/action/PkDeviceAction';
-import { KbCode } from '@ng/core/input/enum/KbCode';
-import { PkInputDevices } from '@ng/core/input/enum/PkInputDevices';
-import { Key } from '@ng/core/PkInput';
+import { PkDeviceAction } from '@fwk/core/input/action/PkDeviceAction';
+import { KbCode } from '@fwk/core/input/enum/KbCode';
+import { PkInputDevices } from '@fwk/core/input/enum/PkInputDevices';
+import { Key } from '@fwk/core/PkInput';
 
 /**
  * PkKeyboardAction represents a physical keyboard key which has been actuated by the user.<br>

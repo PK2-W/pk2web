@@ -1,4 +1,4 @@
-import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
+import { PkUIComponent } from '@fwk/ui/component/PkUIComponent';
 
 export class UIDummy extends PkUIComponent {
 

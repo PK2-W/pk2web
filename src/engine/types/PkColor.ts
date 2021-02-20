@@ -1,4 +1,6 @@
 export class PkColor {
+    public static TRANSPARENT = PkColor.rgba(0, 0, 0, 0);
+    
     private _red: number;
     private _green: number;
     private _blue: number;

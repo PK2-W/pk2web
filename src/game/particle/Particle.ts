@@ -4,10 +4,10 @@
 
 import { ParticleContext } from '@game/particle/ParticleContext';
 import { int } from '@game/support/types';
-import { DwSprite } from '@ng/drawable/dw/DwSprite';
-import { DwObjectBase } from '@ng/drawable/dwo/DwObjectBase';
-import { PkBaseTexture } from '@ng/types/image/PkBaseTexture';
-import { PkRectangle } from '@ng/types/PkRectangle';
+import { DwSprite } from '@fwk/drawable/dw/DwSprite';
+import { DwObjectBase } from '@fwk/drawable/dwo/DwObjectBase';
+import { PkBaseTexture } from '@fwk/types/image/PkBaseTexture';
+import { PkRectangle } from '@fwk/types/PkRectangle';
 
 
 export abstract class Particle extends DwObjectBase<DwSprite> {

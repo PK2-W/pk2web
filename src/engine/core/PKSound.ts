@@ -1,4 +1,4 @@
-import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
+import { PkAssetTk } from '@fwk/toolkit/PkAssetTk';
 
 export class PKSound {
     public async loadSFX(options: string[]) {

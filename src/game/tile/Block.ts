@@ -3,9 +3,9 @@ import { BlockCollider } from '@game/tile/BlockCollider';
 import { BLOCK_SIZE } from '@game/tile/BlockConstants';
 import { BlockContext } from '@game/tile/BlockContext';
 import { BlockPrototype, TBlockProtoCode } from '@game/tile/BlockPrototype';
-import { Dw } from '@ng/drawable/dw/Dw';
-import { DwSprite } from '@ng/drawable/dw/DwSprite';
-import { DwObjectBase } from '@ng/drawable/dwo/DwObjectBase';
+import { Dw } from '@fwk/drawable/dw/Dw';
+import { DwSprite } from '@fwk/drawable/dw/DwSprite';
+import { DwObjectBase } from '@fwk/drawable/dwo/DwObjectBase';
 
 export class Block extends DwObjectBase<DwSprite> {
     private readonly _context: BlockContext;
@@ -119,8 +119,8 @@ export class Block extends DwObjectBase<DwSprite> {
     public relayout(): void {
         //this._drawable.clear();
         
-        const texture = this._proto.texture.base.getTexture(this._proto.getTextureArea(this._textureOffset));
-        this._dw.setTexture(texture);
+        const texture = this._proto.texture;
+        this._dw.setNewTexture(texture);
         //this._drawable.add(this.tmpSpr);
         
         // // Debug

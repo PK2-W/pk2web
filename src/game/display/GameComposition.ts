@@ -1,10 +1,10 @@
 import { Particle } from '@game/particle/Particle';
 import { Sprite } from '@game/sprite/Sprite';
 import { Block } from '@game/tile/Block';
-import { DwContainer } from '@ng/drawable/dw/DwContainer';
-import { DwObject } from '@ng/drawable/dwo/DwObject';
-import { DwObjectBase } from '@ng/drawable/dwo/DwObjectBase';
-import { Log } from '@ng/support/log/LoggerImpl';
+import { DwContainer } from '@fwk/drawable/dw/DwContainer';
+import { DwObject } from '@fwk/drawable/dwo/DwObject';
+import { DwObjectBase } from '@fwk/drawable/dwo/DwObjectBase';
+import { Log } from '@fwk/support/log/LoggerImpl';
 
 export class GameComposition extends DwObjectBase<DwContainer> {
     // Game ordered layers
@@ -19,27 +19,28 @@ export class GameComposition extends DwObjectBase<DwContainer> {
     
     public constructor() {
         super(new DwContainer);
+        this.dbgName = GameComposition.name;
         
-        // It's born not renderable
-        this.dw.renderable = false;
+        // It's born not visible
+        this.dw.visible = false;
         
-        this._lyBgImage = new DwContainer().addTo(this._dw);
-        this._lyBgSprites = new DwContainer().addTo(this._dw);
-        this._lyBgParticles = new DwContainer().addTo(this._dw);
-        this._lyBgBlocks = new DwContainer().addTo(this._dw);
+        this._lyBgImage = new DwContainer('Layer:BgImage').addTo(this._dw);
+        this._lyBgSprites = new DwContainer('Layer:BgSprites').addTo(this._dw);
+        this._lyBgParticles = new DwContainer('Layer:BgParticles').addTo(this._dw);
+        this._lyBgBlocks = new DwContainer('Layer:BgBlocks').addTo(this._dw);
         
-        this._lyFgSprites = new DwContainer().addTo(this._dw);
-        this._lyFgParticles = new DwContainer().addTo(this._dw);
-        this._lyFgBlocks = new DwContainer().addTo(this._dw);
+        this._lyFgSprites = new DwContainer('Layer:FgSprites').addTo(this._dw);
+        this._lyFgParticles = new DwContainer('Layer:FgParticles').addTo(this._dw);
+        this._lyFgBlocks = new DwContainer('Layer:FgBlocks').addTo(this._dw);
         
-        this._lyOverlay = new DwContainer().addTo(this._dw);
+        this._lyOverlay = new DwContainer('Layer:Overlay').addTo(this._dw);
     }
     
     public show(): void {
-        this.dw.renderable = true;
+        this.dw.visible = true;
     }
     public hide(): void {
-        this.dw.renderable = false;
+        this.dw.visible = false;
     }
     
     

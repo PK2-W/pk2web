@@ -1,7 +1,7 @@
 import type { PekkaContext } from '@game/PekkaContext';
 import type { TTextId } from '@game/support/types';
-import type { PkFont } from '@ng/types/font/PkFont';
-import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
+import type { PkFont } from '@fwk/types/font/PkFont';
+import { PkUIComponent } from '@fwk/ui/component/PkUIComponent';
 
 export abstract class UIText extends PkUIComponent<PekkaContext> {
     protected _text: TTextId | string;

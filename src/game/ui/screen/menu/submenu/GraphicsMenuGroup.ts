@@ -1,13 +1,15 @@
 import { PekkaContext } from '@game/PekkaContext';
 import { TX } from '@game/texts';
 import { UICheckbox } from '@game/ui/component/UICheckbox';
+import { UIPanel } from '@game/ui/component/UIPanel';
 import { UIPlainText } from '@game/ui/component/UIPlainText';
+import { UIProgressBar } from '@game/ui/component/UIProgressBar';
 import { UIStackLayout } from '@game/ui/component/UIStackLayout';
 import { UIText } from '@game/ui/component/UIText';
 import { UIWaveText } from '@game/ui/component/UIWaveText';
 import { MenuScreen } from '@game/ui/screen/menu/MenuScreen';
-import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
-import { PkUIComponentContainer } from '@ng/ui/component/PkUIComponentContainer';
+import { PkUIComponent } from '@fwk/ui/component/PkUIComponent';
+import { PkUIComponentContainer } from '@fwk/ui/component/PkUIComponentContainer';
 
 export class GraphicsMenuGroup extends PkUIComponentContainer<PekkaContext> {
     private readonly _menu: MenuScreen;

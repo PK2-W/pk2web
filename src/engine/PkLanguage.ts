@@ -4,8 +4,8 @@
 //#########################
 
 import { TTextId } from '@game/support/types';
-import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
-import { PkParameters } from '@ng/types/PkParameters';
+import { PkAssetTk } from '@fwk/toolkit/PkAssetTk';
+import { PkParameters } from '@fwk/types/PkParameters';
 
 
 const LUE_SKIP: number = 0;

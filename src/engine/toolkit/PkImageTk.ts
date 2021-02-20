@@ -1,6 +1,6 @@
-import { PkBinary } from '@ng/types/PkBinary';
-import { PkColor } from '@ng/types/PkColor';
-import { PkRectangle } from '@ng/types/PkRectangle';
+import { PkBinary } from '@fwk/types/PkBinary';
+import { PkColor } from '@fwk/types/PkColor';
+import { PkRectangle } from '@fwk/types/PkRectangle';
 
 export class PkImageTk {
     private constructor() {}

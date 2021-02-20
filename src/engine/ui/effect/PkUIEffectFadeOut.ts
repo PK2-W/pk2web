@@ -1,5 +1,5 @@
-import { TEasingFunction, PkEasing } from '@ng/support/PkEasing';
-import { PkUiEffect } from '@ng/ui/effect/PkUiEffect';
+import { TEasingFunction, PkEasing } from '@fwk/support/PkEasing';
+import { PkUiEffect } from '@fwk/ui/effect/PkUiEffect';
 
 export class PkUIEffectFadeOut extends PkUiEffect {
     private readonly _duration: number;

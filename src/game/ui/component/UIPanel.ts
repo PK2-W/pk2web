@@ -1,4 +1,4 @@
-import { PkUIComponentContainer } from '@ng/ui/component/PkUIComponentContainer';
+import { PkUIComponentContainer } from '@fwk/ui/component/PkUIComponentContainer';
 
 export class UIPanel extends PkUIComponentContainer {
 

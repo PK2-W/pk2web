@@ -1,6 +1,6 @@
-import { DwContainer } from '@ng/drawable/dw/DwContainer';
-import { PkFont } from '@ng/types/font/PkFont';
-import { PkFontAsset } from '@ng/types/font/PkFontAsset';
+import { DwContainer } from '@fwk/drawable/dw/DwContainer';
+import { PkFont } from '@fwk/types/font/PkFont';
+import { PkFontAsset } from '@fwk/types/font/PkFontAsset';
 import * as EventEmitter from 'eventemitter3';
 
 export class PkFontHolder extends EventEmitter implements PkFont {

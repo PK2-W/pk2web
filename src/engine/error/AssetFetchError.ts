@@ -1,4 +1,4 @@
-import { PkError } from '@ng/error/PkError';
+import { PkError } from '@fwk/error/PkError';
 
 export class AssetFetchError extends PkError {
     public uri: string;

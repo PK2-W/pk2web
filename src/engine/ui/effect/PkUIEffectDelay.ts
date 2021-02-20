@@ -1,4 +1,4 @@
-import { PkUiEffect } from '@ng/ui/effect/PkUiEffect';
+import { PkUiEffect } from '@fwk/ui/effect/PkUiEffect';
 
 export class PkUIEffectDelay extends PkUiEffect {
     private readonly _duration: number;

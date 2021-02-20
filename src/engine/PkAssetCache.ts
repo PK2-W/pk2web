@@ -1,13 +1,13 @@
-import { PkError } from '@ng/error/PkError';
-import { Log } from '@ng/support/log/LoggerImpl';
-import { ifnul } from '@ng/support/utils';
-import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
-import { PkBitmapBT } from '@ng/types/image/PkBitmapBT';
-import { PkImageBitmapBT } from '@ng/types/image/PkImageBitmapBT';
-import { PkBinary } from '@ng/types/PkBinary';
-import { PkImageTexture } from '@ng/types/PkImageTexture';
-import { PkRectangle } from '@ng/types/PkRectangle';
-import { PkSound } from '@ng/types/PkSound';
+import { PkError } from '@fwk/error/PkError';
+import { Log } from '@fwk/support/log/LoggerImpl';
+import { ifnul } from '@fwk/support/utils';
+import { PkAssetTk } from '@fwk/toolkit/PkAssetTk';
+import { PkBitmapBT } from '@fwk/types/image/PkBitmapBT';
+import { PkImageBitmapBT } from '@fwk/types/image/PkImageBitmapBT';
+import { PkBinary } from '@fwk/types/PkBinary';
+import { PkImageTexture } from '@fwk/types/PkImageTexture';
+import { PkRectangle } from '@fwk/types/PkRectangle';
+import { PkSound } from '@fwk/types/PkSound';
 
 export class PkAssetCache {
     private readonly _binaryIndex: Map<string, PkBinary>;

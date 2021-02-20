@@ -4,9 +4,9 @@
 //#########################
 
 import { int, SCREENID } from '@game/support/types';
-import { PkDevice } from '@ng/core/PkDevice';
-import { PkInput } from '@ng/core/PkInput';
-import { PkFilesystem } from '@ng/filesystem/PkFilesystem';
+import { PkDevice } from '@fwk/core/PkDevice';
+import { PkInput } from '@fwk/core/PkInput';
+import { PkFilesystem } from '@fwk/filesystem/PkFilesystem';
 import { PK2GAMELOOP } from '@sp/constants';
 import { PkLanguage } from '../PkLanguage';
 import { PkRenderer } from '../render/PkRenderer';

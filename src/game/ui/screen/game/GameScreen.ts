@@ -6,7 +6,7 @@ import { Screen } from '@game/ui/screen/Screen';
 export class GameScreen extends Screen {
     private _uiGame: UIGame;
     
-    public static create(context: PekkaContext): GameScreen {
+    public static async create(context: PekkaContext): Promise<GameScreen> {
         return new GameScreen(context);
     }
     

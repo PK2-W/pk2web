@@ -5,10 +5,10 @@ import { UIStackLayout } from '@game/ui/component/UIStackLayout';
 import { UIText } from '@game/ui/component/UIText';
 import { UIWaveText } from '@game/ui/component/UIWaveText';
 import { MenuScreen } from '@game/ui/screen/menu/MenuScreen';
-import { PkInputEvent } from '@ng/core/input/PkInputEvent';
-import { PkInput } from '@ng/core/PkInput';
-import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
-import { PkUIComponentContainer } from '@ng/ui/component/PkUIComponentContainer';
+import { PkInputEvent } from '@fwk/core/input/PkInputEvent';
+import { PkInput } from '@fwk/core/PkInput';
+import { PkUIComponent } from '@fwk/ui/component/PkUIComponent';
+import { PkUIComponentContainer } from '@fwk/ui/component/PkUIComponentContainer';
 
 export class MainMenuGroup extends PkUIComponentContainer<PekkaContext> {
     private readonly _menu: MenuScreen;

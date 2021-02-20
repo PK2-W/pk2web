@@ -2,13 +2,13 @@ import { InputAction } from '@game/InputActions';
 import { PekkaContext } from '@game/PekkaContext';
 import { TTextId } from '@game/support/types';
 import { UIWaveText } from '@game/ui/component/UIWaveText';
-import { PkInputEvent } from '@ng/core/input/PkInputEvent';
-import { PkInput } from '@ng/core/PkInput';
-import { DwSprite } from '@ng/drawable/dw/DwSprite';
-import { PkFont } from '@ng/types/font/PkFont';
-import { PkRectangle } from '@ng/types/PkRectangle';
-import { PkTexture } from '@ng/types/PkTexture';
-import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
+import { PkInputEvent } from '@fwk/core/input/PkInputEvent';
+import { PkInput } from '@fwk/core/PkInput';
+import { DwSprite } from '@fwk/drawable/dw/DwSprite';
+import { PkFont } from '@fwk/types/font/PkFont';
+import { PkRectangle } from '@fwk/types/PkRectangle';
+import { PkTexture } from '@fwk/types/PkTexture';
+import { PkUIComponent } from '@fwk/ui/component/PkUIComponent';
 import { STUFF_CKEY } from '@sp/constants';
 
 export class UICheckbox extends PkUIComponent<PekkaContext> {

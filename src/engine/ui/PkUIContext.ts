@@ -1,5 +1,5 @@
-import { GameTimer } from '@ng/core/GameTimer';
-import { PkDevice } from '@ng/core/PkDevice';
+import { GameTimer } from '@fwk/core/GameTimer';
+import { PkDevice } from '@fwk/core/PkDevice';
 
 export interface PkUIContext {
     readonly device: PkDevice;

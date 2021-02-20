@@ -1,4 +1,4 @@
-import { PkBinary } from '@ng/types/PkBinary';
+import { PkBinary } from '@fwk/types/PkBinary';
 import { ANIMAATIO_MAX_SEKVENSSEJA } from '../../support/constants';
 import { CVect, CBYTE, cvect, uint } from '../support/types';
 

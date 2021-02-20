@@ -1,9 +1,14 @@
-import { Dw } from '@ng/drawable/dw/Dw';
-import { TPoint } from '@ng/types/IPoint';
-import type { PkTexture } from '@ng/types/PkTexture';
+import { Dw } from '@fwk/drawable/dw/Dw';
+import { NewTexture } from '@fwk/texture/NewTexture';
+import { NewTextureResource } from '@fwk/texture/NewTextureResource';
+import { PkPaletteBitmapResource } from '@fwk/texture/PkPaletteBitmapResource';
+import { TPoint } from '@fwk/types/IPoint';
+import type { PkTexture } from '@fwk/types/PkTexture';
 
 export class DwSprite extends Dw<PIXI.Sprite> {
+    /** @deprecated */
     private _texture: PkTexture<any>;
+    private _newTexture: NewTexture<any>;
     
     public constructor() {
         super(new PIXI.Sprite());
@@ -18,6 +23,16 @@ export class DwSprite extends Dw<PIXI.Sprite> {
      */
     public setTexture(texture: PkTexture<any>): this {
         this._texture = texture;
+        this._pixi.texture = texture.getPixiTexture();
+        return this;
+    }
+    
+    public getNewTexture(): NewTexture<NewTextureResource> {
+        return this._newTexture;
+    }
+    
+    public setNewTexture(texture: NewTexture<PkPaletteBitmapResource>): this {
+        this._newTexture = texture;
         this._pixi.texture = texture.getPixiTexture();
         return this;
     }

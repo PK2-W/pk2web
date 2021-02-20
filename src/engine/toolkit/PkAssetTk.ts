@@ -1,12 +1,13 @@
-import { AssetFetchError } from '@ng/error/AssetFetchError';
-import { AssetNotFoundError } from '@ng/error/AssetNotFoundError';
-import { Log } from '@ng/support/log/LoggerImpl';
-import { PkFontAsset } from '@ng/types/font/PkFontAsset';
-import { PkBitmapBT } from '@ng/types/image/PkBitmapBT';
-import { PkImageBitmapBT } from '@ng/types/image/PkImageBitmapBT';
-import { PkBinary } from '@ng/types/PkBinary';
-import { PkParameters } from '@ng/types/PkParameters';
-import { PkSound } from '@ng/types/PkSound';
+import { AssetFetchError } from '@fwk/error/AssetFetchError';
+import { AssetNotFoundError } from '@fwk/error/AssetNotFoundError';
+import { Log } from '@fwk/support/log/LoggerImpl';
+import { Bitmap3 } from '@fwk/types/bitmap/Bitmap3';
+import { PkFontAsset } from '@fwk/types/font/PkFontAsset';
+import { PkBitmapBT } from '@fwk/types/image/PkBitmapBT';
+import { PkImageBitmapBT } from '@fwk/types/image/PkImageBitmapBT';
+import { PkBinary } from '@fwk/types/PkBinary';
+import { PkParameters } from '@fwk/types/PkParameters';
+import { PkSound } from '@fwk/types/PkSound';
 
 export class PkAssetTk {
     private constructor() {

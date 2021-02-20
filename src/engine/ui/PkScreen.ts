@@ -1,14 +1,14 @@
 import { InputAction } from '@game/InputActions';
-import { PkInputEvent } from '@ng/core/input/PkInputEvent';
-import { PkInput } from '@ng/core/PkInput';
-import { Log } from '@ng/support/log/LoggerImpl';
-import { PkEasing } from '@ng/support/PkEasing';
-import { mod } from '@ng/support/utils';
-import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
-import { PkUIComponentContainer } from '@ng/ui/component/PkUIComponentContainer';
-import { PkUIEffectFadeIn } from '@ng/ui/effect/PkUIEffectFadeIn';
-import { PkUIEffectFadeOut } from '@ng/ui/effect/PkUIEffectFadeOut';
-import { PkUIContext } from '@ng/ui/PkUIContext';
+import { PkInputEvent } from '@fwk/core/input/PkInputEvent';
+import { PkInput } from '@fwk/core/PkInput';
+import { Log } from '@fwk/support/log/LoggerImpl';
+import { PkEasing } from '@fwk/support/PkEasing';
+import { mod } from '@fwk/support/utils';
+import { PkUIComponent } from '@fwk/ui/component/PkUIComponent';
+import { PkUIComponentContainer } from '@fwk/ui/component/PkUIComponentContainer';
+import { PkUIEffectFadeIn } from '@fwk/ui/effect/PkUIEffectFadeIn';
+import { PkUIEffectFadeOut } from '@fwk/ui/effect/PkUIEffectFadeOut';
+import { PkUIContext } from '@fwk/ui/PkUIContext';
 
 export interface PkIntent {
     actn: string,
@@ -35,7 +35,7 @@ export abstract class PkScreen<T extends PkUIContext = PkUIContext> extends PkUI
         this._creationTime = this.context.clock.now();
         
         this._status = PkScreenLCS.SUSPENDED;
-        this.renderable = false;
+        this.visible = false;
         this.setActive(false);
         
         this.on(PkInput.EV_KEYDOWN, (ev: PkInputEvent) => {
@@ -90,7 +90,7 @@ export abstract class PkScreen<T extends PkUIContext = PkUIContext> extends PkUI
             this._status = PkScreenLCS.RESUMING;
             this.emit(PkScreen.EV_RESUMING);
             
-            this.renderable = true;
+            this.visible = true;
             
             if (ms > 0) {
                 this.getDrawable().globalAlpha = 0;
@@ -137,7 +137,7 @@ export abstract class PkScreen<T extends PkUIContext = PkUIContext> extends PkUI
         });
     }
     private _suspend(intent: PkIntent): void {
-        this.renderable = false;
+        this.visible = false;
         
         this._status = PkScreenLCS.SUSPENDED;
         this.emit(PkScreen.EV_SUSPENDED, intent);
@@ -289,7 +289,7 @@ export abstract class PkScreen<T extends PkUIContext = PkUIContext> extends PkUI
             }
         }
     }
-    
+   
     
     ///  Events  ///
     

@@ -1,5 +1,5 @@
-import { PkFont } from '@ng/types/font/PkFont';
-import { PkFontInterface } from '@ng/types/font/PkFontInterface';
+import { PkFont } from '@fwk/types/font/PkFont';
+import { PkFontInterface } from '@fwk/types/font/PkFontInterface';
 import * as EventEmitter from 'eventemitter3';
 
 export class PkFontObserver extends EventEmitter implements PkFontInterface {

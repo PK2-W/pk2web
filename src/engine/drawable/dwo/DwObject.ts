@@ -1,4 +1,4 @@
-import { Dw } from '@ng/drawable/dw/Dw';
+import { Dw } from '@fwk/drawable/dw/Dw';
 
 export interface DwObject {
     /**

@@ -1,7 +1,7 @@
 import { PekkaContext } from '@game/PekkaContext';
 import { TTextId } from '@game/support/types';
 import { UIText } from '@game/ui/component/UIText';
-import { PkFont } from '@ng/types/font/PkFont';
+import { PkFont } from '@fwk/types/font/PkFont';
 
 export class UIPlainText extends UIText {
     private _shadowDepth: number;

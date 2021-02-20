@@ -1,8 +1,8 @@
 import { PekkaContext } from '@game/PekkaContext';
 import { TTextId } from '@game/support/types';
-import { DwContainer } from '@ng/drawable/dw/DwContainer';
-import { DwObjectBase } from '@ng/drawable/dwo/DwObjectBase';
-import { PkFont } from '@ng/types/font/PkFont';
+import { DwContainer } from '@fwk/drawable/dw/DwContainer';
+import { DwObjectBase } from '@fwk/drawable/dwo/DwObjectBase';
+import { PkFont } from '@fwk/types/font/PkFont';
 import { uint } from '@sp/types';
 
 /**

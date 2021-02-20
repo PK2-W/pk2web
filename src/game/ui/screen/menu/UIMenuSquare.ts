@@ -1,8 +1,8 @@
 import { PekkaContext } from '@game/PekkaContext';
-import { DwCanvas } from '@ng/drawable/dw/DwCanvas';
-import { PkTickable } from '@ng/support/PkTickable';
-import { TColor } from '@ng/types/PkColor';
-import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
+import { DwCanvas } from '@fwk/drawable/dw/DwCanvas';
+import { PkTickable } from '@fwk/support/PkTickable';
+import { TColor } from '@fwk/types/PkColor';
+import { PkUIComponent } from '@fwk/ui/component/PkUIComponent';
 
 export class UIMenuSquare extends PkUIComponent implements PkTickable {
     // Set of 11 colors used to draw the square

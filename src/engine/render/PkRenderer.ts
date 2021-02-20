@@ -1,10 +1,11 @@
-import { PkInputEvent } from '@ng/core/input/PkInputEvent';
-import { PkEngine } from '@ng/core/PkEngine';
-import { PkInput } from '@ng/core/PkInput';
-import { PkError } from '@ng/error/PkError';
-import { Log } from '@ng/support/log/LoggerImpl';
-import { PkTickable } from '@ng/support/PkTickable';
-import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
+import { PkInputEvent } from '@fwk/core/input/PkInputEvent';
+import { PkEngine } from '@fwk/core/PkEngine';
+import { PkInput } from '@fwk/core/PkInput';
+import { PkError } from '@fwk/error/PkError';
+import { PaletteFilter } from '@fwk/PaletteFilter';
+import { Log } from '@fwk/support/log/LoggerImpl';
+import { PkTickable } from '@fwk/support/PkTickable';
+import { PkUIComponent } from '@fwk/ui/component/PkUIComponent';
 import { WEB_CONTAINER } from '@sp/constants';
 import * as PIXI from 'pixi.js';
 import { PkScreen } from '../ui/PkScreen';
@@ -89,14 +90,18 @@ export class PkRenderer implements PkTickable {
     private _fpsAvg = [];
     private _fpsAvgDisplay = 0;
     
+    private toca = true;
+    
     public renderTick() {
         //try{ window.pk2w._game.context.time.trigger(); } catch(r){}
-        
+        window.ct = 0;
+        //if (this.toca)
         if (window.nor != true)
             this._renderer.render(this._stage);
-        
+        Log.fast('Update tranform', window.ct);
         requestAnimationFrame(this.renderTick.bind(this));
         
+        //if (this.toca) {
         const now = performance.now();
         const delta = now - this._fpsPrev;
         this._fpsPrev = now;
@@ -109,6 +114,9 @@ export class PkRenderer implements PkTickable {
             const avg = this._fpsAvg.reduce((p, c) => p + c, 0) / (this._fpsAvg.length);
             Log.fast('Frame rate', Math.round(avg) + ' fps (~' + (Math.round(avg / 60 * 10) / 10) + ')');
         }
+        //}
+        
+        this.toca = !this.toca;
     }
     
     ///

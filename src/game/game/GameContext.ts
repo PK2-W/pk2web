@@ -1,11 +1,23 @@
+import { PkFilesystem } from '@fwk/filesystem/PkFilesystem';
+import { GameComposition } from '@game/display/GameComposition';
 import { Entropy } from '@game/Entropy';
+import { Episode } from '@game/episodes/Episode';
+import { TextureCache } from '@game/game/TextureCache';
+import { UIGame } from '@game/game/ui/UIGame';
+import { LevelMap } from '@game/map/LevelMap';
+import { ParticleSystem } from '@game/particle/ParticleSystem';
+import { PekkaContext } from '@game/PekkaContext';
 import { Sprite } from '@game/sprite/Sprite';
-import { int } from '@game/support/types';
-import { PkDevice } from '@ng/core/PkDevice';
-import { PKSound } from '@ng/core/PKSound';
-import { PkAssetCache } from '@ng/PkAssetCache';
-import { PkSound } from '@ng/types/PkSound';
-import { uint } from '@sp/types';
+import { PkDevice } from '@fwk/core/PkDevice';
+import { PKSound } from '@fwk/core/PKSound';
+import { PkError } from '@fwk/error/PkError';
+import { PkAssetCache } from '@fwk/PkAssetCache';
+import { PkCamera } from '@fwk/render/PkCamera';
+import { int, uint } from '@fwk/shared/bx-ctypes';
+import { Log } from '@fwk/support/log/LoggerImpl';
+import { minmax, rand } from '@fwk/support/utils';
+import { PkSound } from '@fwk/types/PkSound';
+import { SOUND_SAMPLERATE } from '@sp/constants';
 
 /**
  * The game environment is shared with all game related elements.
@@ -14,8 +26,7 @@ export interface GameContext {
     
     readonly entropy: Entropy;
     
-    readonly cameraX: number;
-    readonly cameraY: number;
+    readonly camera: PkCamera;
     
     readonly device: PkDevice;
     
@@ -23,6 +34,9 @@ export interface GameContext {
     readonly gameStuff: PkAssetCache;
     readonly sound: PKSound;
     
+    readonly fs: PkFilesystem;
+    
+    readonly map: LevelMap;
     
     ///  Switches  ////
     

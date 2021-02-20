@@ -1,7 +1,7 @@
-import { DwContainer } from '@ng/drawable/dw/DwContainer';
-import { DwHelper } from '@ng/drawable/DwHelper';
-import { minmax } from '@ng/support/utils';
-import { PkRectangle } from '@ng/types/PkRectangle';
+import { DwContainer } from '@fwk/drawable/dw/DwContainer';
+import { DwHelper } from '@fwk/drawable/DwHelper';
+import { minmax } from '@fwk/support/utils';
+import { PkRectangle } from '@fwk/types/PkRectangle';
 import { EventEmitter, ListenerFn } from 'eventemitter3';
 import * as PIXI from 'pixi.js';
 
@@ -141,7 +141,7 @@ export abstract class Dw<T extends PIXI.DisplayObject> extends EventEmitter {
      */
     public setGlobalAlpha(alpha: number): this {
         this._alphaFilter.alpha = minmax(alpha, 0, 1);
-        if (alpha >= 1) {
+        if (this._alphaFilter.alpha === 1) {
             const i = this.pixi.filters.indexOf(this._alphaFilter);
             if (i > -1) {
                 this.pixi.filters.splice(i, 1);
@@ -151,7 +151,6 @@ export abstract class Dw<T extends PIXI.DisplayObject> extends EventEmitter {
                 this.pixi.filters.push(this._alphaFilter);
             }
         }
-        this._alphaFilter.alpha = minmax(alpha, 0, 1);
         return this;
     }
     
@@ -252,7 +251,12 @@ export abstract class Dw<T extends PIXI.DisplayObject> extends EventEmitter {
     }
     
     public destroy(): void {
-    
+        if (parent != null) {
+            this.parent.remove(this);
+        }
+        this.removeAllListeners();
+        
+        this.pixi.destroy();
     }
     
     public countRenderable(): number {

@@ -1,5 +1,5 @@
-import { PkDeviceAction } from '@ng/core/input/action/PkDeviceAction';
-import { PkInputEventType } from '@ng/core/input/enum/PkInputEventType';
+import { PkDeviceAction } from '@fwk/core/input/action/PkDeviceAction';
+import { PkInputEventType } from '@fwk/core/input/enum/PkInputEventType';
 
 export abstract class PkDeviceEvent {
     protected _deviceAction: PkDeviceAction;

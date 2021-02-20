@@ -1,5 +1,5 @@
-import { PkUIComponentContainer } from '@ng/ui/component/PkUIComponentContainer';
-import { PkUIContext } from '@ng/ui/PkUIContext';
+import { PkUIComponentContainer } from '@fwk/ui/component/PkUIComponentContainer';
+import { PkUIContext } from '@fwk/ui/PkUIContext';
 
 export class UIStackLayout extends PkUIComponentContainer {
     private _rowHeight: number;

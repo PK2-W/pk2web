@@ -1,6 +1,6 @@
-import { PkBaseTexture } from '@ng/types/image/PkBaseTexture';
-import { PkRectangle } from '@ng/types/PkRectangle';
-import { PkTexture } from '@ng/types/PkTexture';
+import { PkBaseTexture } from '@fwk/types/image/PkBaseTexture';
+import { PkRectangle } from '@fwk/types/PkRectangle';
+import { PkTexture } from '@fwk/types/PkTexture';
 
 export class TextureCache {
     private _baseTextures: Map<string, PkBaseTexture>;

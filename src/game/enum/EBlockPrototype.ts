@@ -42,6 +42,8 @@ export enum EBlockPrototype {
     BLOCK_ANIM3 = 70,
     /** Animated block 4 (75..79). */
     BLOCK_ANIM4 = 75,
+    BLOCK_WATER_SURFACE = 130,
+    BLOCK_WATERFALL = 131,
     BLOCK_VIRTA_VASEMMALLE = 140,
     BLOCK_VIRTA_OIKEALLE = 141,
     BLOCK_VIRTA_YLOS = 142,

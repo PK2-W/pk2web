@@ -3,9 +3,9 @@ import { TX } from '@game/texts';
 import { UIPlainText } from '@game/ui/component/UIPlainText';
 import { UIText } from '@game/ui/component/UIText';
 import { Screen } from '@game/ui/screen/Screen';
-import { DwSprite } from '@ng/drawable/dw/DwSprite';
-import { pathJoin } from '@ng/support/utils';
-import { PkAssetTk } from '@ng/toolkit/PkAssetTk';
+import { DwSprite } from '@fwk/drawable/dw/DwSprite';
+import { pathJoin } from '@fwk/support/utils';
+import { PkAssetTk } from '@fwk/toolkit/PkAssetTk';
 import { RESOURCES_PATH } from '@sp/constants';
 
 export class MapScreen extends Screen {

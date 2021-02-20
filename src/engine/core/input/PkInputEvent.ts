@@ -1,5 +1,5 @@
-import { PkInputEventType } from '@ng/core/input/enum/PkInputEventType';
-import { PkDeviceEvent } from '@ng/core/input/event/PkDeviceEvent';
+import { PkInputEventType } from '@fwk/core/input/enum/PkInputEventType';
+import { PkDeviceEvent } from '@fwk/core/input/event/PkDeviceEvent';
 
 export class PkInputEvent {
     public readonly deviceEvent: PkDeviceEvent;

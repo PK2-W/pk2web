@@ -4,12 +4,13 @@ import { EDamageType } from '@game/enum/EDamageType';
 import { SpriteAnimation } from '@game/sprite/SpriteAnimation';
 import { SpriteFuture } from '@game/sprite/SpriteFuture';
 import { SpritePrototype } from '@game/sprite/SpritePrototype';
-import { int, CBYTE, rand } from '@game/support/types';
+import { int, CBYTE } from '@game/support/types';
 import { BlockCollider } from '@game/tile/BlockCollider';
 import { BLOCK_SIZE } from '@game/tile/BlockConstants';
-import { DwSprite } from '@ng/drawable/dw/DwSprite';
-import { DwObjectBase } from '@ng/drawable/dwo/DwObjectBase';
-import { ndecs } from '@ng/support/utils';
+import { DwSprite } from '@fwk/drawable/dw/DwSprite';
+import { DwObjectBase } from '@fwk/drawable/dwo/DwObjectBase';
+import { PaletteFilter } from '@fwk/PaletteFilter';
+import { ndecs, rand } from '@fwk/support/utils';
 import { VAHINKO_AIKA } from '@sp/constants';
 
 /**
@@ -233,6 +234,8 @@ export class Sprite extends DwObjectBase<DwSprite> {
             //this._drawable.clear();
             //this._drawable.add(this._drawable);
             this._dw.setAnchor({ x: 0.5, y: 0.5 });
+            
+            this.dbgName = this._proto.name;
         }
     }
     
@@ -252,8 +255,8 @@ export class Sprite extends DwObjectBase<DwSprite> {
         const texture = this.proto.getFrame(frame);
         // if (texture == null) {
         //     console.debug(`Current frame texture for sprite ${ this.__iid__ } is empty.`);
-        if (this._dw.texture !== texture) {
-            this._dw.texture = texture;
+        if (this._dw.getNewTexture() !== texture) {
+            this._dw.setNewTexture(texture);
         }
         
         if (this.proto.shakes) {
@@ -279,7 +282,7 @@ export class Sprite extends DwObjectBase<DwSprite> {
             }
         }
         
-        this._dw.renderable = true;
+        this._dw.visible = true;
     }
     
     public causeDamage(level: number, type: EDamageType) {
@@ -356,7 +359,7 @@ export class Sprite extends DwObjectBase<DwSprite> {
             frame = this.proto.frameCount;
         }
         
-        this._dw.renderable = false;
+        this._dw.visible = false;
         
         return frame;
     }

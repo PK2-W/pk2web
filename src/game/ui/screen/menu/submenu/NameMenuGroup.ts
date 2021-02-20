@@ -5,8 +5,8 @@ import { UIText } from '@game/ui/component/UIText';
 import { UITextInput } from '@game/ui/component/UITextInput';
 import { UIWaveText } from '@game/ui/component/UIWaveText';
 import { MenuScreen } from '@game/ui/screen/menu/MenuScreen';
-import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
-import { PkUIComponentContainer } from '@ng/ui/component/PkUIComponentContainer';
+import { PkUIComponent } from '@fwk/ui/component/PkUIComponent';
+import { PkUIComponentContainer } from '@fwk/ui/component/PkUIComponentContainer';
 
 /**
  * SRC: PK_Draw_Menu_Name.

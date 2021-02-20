@@ -1,5 +1,5 @@
-import { Dw } from '@ng/drawable/dw/Dw';
-import { PkColor, TColor } from '@ng/types/PkColor';
+import { Dw } from '@fwk/drawable/dw/Dw';
+import { PkColor, TColor } from '@fwk/types/PkColor';
 
 export class DwCanvas extends Dw<PIXI.Graphics> {
     public constructor() {

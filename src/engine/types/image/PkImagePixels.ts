@@ -1,5 +1,5 @@
-import { PkImageTk } from '@ng/toolkit/PkImageTk';
-import { PkColor } from '@ng/types/PkColor';
+import { PkImageTk } from '@fwk/toolkit/PkImageTk';
+import { PkColor } from '@fwk/types/PkColor';
 
 export class PkImagePixels {
     private _dt: ImageData;

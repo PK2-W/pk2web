@@ -1,10 +1,11 @@
 import { GameContext } from '@game/game/GameContext';
 import { Particle } from '@game/particle/Particle';
 import { ParticleContext } from '@game/particle/ParticleContext';
-import { Log } from '@ng/support/log/LoggerImpl';
-import { PkBaseTexture } from '@ng/types/image/PkBaseTexture';
+import { int } from '@fwk/shared/bx-ctypes';
+import { Log } from '@fwk/support/log/LoggerImpl';
+import { rand } from '@fwk/support/utils';
+import { PkBaseTexture } from '@fwk/types/image/PkBaseTexture';
 import { STUFF_CKEY } from '@sp/constants';
-import { int, rand } from '../support/types';
 
 /**
  * SDL: PK2::Particle_System.
@@ -68,7 +69,6 @@ export class ParticleSystem implements ParticleContext {
         }
     }
     
-    /** @deprecated */
     // public new_particle(type: int, x: number, y: number, a: number, b: number, time: int, weight: number, color: int): void {
     //     const particle = new Particle(this, type, x, y, a, b, rand() % 63, time, weight, color);
     //     this.Particles.push(particle);

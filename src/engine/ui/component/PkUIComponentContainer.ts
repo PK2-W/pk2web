@@ -1,6 +1,6 @@
-import { PkTickable } from '@ng/support/PkTickable';
-import { PkUIComponent } from '@ng/ui/component/PkUIComponent';
-import { PkUIContext } from '@ng/ui/PkUIContext';
+import { PkTickable } from '@fwk/support/PkTickable';
+import { PkUIComponent } from '@fwk/ui/component/PkUIComponent';
+import { PkUIContext } from '@fwk/ui/PkUIContext';
 
 export abstract class PkUIComponentContainer<T extends PkUIContext = PkUIContext>
     extends PkUIComponent<T>

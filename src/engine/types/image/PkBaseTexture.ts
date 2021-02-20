@@ -1,8 +1,9 @@
-import { PkColor } from '@ng/types/PkColor';
-import { PkTexture } from '@ng/types/PkTexture';
+import { PkColor } from '@fwk/types/PkColor';
+import { PkTexture } from '@fwk/types/PkTexture';
 import { uint } from '@sp/types';
 import * as PIXI from 'pixi.js';
 
+/** @deprecated */
 export interface PkBaseTexture {
     /**
      * Image width.

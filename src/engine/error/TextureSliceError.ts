@@ -1,4 +1,4 @@
-import { PkError } from '@ng/error/PkError';
+import { PkError } from '@fwk/error/PkError';
 
 export class TextureSliceError extends PkError {
     public constructor(frameSize: PIXI.Rectangle, imageWidth: number, imageHeight: number) {

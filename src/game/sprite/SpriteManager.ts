@@ -4,10 +4,10 @@ import { GameContext } from '@game/game/GameContext';
 import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, LevelMap } from '@game/map/LevelMap';
 import { Sprite } from '@game/sprite/Sprite';
 import { SpritePrototype, TSpriteProtoCode, SpritePrototypeLoadError } from '@game/sprite/SpritePrototype';
-import { int, CVect, cvect, rand } from '@game/support/types';
-import { PkError } from '@ng/error/PkError';
-import { Log } from '@ng/support/log/LoggerImpl';
-import { pathJoin, ifnul, floor } from '@ng/support/utils';
+import { int, CVect, cvect } from '@game/support/types';
+import { PkError } from '@fwk/error/PkError';
+import { Log } from '@fwk/support/log/LoggerImpl';
+import { pathJoin, ifnul, floor, rand } from '@fwk/support/utils';
 import { MAX_SPRITES, MAX_SPRITE_TYPES, RESOURCES_PATH } from '@sp/constants';
 import { OutOfBoundsError } from '@sp/error/OutOfBoundsError';
 import { EventEmitter } from '@vendor/eventemitter3';
@@ -116,7 +116,7 @@ export class SpriteManager extends EventEmitter {
                         //> 🧍/episodeid/sprites/
                         pathJoin(this._context.episode.homePath, 'sprites')] : []),
                     //> 🏠/sprites/
-                    pathJoin(RESOURCES_PATH, 'sprites')];
+                    '/assets/sprites'];
                 
                 // Try to load the sprite prototipe from each possible location
                 const calls = fpaths.map(fpath => this.loadPrototype.bind(this, fpath, protoName));
@@ -280,10 +280,10 @@ export class SpriteManager extends EventEmitter {
             
             if (sprite != null && !sprite.isDiscarded()) {
                 sprite.active =
-                    sprite.x < this.ctx.cameraX + floor(this.ctx.device.screenWidth * 1.5) &&
-                    sprite.x > this.ctx.cameraX - floor(this.ctx.device.screenWidth * 0.5) &&
-                    sprite.y < this.ctx.cameraY + floor(this.ctx.device.screenHeight * 1.5) &&
-                    sprite.y > this.ctx.cameraY - floor(this.ctx.device.screenHeight * 0.5);
+                    sprite.x < this.ctx.camera.x + floor(this.ctx.device.screenWidth * 1.5) &&
+                    sprite.x > this.ctx.camera.x - floor(this.ctx.device.screenWidth * 0.5) &&
+                    sprite.y < this.ctx.camera.y + floor(this.ctx.device.screenHeight * 1.5) &&
+                    sprite.y > this.ctx.camera.y - floor(this.ctx.device.screenHeight * 0.5);
             }
         }
     }
