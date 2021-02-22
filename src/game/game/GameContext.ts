@@ -1,4 +1,5 @@
 import { PkFilesystem } from '@fwk/filesystem/PkFilesystem';
+import { Bitmap3Palette } from '@fwk/types/bitmap/Bitmap3Palette';
 import { GameComposition } from '@game/display/GameComposition';
 import { Entropy } from '@game/Entropy';
 import { Episode } from '@game/episodes/Episode';
@@ -29,6 +30,8 @@ export interface GameContext {
     readonly camera: PkCamera;
     
     readonly device: PkDevice;
+    
+    readonly palette: Bitmap3Palette;
     
     readonly stuff: PkAssetCache;
     readonly gameStuff: PkAssetCache;

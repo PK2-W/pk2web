@@ -956,6 +956,8 @@ export class BlockManager {
             //> 🏠/gfx/tiles/
             pathJoin('/assets/gfx/tiles/', filename));
         
+        this._spritesheet.bitmap.setPalette(this._context.palette);
+        
         // Crop final textures
         for (let j = 0; j < 15; j++) {
             for (let i = 0; i < 10; i++) {

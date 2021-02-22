@@ -73,7 +73,7 @@ export class PkFontAsset implements PkFont {
         const path = this._url.substring(0, this._url.lastIndexOf('/')) + '/';
         const imagePath = this._parameters.get('image');
         
-        this._bitmap = await PkAssetTk.getBitmap(pathJoin(path, imagePath));
+        this._bitmap = await   PkAssetTk.getBitmap(pathJoin(path, imagePath));
         this._bitmap.makeColorTransparent();
         // TODO: Control error
         //	temp_image = PisteDraw2_Image_Load(_uri,false);

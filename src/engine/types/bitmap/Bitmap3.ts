@@ -1,16 +1,17 @@
-import { ifnul } from '@fwk/support/utils';
+import { uint, uint16, uint32, uint8 } from '@fwk/shared/bx-ctypes';
+import { Log } from '@fwk/support/log/LoggerImpl';
 import { Bitmap3Palette } from '@fwk/types/bitmap/Bitmap3Palette';
-import { BitmapTx } from '@fwk/types/bitmap/BitmapTx';
 import { BitmapFormatError } from '@fwk/types/image/PkBitmapBT';
 import { PkBinary } from '@fwk/types/PkBinary';
 import { PkColor } from '@fwk/types/PkColor';
-import { uint, uint16, uint32, uint8 } from '@fwk/shared/bx-ctypes';
 import { PkRectangle } from '@fwk/types/PkRectangle';
-import { PkTexture } from '@fwk/types/PkTexture';
 import { OutOfBoundsError } from '@sp/error/OutOfBoundsError';
-import * as PIXI from 'pixi.js';
+import { EventEmitter } from 'eventemitter3';
 
-export class Bitmap3 {
+export class Bitmap3 extends EventEmitter {
+    /**
+     * Final representacion as a [RGBA...] binary buffer.
+     */
     private _imageBuffer: PkBinary;
     
     private _width: uint;
@@ -20,6 +21,9 @@ export class Bitmap3 {
     
     private _initialPalette: Bitmap3Palette;
     private _palette: Bitmap3Palette;
+    /**
+     * If the bitmap has palette, matrix of the color indexes in the palette.
+     */
     private _colorMap: PkBinary;
     
     /**
@@ -87,7 +91,14 @@ export class Bitmap3 {
         if (paletteLen > 0) {
             bmp._initialPalette = new Bitmap3Palette(paletteLen);
             bmp._palette = bmp._initialPalette;
-            bmp._palette.fillFromStream(bin);
+            for (let i = 0; i < paletteLen; i++) {
+                bmp._palette.set(i, PkColor.bgr(
+                    bin.streamReadUint8(),  // blue
+                    bin.streamReadUint8(),  // green
+                    bin.streamReadUint8())  // red
+                );
+                bin.streamOffset++;         // must be zero
+            }
         }
         
         // Prepare image buffer
@@ -160,7 +171,7 @@ export class Bitmap3 {
         return bmp;
     }
     
-    public static fromBitmap(src: Bitmap3, frame: PkRectangle): Bitmap3 {
+    public static fromBitmap(src: Bitmap3, frame?: PkRectangle): Bitmap3 {
         //  if (frame.co)
         
         if (frame == null) {
@@ -200,7 +211,9 @@ export class Bitmap3 {
     }
     
     
-    constructor(width: number, height: number) {
+    public constructor(width: number, height: number) {
+        super();
+        
         this._width = width;
         this._height = height;
         
@@ -209,6 +222,42 @@ export class Bitmap3 {
     
     
     ///  Palette  ///
+    
+    /**
+     *
+     * @param palette
+     */
+    public setPalette(palette: Bitmap3Palette): void {
+        if (palette.size < this._paletteColors) {
+            throw new Error(`[Bitmap] Number of colors in replacement palette is lower than the required by the bitmap (${ this._paletteColors }).`);
+        }
+        if (palette.size > this._paletteColors) {
+            Log.w(`[Bitmap] Number of colors in replacement palette is greater than the used by the bitmap (${ this._paletteColors }).`);
+        }
+        
+        this._palette = palette;
+        
+        let colorIdx: uint8,
+            color: PkColor;
+        for (let j = 0; j < this._height; j++) {
+            for (let i = 0; i < this._width; i++) {
+                // Get palette index
+                colorIdx = this.getPixelIndex(i, j);
+                
+                // Update the buffer
+                color = colorIdx === 255
+                    ? PkColor.TRANSPARENT
+                    : this.palette.get(colorIdx);
+                
+                this._imageBuffer.writeUint8(j * this._width * 4 + i * 4, color.r);
+                this._imageBuffer.writeUint8(j * this._width * 4 + i * 4, color.g);
+                this._imageBuffer.writeUint8(j * this._width * 4 + i * 4, color.b);
+                this._imageBuffer.writeUint8(j * this._width * 4 + i * 4, color.a255);
+            }
+        }
+        
+        this.emit(Bitmap3.EV_CHANGE);
+    }
     
     /**
      * Number of colors in the palette.
@@ -266,7 +315,7 @@ export class Bitmap3 {
         }
         // Check index format
         if (index < 0 || index >= this._paletteColors) {
-            throw new OutOfBoundsError(`The specified palette index (${ index }) is out of the palette range (${ this._bitsPerPx }bits [0-${ this.paletteSize }]).`);
+            throw new OutOfBoundsError(`The specified palette index (${ index }) is out of the palette range (${ this._bitsPerPx }bits [0-${ this.palette.size }]).`);
         }
         
         // Update the index buffer
@@ -305,6 +354,10 @@ export class Bitmap3 {
     
     public crop(frame: PkRectangle): Bitmap3 {
         return Bitmap3.fromBitmap(this, frame);
+    }
+    
+    public clone() {
+        return Bitmap3.fromBitmap(this);
     }
     
     private updateBuffer(): void {
@@ -350,4 +403,9 @@ export class Bitmap3 {
     public get buffer(): PkBinary {
         return this._imageBuffer;
     }
+    
+    
+    ///  Events  ///
+    
+    public static readonly EV_CHANGE = Symbol('change.bitmap.ev');
 }

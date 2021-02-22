@@ -1,28 +1,33 @@
 import { uint8 } from '@fwk/shared/bx-ctypes';
 import { ifnul } from '@fwk/support/utils';
-import { PkBinary } from '@fwk/types/PkBinary';
 import { PkColor } from '@fwk/types/PkColor';
 import { EventEmitter } from 'eventemitter3';
 
 export class Bitmap3Palette extends EventEmitter {
-    private readonly _palette: PkBinary;
+    private _colorMap: PkColor[];
     private _size: uint8;
     
-    public constructor(initialSize: uint8 = 256) {
+    public constructor(size: uint8 = 256) {
         super();
         
-        this._palette = new PkBinary(256);
-        this._size = initialSize;
+        this._colorMap = new Array(size);
+        this._size = size;
     }
     
-    public fillFromStream(binary: PkBinary): void {
-        for (let i = 0; i < this._size; i++) {
-            this._palette[i] = PkColor.bgr(
-                binary.streamReadUint8(),   // blue
-                binary.streamReadUint8(),   // green
-                binary.streamReadUint8());  // red
-            binary.streamOffset++;          // must be zero
-        }
+    /**
+     * Returns a copy of the specified instance.
+     */
+    public static clone(palette: Bitmap3Palette): Bitmap3Palette {
+        const self = new Bitmap3Palette(palette._size);
+        self._colorMap = [...palette._colorMap];
+        return self;
+    }
+    
+    /**
+     * Returns the size of the palette.
+     */
+    public get size(): uint8 {
+        return this._size;
     }
     
     /**
@@ -31,7 +36,7 @@ export class Bitmap3Palette extends EventEmitter {
      * @param index - Index of the desired color in the bitmap's palette.
      */
     public get(index: uint8): PkColor {
-        return ifnul(this._palette[index]);
+        return ifnul(this._colorMap[index]);
     }
     
     /**
@@ -41,7 +46,9 @@ export class Bitmap3Palette extends EventEmitter {
      * @param color - Color to set.
      */
     public set(index: uint8, color: PkColor): void {
-        this._palette[index] = color.clone();
+        this._colorMap[index] = color.clone();
+        
+        this.emit(Bitmap3Palette.EV_CHANGE, index, color);
     }
     
     /**
@@ -52,5 +59,15 @@ export class Bitmap3Palette extends EventEmitter {
         return this.get(this._size - 1);
     }
     
+    /**
+     * Returns a copy of this palette.
+     */
+    public clone(): Bitmap3Palette {
+        return Bitmap3Palette.clone(this);
+    }
     
+    
+    ///  Events  ///
+    
+    public static readonly EV_CHANGE = Symbol('change.palette.ev');
 }

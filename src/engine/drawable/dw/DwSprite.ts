@@ -8,7 +8,7 @@ import type { PkTexture } from '@fwk/types/PkTexture';
 export class DwSprite extends Dw<PIXI.Sprite> {
     /** @deprecated */
     private _texture: PkTexture<any>;
-    private _newTexture: NewTexture<any>;
+    private _newTexture: NewTexture;
     
     public constructor() {
         super(new PIXI.Sprite());
@@ -31,7 +31,7 @@ export class DwSprite extends Dw<PIXI.Sprite> {
         return this._newTexture;
     }
     
-    public setNewTexture(texture: NewTexture<PkPaletteBitmapResource>): this {
+    public setNewTexture(texture: NewTexture): this {
         this._newTexture = texture;
         this._pixi.texture = texture.getPixiTexture();
         return this;

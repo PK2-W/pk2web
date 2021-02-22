@@ -26,7 +26,7 @@ module.exports = {
             '@game': to('./game'),
             //     '@s:be': to('../src/backend'),
             //     '@s:fe': to('../src/frontend'),
-            '@ng': to('./engine'),
+            '@fwk': to('./engine'),
             //     '@s:sp': to('../src/support'),
             //
             //     '@c:app': to('./app'),
@@ -73,6 +73,7 @@ module.exports = {
         //new ForkTsCheckerWebpackPlugin({ tsconfig: to('tsconfig.json') })
     ],
     externals: {
-        'pixi.js': 'PIXI'
+        'pixi.js': 'PIXI',
+        'ft2.js': 'Fasttracker'
     }
 };

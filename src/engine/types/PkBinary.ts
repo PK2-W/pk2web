@@ -120,6 +120,10 @@ export class PkBinary {
         return this._xBlob;
     }
     
+    public get buffer(): ArrayBuffer {
+        return this._ab;
+    }
+    
     
     ///  Stream  ///
     

@@ -1,7 +1,7 @@
 import { NewTextureResource } from '@fwk/texture/NewTextureResource';
 import * as PIXI from 'pixi.js';
 
-export class NewTexture<T extends NewTextureResource> {
+export class NewTexture<T extends NewTextureResource = NewTextureResource> {
     private readonly _resource: T;
     
     private _cache_pixiTexture: PIXI.Texture;

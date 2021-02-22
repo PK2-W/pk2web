@@ -1,6 +1,8 @@
 import { DwContainer } from '@fwk/drawable/dw/DwContainer';
 import { DwSprite } from '@fwk/drawable/dw/DwSprite';
 import { DwObjectBase } from '@fwk/drawable/dwo/DwObjectBase';
+import { NewTexture } from '@fwk/texture/NewTexture';
+import { PkPaletteBitmapResource } from '@fwk/texture/PkPaletteBitmapResource';
 import { PkBaseTexture } from '@fwk/types/image/PkBaseTexture';
 import { TPoint } from '@fwk/types/IPoint';
 import { PkTexture } from '@fwk/types/PkTexture';
@@ -11,9 +13,9 @@ export class DwTilingSprite extends DwObjectBase<DwContainer> {
     private _anchor: TPoint;
     private _scale: TPoint;
     private _spriteBuffer: DwSprite[];
-    private _texture: PkTexture<PkBaseTexture>;
+    private _texture: NewTexture;
     
-    public constructor(texture: PkTexture<PkBaseTexture>, width: number, height: number) {
+    public constructor(texture: NewTexture, width: number, height: number) {
         super(new DwContainer);
         
         this._texture = texture;
@@ -77,14 +79,14 @@ export class DwTilingSprite extends DwObjectBase<DwContainer> {
         return this;
     }
     
-    public get texture(): PkTexture<PkBaseTexture> {
+    public get texture(): NewTexture {
         return this._texture;
     }
-    public set texture(texture: PkTexture<PkBaseTexture>) {
+    public set texture(texture: NewTexture) {
         this._texture = texture;
         this.arrange();
     }
-    public setTexture(texture: PkTexture<PkBaseTexture>): this {
+    public setTexture(texture: NewTexture): this {
         this.texture = texture;
         return this;
     }
@@ -120,7 +122,7 @@ export class DwTilingSprite extends DwObjectBase<DwContainer> {
             for (let j = 0; j < jCount; j++) {
                 for (let i = 0; i < iCount; i++) {
                     spr = this._spriteBuffer[j * iCount + i]
-                        .setTexture(this._texture)
+                        .setNewTexture(this._texture)
                         .setPosition(i * this._texture.width, j * this._texture.height)
                         .addTo(this.dw);
                 }

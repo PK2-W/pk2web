@@ -89,6 +89,10 @@ export class PkPaletteBitmapResource extends NewTextureResource {
         this.getPixiResource().update();
     }
     
+    public clone(): PkPaletteBitmapResource {
+        return PkPaletteBitmapResource.fromBitmap(this._bitmap.clone());
+    }
+    
     
     ///  PIXI  ///
     

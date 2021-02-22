@@ -34,7 +34,7 @@ const TITLE_Y = 90;
 
 export class MenuScreen extends Screen {
     private _music: PkAudio;
-    private _bgImage: PkBitmapBT;
+    private _bgImage: PkPaletteBitmapResource;
     private _bgDrawable: DwSprite;
     
     private _square: UIMenuSquare;
@@ -63,9 +63,9 @@ export class MenuScreen extends Screen {
         this._music = await this.context.fs.getAudio('/assets/music/song09.xm', PkAudioType.MOD);
         
         // Load and prepare background
-        this._bgImage = await PkAssetTk.getBitmap(pathJoin(RESOURCES_PATH, 'gfx/menu.bmp'));
+        this._bgImage = await this.context.fs.getPaletteBitmap( '/assets/gfx/menu.bmp');
         this._bgDrawable = new DwSprite()
-            .setTexture(this._bgImage.getTexture())
+            .setNewTexture(this._bgImage.getTexture())
             .addTo(this._dw);
         
         // Prepare square

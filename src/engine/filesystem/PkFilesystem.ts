@@ -8,6 +8,7 @@ import { Bitmap3 } from '@fwk/types/bitmap/Bitmap3';
 import { PkBitmapBT } from '@fwk/types/image/PkBitmapBT';
 import { PkBinary } from '@fwk/types/PkBinary';
 import { PkAudio, PkAudioType } from '@fwk/types/audio/PkAudio';
+import { PkSound } from '@fwk/types/PkSound';
 
 export class PkFilesystem {
     private _mountpoints: Map<string, PkFs>;
@@ -156,5 +157,17 @@ export class PkFilesystem {
     public async getAudio(uri: string, type: PkAudioType): Promise<PkAudio> {
         Log.d('[~Fs] Getting \'', uri, '\' as audio file');
         return PkAudio.fromBinary(await this.getBinary(uri, true), type, uriFilename(uri));
+    }
+    
+    public async getSound(...uris: string[]): Promise<PkSound> {
+        try {
+            Log.d('[~Fs] Getting \'', uris[0], '\' as sound');
+            const asset = PkSound.fromBinary(await this.getBinaryX(...uris/*, true*/));
+            if (asset != null) asset['__delta'] = uris[0];
+            return asset;
+        } catch (err) {
+            if (err instanceof AssetFetchError) err.type = 'sound';
+            throw err;
+        }
     }
 }

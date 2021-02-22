@@ -80,8 +80,16 @@ export class SpritePrototype {
     private _animaatiot: CVect<SpriteAnimation> = cvect(SPRITE_MAX_ANIMAATIOITA);	// animaatio sekvenssit
     private _animaatioita: CBYTE;									// animaatioiden m��r�
     private _frameRate: CBYTE;										// yhden framen kesto
-    private _kuva_x: int;											// miss� kohtaa kuvaa sprite on
-    private _kuva_y: int;											// miss� kohtaa kuvaa sprite on
+    /**
+     * X position in the spritesheet where the sprite frames begin.<br>
+     * (miss� kohtaa kuvaa sprite on)
+     */
+    private _kuva_x: int;
+    /**
+     * Y position in the spritesheet where the sprite frames begin.<br>
+     * (miss� kohtaa kuvaa sprite on)
+     */
+    private _kuva_y: int;
     /** Width of a frame in the sheet. */
     private _frameWidth: int;
     /** Height of a frame in the sheet. */
@@ -415,24 +423,25 @@ export class SpritePrototype {
         }
         
         // For debug possible errors
-        Log.dg(
-            [`[SpritePrototype] Loaded descriptor for sprite "${ this.fname }"`],
-            [`Version: ${ this._version }`],
-            [`Max jump: ${ this._maxJump }`],
-            [`Max speed: ${ this._maxSpeed }`],
-            [`Energy: ${ this._energy }`],
-            [`Weight: ${ this._weight }`],
-            [`Frames: ${ this._frameCount }`],
-            [`Animations: [${ this._animaatiot.join(',') }]`],
-            [`Behaviours: [${ this._AI.filter(ai => ai != 0).map(ai => EAi[ai]).join(', ') }]`],
-            [`Sounds: [${ this._aanitiedostot.filter(sfx => sfx != null).join(', ') }]`]
+        Log.d(
+            `[SpritePrototype] Loaded descriptor for sprite "${ this.fname }"\n` +
+            ` - Version: ${ this._version }\n` +
+            ` - Max jump: ${ this._maxJump }\n` +
+            ` - Max speed: ${ this._maxSpeed }\n` +
+            ` - Energy: ${ this._energy }\n` +
+            ` - Weight: ${ this._weight }\n` +
+            ` - Frames: ${ this._frameCount }\n` +
+            ` - Animations: [${ this._animaatiot.join(',') }]\n` +
+            ` - Behaviours: [${ this._AI.filter(ai => ai != 0).map(ai => EAi[ai]).join(', ') }]\n` +
+            ` - Sounds: [${ this._aanitiedostot.filter(sfx => sfx != null).join(', ') }]`
         );
         
         // Get the spritesheet bitmap
         // The same spritesheet can be used by multiple sprites, so let's use cache
-        let bitmap: PkPaletteBitmapResource;
+        let resource: PkPaletteBitmapResource;
         try {
-            bitmap = await this._context.fs.getPaletteBitmap(pathJoin(fpath, this._spritesheetName));
+            resource = await this._context.fs.getPaletteBitmap(pathJoin(fpath, this._spritesheetName));
+            resource.bitmap.setPalette(this._context.palette);
             //bitmap.makeColorTransparent();
         } catch (err) {
             // Register and notify the error, but don't raise it
@@ -442,30 +451,25 @@ export class SpritePrototype {
         }
         
         // The remaining tasks are only done if the bitmap was succesfully loaded
-        if (bitmap != null) {
-            // //Set diferent colors
-            // BYTE *buffer = NULL;
-            // DWORD leveys;
-            // BYTE vari;
-            // int x,y,w,h;
+        if (resource != null) {
             
-            // TODO
-            // if (this._vari !== EColor.VARI_NORMAALI) { //Change sprite colors
-            //     bitmap = bitmap.clone();
-            //
-            //     for (let j = 0; j < bitmap.height; j++) {
-            //         for (let i = 0; i < bitmap.width; i++) {
-            //             const index = bitmap.getPixelIndex(i, j);
-            //             if (index != 255) {
-            //                 bitmap.setPixelIndex(i, j, (index % 32) + this._vari);
-            //             }
-            //         }
-            //     }
-            // }
+            // Apply sprite tinting
+            if (this._vari !== EColor.VARI_NORMAALI) {
+                // Clone the resource (palette keeps linked)
+                resource = resource.clone();
+                
+                for (let j = 0; j < resource.height; j++) {
+                    for (let i = 0; i < resource.width; i++) {
+                        const color = resource.bitmap.getPixelIndex(i, j);
+                        if (color != 255) {
+                            resource.bitmap.setPixelIndex(i, j, (color % 32) + this._vari);
+                        }
+                    }
+                }
+            }
             
-            // Get each animation frame of the sprite from the spritesheet ¬
-            
-            // Start point is the specified in the descriptor
+            // CROP EACH ANIMATION FRAME FROM THE SPRITESHEET
+            // Start point is the specified one in the descriptor
             let frame_x = this._kuva_x;
             let frame_y = this._kuva_y;
             
@@ -478,7 +482,7 @@ export class SpritePrototype {
                 // Get each frame slicing the spritesheet
                 // Flipped frames are generated dynamically
                 try {
-                    this._frames[f] = bitmap
+                    this._frames[f] = resource
                         .crop(PkRectangle.$(frame_x, frame_y, this._frameWidth, this._frameHeight))
                         .getTexture();
                 } catch (err) {
@@ -514,10 +518,10 @@ export class SpritePrototype {
                     //> 🧍/episodeid/sprites/
                     ...(this._context.episode.isCommunity() ? [pathJoin(this._context.episode.homePath, 'sprites')] : []),
                     //> 🏠/sprites/
-                    pathJoin(RESOURCES_PATH, 'sprites')];
+                    '/assets/sprites'];
                 
                 try {
-                    this._aanet[i] = await this._context.gameStuff.fetchSound(fpaths.map(fpath => pathJoin(fpath, fname)));
+                    this._aanet[i] = await this._context.fs.getSound(...fpaths.map(fpath => pathJoin(fpath, fname)));
                 } catch (err) {
                     // Register and notify the error, but don't raise it
                     err = new SpritePrototypeMinorError(`Unable to get sound {${ i }}:{${ fname }} for sprite {${ this.name }}.`, err);

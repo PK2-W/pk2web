@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import { PkFilesystem } from '@fwk/filesystem/PkFilesystem';
+import { NewTextureResource } from '@fwk/texture/NewTextureResource';
+import { PkPaletteBitmapResource } from '@fwk/texture/PkPaletteBitmapResource';
+import { Bitmap3Palette } from '@fwk/types/bitmap/Bitmap3Palette';
 import { GameComposition } from '@game/display/GameComposition';
 import { Effects } from '@game/effects/Effects';
 import { Entropy } from '@game/Entropy';
@@ -62,6 +65,7 @@ import {
     LAND_SOUND_CKEY,
     SOUND_SAMPLERATE
 } from '@sp/constants';
+import { NewTexture } from '@fwk/texture/NewTexture';
 
 export class Game implements GameContext, PkTickable {
     private readonly _context: PekkaContext;
@@ -292,10 +296,10 @@ export class Game implements GameContext, PkTickable {
     }
     
     private async _loadBgImage(fpath: string, fname: string): Promise<void> {
-        const bt = await PkAssetTk.getBitmap(
+        const bt = await this._context.fs.getPaletteBitmap(
             ...(this.episode.isCommunity() ? [pathJoin(this.episode.homePath, 'gfx/scenery/', fname)] : []),
             pathJoin(fpath, fname),
-            pathJoin(RESOURCES_PATH, 'gfx/scenery/', fname));
+            pathJoin('/assets/gfx/scenery/', fname));
         this._bgTexture = bt.getTexture();
     }
     

@@ -1,4 +1,5 @@
 import { Log } from '@fwk/support/log/LoggerImpl';
+import { PkBinary } from '@fwk/types/PkBinary';
 
 export class PkSound {
     private readonly _audioCtx: AudioContext;
@@ -7,6 +8,12 @@ export class PkSound {
     public static async fromArrayBuffer(raw: ArrayBuffer): Promise<PkSound> {
         const sound = new PkSound();
         await sound.decode(raw);
+        return sound;
+    }
+    
+    public static async fromBinary(binary: PkBinary): Promise<PkSound> {
+        const sound = new PkSound();
+        await sound.decode(binary.buffer);
         return sound;
     }
     
