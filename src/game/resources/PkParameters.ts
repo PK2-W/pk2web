@@ -1,7 +1,24 @@
-export class PkParameters {
+import { PkResourceBase } from '@fwk/filesystem/PkResource';
+import { ifnul } from '@fwk/support/utils';
+import { PekkaContext } from '@game/PekkaContext';
+
+export class PkParameters extends PkResourceBase {
     private readonly _parameters: Map<string, string>;
     
+    public static async fetch(uris: string[], context: PekkaContext, child: boolean = false) {
+        // Get the file as plain text
+        const text = await context.fs.fetchPlainText(uris, true);
+        // Instance object
+        const instance = new PkParameters(text.resource);
+        // Assign the resource URI
+        instance._uri = text.uri;
+        
+        return instance;
+    }
+    
     public constructor(raw: string) {
+        super();
+        
         this._parameters = new Map();
         this._parse(raw);
     }
@@ -52,8 +69,7 @@ export class PkParameters {
         if (this._parameters == null)
             return null;
         
-        const txt = this._parameters.get(param);
-        return (txt != null) ? txt : null;
+        return ifnul(this._parameters.get(param));
     }
     
     // public getAll(): { [key: string]: string } {

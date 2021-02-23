@@ -1,6 +1,6 @@
 import { uint, uint16, uint32, uint8 } from '@fwk/shared/bx-ctypes';
 import { Log } from '@fwk/support/log/LoggerImpl';
-import { Bitmap3Palette } from '@fwk/types/bitmap/Bitmap3Palette';
+import { BitmapPalette } from '@fwk/shared/bx-bitmap-palette';
 import { BitmapFormatError } from '@fwk/types/image/PkBitmapBT';
 import { PkBinary } from '@fwk/types/PkBinary';
 import { PkColor } from '@fwk/types/PkColor';
@@ -8,7 +8,7 @@ import { PkRectangle } from '@fwk/types/PkRectangle';
 import { OutOfBoundsError } from '@sp/error/OutOfBoundsError';
 import { EventEmitter } from 'eventemitter3';
 
-export class Bitmap3 extends EventEmitter {
+export class Bitmap extends EventEmitter {
     /**
      * Final representacion as a [RGBA...] binary buffer.
      */
@@ -19,19 +19,20 @@ export class Bitmap3 extends EventEmitter {
     private _bitsPerPx: uint16;
     private _paletteColors: uint32;
     
-    private _initialPalette: Bitmap3Palette;
-    private _palette: Bitmap3Palette;
+    private _initialPalette: BitmapPalette;
+    private _palette: BitmapPalette;
     /**
      * If the bitmap has palette, matrix of the color indexes in the palette.
      */
     private _colorMap: PkBinary;
+    
     
     /**
      * The provided binary object is never changed.
      *
      * @param bin
      */
-    public static fromBinary(bin: PkBinary): Bitmap3 {
+    public static fromBinary(bin: PkBinary): Bitmap {
         if (bin == null) {
             return null;
         }
@@ -53,7 +54,7 @@ export class Bitmap3 extends EventEmitter {
         
         const width = bin.streamReadUint32();   // width
         const height = bin.streamReadUint32();  // height
-        const bmp = new Bitmap3(width, height);
+        const bmp = new Bitmap(width, height);
         
         const planes = bin.streamReadUint16();  // planes
         if (planes > 1) {
@@ -89,7 +90,7 @@ export class Bitmap3 extends EventEmitter {
         }
         // If final size > 0 -> instance new palette and fill
         if (paletteLen > 0) {
-            bmp._initialPalette = new Bitmap3Palette(paletteLen);
+            bmp._initialPalette = new BitmapPalette(paletteLen);
             bmp._palette = bmp._initialPalette;
             for (let i = 0; i < paletteLen; i++) {
                 bmp._palette.set(i, PkColor.bgr(
@@ -99,6 +100,7 @@ export class Bitmap3 extends EventEmitter {
                 );
                 bin.streamOffset++;         // must be zero
             }
+            bmp._palette.on(BitmapPalette.EV_CHANGE, bmp._onPaletteChange, bmp);
         }
         
         // Prepare image buffer
@@ -106,7 +108,7 @@ export class Bitmap3 extends EventEmitter {
         
         // If palette is applicable, fill color map
         if (bmp.usesPalette()) {
-            let index: uint8,
+            let colorIdx: uint8,
                 color: PkColor;
             
             bmp._colorMap = new PkBinary(bmp._width * bmp._height);
@@ -114,15 +116,15 @@ export class Bitmap3 extends EventEmitter {
             for (let j = bmp._height - 1; j >= 0; j--) {
                 for (let i = 0; i < bmp._width; i++) {
                     // Get palette index and save to raw buffer
-                    index = bin.readUint8(bin.streamOffset + j * bmp._width + i);
-                    bmp._colorMap.streamWriteUint8(index);
+                    colorIdx = bin.readUint8(bin.streamOffset + j * bmp._width + i);
+                    bmp._colorMap.streamWriteUint8(colorIdx);
                     
                     // Obtain color an save to image buffer
-                    color = bmp.palette.get(index);
+                    color = bmp.palette.get(colorIdx);
                     bmp._imageBuffer.streamWriteUint8(color.r);
                     bmp._imageBuffer.streamWriteUint8(color.g);
                     bmp._imageBuffer.streamWriteUint8(color.b);
-                    bmp._imageBuffer.streamWriteUint8(255);
+                    bmp._imageBuffer.streamWriteUint8(color.a255);
                 }
             }
         } else {
@@ -171,20 +173,21 @@ export class Bitmap3 extends EventEmitter {
         return bmp;
     }
     
-    public static fromBitmap(src: Bitmap3, frame?: PkRectangle): Bitmap3 {
+    public static fromBitmap(src: Bitmap, frame?: PkRectangle): Bitmap {
         //  if (frame.co)
         
         if (frame == null) {
             frame = PkRectangle.$(0, 0, src._width, src._height);
         }
         
-        const dst = new Bitmap3(frame.width, frame.height);
+        const dst = new Bitmap(frame.width, frame.height);
         
         dst._bitsPerPx = src._bitsPerPx;
         dst._paletteColors = src._paletteColors;
         
         dst._initialPalette = src._palette;
         dst._palette = src._palette;
+        dst._palette.on(BitmapPalette.EV_CHANGE, dst._onPaletteChange, dst);
         
         dst._colorMap = new PkBinary(dst._width * dst._height);
         
@@ -227,7 +230,7 @@ export class Bitmap3 extends EventEmitter {
      *
      * @param palette
      */
-    public setPalette(palette: Bitmap3Palette): void {
+    public setPalette(palette: BitmapPalette): void {
         if (palette.size < this._paletteColors) {
             throw new Error(`[Bitmap] Number of colors in replacement palette is lower than the required by the bitmap (${ this._paletteColors }).`);
         }
@@ -236,6 +239,7 @@ export class Bitmap3 extends EventEmitter {
         }
         
         this._palette = palette;
+        this._palette.on(BitmapPalette.EV_CHANGE, this._onPaletteChange, this);
         
         let colorIdx: uint8,
             color: PkColor;
@@ -250,19 +254,39 @@ export class Bitmap3 extends EventEmitter {
                     : this.palette.get(colorIdx);
                 
                 this._imageBuffer.writeUint8(j * this._width * 4 + i * 4, color.r);
-                this._imageBuffer.writeUint8(j * this._width * 4 + i * 4, color.g);
-                this._imageBuffer.writeUint8(j * this._width * 4 + i * 4, color.b);
-                this._imageBuffer.writeUint8(j * this._width * 4 + i * 4, color.a255);
+                this._imageBuffer.writeUint8(j * this._width * 4 + i * 4 + 1, color.g);
+                this._imageBuffer.writeUint8(j * this._width * 4 + i * 4 + 2, color.b);
+                this._imageBuffer.writeUint8(j * this._width * 4 + i * 4 + 3, color.a255);
             }
         }
         
-        this.emit(Bitmap3.EV_CHANGE);
+        this.emit(Bitmap.EV_CHANGE);
+    }
+    
+    private _onPaletteChange(index: uint8, color: PkColor) {
+        let colorIdx: uint8;
+        
+        for (let j = 0; j < this._height; j++) {
+            for (let i = 0; i < this._width; i++) {
+                // Get palette index
+                colorIdx = this.getPixelIndex(i, j);
+                
+                if (colorIdx === index) {
+                    this._imageBuffer.writeUint8(j * this._width * 4 + i * 4, color.r);
+                    this._imageBuffer.writeUint8(j * this._width * 4 + i * 4 + 1, color.g);
+                    this._imageBuffer.writeUint8(j * this._width * 4 + i * 4 + 2, color.b);
+                    this._imageBuffer.writeUint8(j * this._width * 4 + i * 4 + 3, color.a255);
+                }
+            }
+        }
+        
+        this.emit(Bitmap.EV_CHANGE);
     }
     
     /**
      * Number of colors in the palette.
      */
-    public get palette(): Bitmap3Palette {
+    public get palette(): BitmapPalette {
         return this._palette;
     }
     
@@ -326,7 +350,7 @@ export class Bitmap3 extends EventEmitter {
         this._imageBuffer.writeUint8((j * this.width + i) * 4, pcolor.r);
         this._imageBuffer.writeUint8((j * this.width + i) * 4 + 1, pcolor.g);
         this._imageBuffer.writeUint8((j * this.width + i) * 4 + 2, pcolor.b);
-        this._imageBuffer.writeUint8((j * this.width + i) * 4 + 3, index == 255 ? 0 : 255);
+        this._imageBuffer.writeUint8((j * this.width + i) * 4 + 3, pcolor.a255);
         
         return this;
     }
@@ -352,12 +376,12 @@ export class Bitmap3 extends EventEmitter {
     //     }
     // }
     
-    public crop(frame: PkRectangle): Bitmap3 {
-        return Bitmap3.fromBitmap(this, frame);
+    public crop(frame: PkRectangle): Bitmap {
+        return Bitmap.fromBitmap(this, frame);
     }
     
     public clone() {
-        return Bitmap3.fromBitmap(this);
+        return Bitmap.fromBitmap(this);
     }
     
     private updateBuffer(): void {

@@ -1,12 +1,12 @@
 import { AssetFetchError } from '@fwk/error/AssetFetchError';
 import { AssetNotFoundError } from '@fwk/error/AssetNotFoundError';
 import { Log } from '@fwk/support/log/LoggerImpl';
-import { Bitmap3 } from '@fwk/types/bitmap/Bitmap3';
+import { Bitmap } from '@fwk/shared/bx-bitmap';
 import { PkFontAsset } from '@fwk/types/font/PkFontAsset';
 import { PkBitmapBT } from '@fwk/types/image/PkBitmapBT';
 import { PkImageBitmapBT } from '@fwk/types/image/PkImageBitmapBT';
 import { PkBinary } from '@fwk/types/PkBinary';
-import { PkParameters } from '@fwk/types/PkParameters';
+import { PkParameters } from '@game/resources/PkParameters';
 import { PkSound } from '@fwk/types/PkSound';
 
 export class PkAssetTk {
@@ -38,6 +38,7 @@ export class PkAssetTk {
     // }
     
     /**
+     * @deprecated
      * Obtains the specified parametrers file from the Internet.
      *
      * @param url - Full URL of the resource.
@@ -152,6 +153,7 @@ export class PkAssetTk {
     }
     
     /**
+     * @deprecated
      * Obtains the specified font resource from the Internet.
      *
      * @param url - Full URL of the resource.

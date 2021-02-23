@@ -1,5 +1,5 @@
 import { PekkaContext } from '@game/PekkaContext';
-import { PkParameters } from '@fwk/types/PkParameters';
+import { PkParameters } from '@game/resources/PkParameters';
 import { PkScreen } from '@fwk/ui/PkScreen';
 
 export class Screen extends PkScreen<PekkaContext> {

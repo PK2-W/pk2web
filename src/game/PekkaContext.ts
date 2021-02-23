@@ -9,7 +9,7 @@ import { PkInput } from '@fwk/core/PkInput';
 import { PkFilesystem } from '@fwk/filesystem/PkFilesystem';
 import { PkAssetCache } from '@fwk/PkAssetCache';
 import { PkFont } from '@fwk/types/font/PkFont';
-import { PkParameters } from '@fwk/types/PkParameters';
+import { PkParameters } from '@game/resources/PkParameters';
 import { PkAudioChannel } from '@fwk/audio/PkAudioChannel';
 import { PkUIContext } from '@fwk/ui/PkUIContext';
 

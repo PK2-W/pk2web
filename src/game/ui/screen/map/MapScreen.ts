@@ -17,7 +17,7 @@ export class MapScreen extends Screen {
     private async inialize(): Promise<MapScreen> {
         const bgImage = await PkAssetTk.getImage(pathJoin(RESOURCES_PATH, 'gfx/map.bmp'));
         const bgDrawable = new DwSprite()
-            .setTexture(bgImage.getTexture());
+            .setOldTexture(bgImage.getTexture());
         this._dw.add(bgDrawable);
     
         this.layout();

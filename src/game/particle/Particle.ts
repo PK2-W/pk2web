@@ -285,7 +285,7 @@ abstract class BgParticle extends Particle {
 
 class DustParticle extends FgParticle {
     protected stage() {
-        this.dw.texture = this.stuffSheet.getTexture(PkRectangle.$(226, 2, 18, 19));
+        this.dw.oldTexture = this.stuffSheet.getTexture(PkRectangle.$(226, 2, 18, 19));
     }
     // public update(): void {
     //     super.update();
@@ -302,14 +302,14 @@ class DustParticle extends FgParticle {
 
 class FeatherParticle extends FgParticle {
     protected stage() {
-        this.dw.texture = this.stuffSheet.getTexture(PkRectangle.$(14, 1, 21, 12));
+        this.dw.oldTexture = this.stuffSheet.getTexture(PkRectangle.$(14, 1, 21, 12));
     }
     public update(): void {
         super.update();
         
         const xplus = Math.floor(this._anim / 7) * 21;
         
-        this.dw.texture.frame.x = 14 + xplus;
+        this.dw.oldTexture.frame.x = 14 + xplus;
         
         this._anim++;
         if (this._anim > 63)
@@ -320,7 +320,7 @@ class FeatherParticle extends FgParticle {
 class SparkParticle extends FgParticle {
     /** @inheritDoc */
     protected stage() {
-        this.dw.texture = this.stuffSheet.getTexture(PkRectangle.$(99, 14, 7, 7));
+        this.dw.oldTexture = this.stuffSheet.getTexture(PkRectangle.$(99, 14, 7, 7));
     }
     /** @inheritDoc */
     public update(): void {
@@ -337,7 +337,7 @@ class SparkParticle extends FgParticle {
 class SmokeParticle extends FgParticle {
     /** @inheritDoc */
     protected stage() {
-        this.dw.texture = this.stuffSheet.getTexture(PkRectangle.$(1, 338, 33, 28));
+        this.dw.oldTexture = this.stuffSheet.getTexture(PkRectangle.$(1, 338, 33, 28));
     }
     /** @inheritDoc */
     public update(): void {
@@ -351,7 +351,7 @@ class SmokeParticle extends FgParticle {
             if (frame > 16)
                 yplus = 32;
             
-            this.dw.texture.frame.change(1 + xplus, 338 + yplus, this.dw.texture.width, this.dw.texture.height);
+            this.dw.oldTexture.frame.change(1 + xplus, 338 + yplus, this.dw.oldTexture.width, this.dw.oldTexture.height);
             
             this._anim++;
         }
@@ -379,7 +379,7 @@ class PointParticle extends FgParticle {
 class StarParticle extends FgParticle {
     /** @inheritDoc */
     protected stage() {
-        this.dw.texture = this.stuffSheet.getTexture(PkRectangle.$(1, 1, 10, 10));
+        this.dw.oldTexture = this.stuffSheet.getTexture(PkRectangle.$(1, 1, 10, 10));
         
         //     if (color > 99 || !settings.lapinakyvat_objektit)
         //         PisteDraw2_Image_CutClip(kuva_peli, x-Game::camera_x, y-Game::camera_y, 1, 1, 11, 11);
@@ -396,7 +396,7 @@ class StarParticle extends FgParticle {
 class LightParticle extends FgParticle {
     /** @inheritDoc */
     protected stage() {
-        this.dw.texture = this.stuffSheet.getTexture(PkRectangle.$(1, 14, 13, 13));
+        this.dw.oldTexture = this.stuffSheet.getTexture(PkRectangle.$(1, 14, 13, 13));
         
         // if (settings.lapinakyvat_objektit)
         //     PK_Draw_Transparent_Object(kuva_peli, 1, 14, 13, 13, x-Game::camera_x, y-Game::camera_y, alpha, color);

@@ -65,7 +65,7 @@ export class MenuScreen extends Screen {
         // Load and prepare background
         this._bgImage = await this.context.fs.getPaletteBitmap( '/assets/gfx/menu.bmp');
         this._bgDrawable = new DwSprite()
-            .setNewTexture(this._bgImage.getTexture())
+            .setTexture(this._bgImage.getTexture())
             .addTo(this._dw);
         
         // Prepare square

@@ -441,8 +441,7 @@ export class SpritePrototype {
         let resource: PkPaletteBitmapResource;
         try {
             resource = await this._context.fs.getPaletteBitmap(pathJoin(fpath, this._spritesheetName));
-            resource.bitmap.setPalette(this._context.palette);
-            //bitmap.makeColorTransparent();
+            resource.internal.setPalette(this._context.palette);
         } catch (err) {
             // Register and notify the error, but don't raise it
             err = new SpritePrototypeMinorError(`Unable to get spritesheet bitmap for sprite {${ this.name }}.`, err);
@@ -460,9 +459,9 @@ export class SpritePrototype {
                 
                 for (let j = 0; j < resource.height; j++) {
                     for (let i = 0; i < resource.width; i++) {
-                        const color = resource.bitmap.getPixelIndex(i, j);
+                        const color = resource.internal.getPixelIndex(i, j);
                         if (color != 255) {
-                            resource.bitmap.setPixelIndex(i, j, (color % 32) + this._vari);
+                            resource.internal.setPixelIndex(i, j, (color % 32) + this._vari);
                         }
                     }
                 }

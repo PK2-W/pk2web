@@ -2,7 +2,7 @@
 import { PkFilesystem } from '@fwk/filesystem/PkFilesystem';
 import { NewTextureResource } from '@fwk/texture/NewTextureResource';
 import { PkPaletteBitmapResource } from '@fwk/texture/PkPaletteBitmapResource';
-import { Bitmap3Palette } from '@fwk/types/bitmap/Bitmap3Palette';
+import { BitmapPalette } from '@fwk/shared/bx-bitmap-palette';
 import { GameComposition } from '@game/display/GameComposition';
 import { Effects } from '@game/effects/Effects';
 import { Entropy } from '@game/Entropy';
@@ -300,13 +300,13 @@ export class Game implements GameContext, PkTickable {
             ...(this.episode.isCommunity() ? [pathJoin(this.episode.homePath, 'gfx/scenery/', fname)] : []),
             pathJoin(fpath, fname),
             pathJoin('/assets/gfx/scenery/', fname));
+        bt.internal.palette.setLastColorTransparent();
         this._bgTexture = bt.getTexture();
     }
     
     /**
      * Places the player at the start position and centers the camera on him.<br>
      * SDL: Select_Start
-     * @private
      */
     private _placePlayer(): void {
         const startPos = this.map.getStartPosition();

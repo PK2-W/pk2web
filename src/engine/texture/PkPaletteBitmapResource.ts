@@ -1,13 +1,15 @@
+import { PkResource } from '@fwk/filesystem/PkResource';
 import { NewTexture } from '@fwk/texture/NewTexture';
 import { NewTextureResource } from '@fwk/texture/NewTextureResource';
-import { Bitmap3 } from '@fwk/types/bitmap/Bitmap3';
-import { Bitmap3Palette } from '@fwk/types/bitmap/Bitmap3Palette';
+import { Bitmap } from '@fwk/shared/bx-bitmap';
+import { BitmapPalette } from '@fwk/shared/bx-bitmap-palette';
 import { PkBinary } from '@fwk/types/PkBinary';
 import { PkRectangle } from '@fwk/types/PkRectangle';
+import { PekkaContext } from '@game/PekkaContext';
 import * as PIXI from 'pixi.js';
 
-export class PkPaletteBitmapResource extends NewTextureResource {
-    private readonly _bitmap: Bitmap3;
+export class PkPaletteBitmapResource extends NewTextureResource implements PkResource {
+    private readonly _internal: Bitmap;
     private _frame: PkRectangle;
     private _buffer: PkBinary;
     
@@ -15,34 +17,43 @@ export class PkPaletteBitmapResource extends NewTextureResource {
     private _cache_pixiRes: PIXI.resources.BufferResource;
     private _cache_pixiBaseTexture: PIXI.BaseTexture;
     
-    public static fromBinary(binary: PkBinary): PkPaletteBitmapResource {
-        return this.fromBitmap(Bitmap3.fromBinary(binary));
+    public static async fetch(uris: string[], context: PekkaContext, child: boolean = false) {
+        const binary = await context.fs.fetchBinary(uris, true);
+        const instance = this.fromBinary(binary.resource);
+        instance.uri = binary.uri;
+        return instance;
     }
     
-    public static fromBitmap(bitmap: Bitmap3): PkPaletteBitmapResource {
+    public static fromBinary(binary: PkBinary): PkPaletteBitmapResource {
+        return this.fromBitmap(Bitmap.fromBinary(binary));
+    }
+    
+    public static fromBitmap(bitmap: Bitmap): PkPaletteBitmapResource {
         return new PkPaletteBitmapResource(bitmap);
     }
     
-    public constructor(bitmap: Bitmap3, frame?: PkRectangle) {
+    public constructor(bitmap: Bitmap, frame?: PkRectangle) {
         super();
         
-        this._bitmap = bitmap;
+        this._internal = bitmap;
         this._frame = frame;
-    }
-    
-    public project(frame: PkRectangle): PkPaletteBitmapResource {
-        return new PkPaletteBitmapResource(this._bitmap, frame);
+        
+        this._internal.on(Bitmap.EV_CHANGE, this.update, this);
     }
     
     public crop(frame: PkRectangle): PkPaletteBitmapResource {
-        return new PkPaletteBitmapResource(this._bitmap.crop(frame));
+        return new PkPaletteBitmapResource(this._internal.crop(frame));
     }
     
-    public get bitmap(): Bitmap3 {
-        return this._bitmap;
+    public get internal(): Bitmap {
+        return this._internal;
     }
     
-    public getTexture(): NewTexture<PkPaletteBitmapResource> {
+    public getTexture(frame?: PkRectangle): NewTexture<PkPaletteBitmapResource> {
+        if (frame != null) {
+            return new NewTexture(this, frame);
+        }
+        
         if (this._cache_texture == null) {
             this._cache_texture = new NewTexture<PkPaletteBitmapResource>(this);
         }
@@ -50,19 +61,19 @@ export class PkPaletteBitmapResource extends NewTextureResource {
     }
     
     public get width(): number {
-        return this._frame != null ? this._frame.width : this._bitmap.width;
+        return this._frame != null ? this._frame.width : this._internal.width;
     }
     
     public get height(): number {
-        return this._frame != null ? this._frame.height : this._bitmap.height;
+        return this._frame != null ? this._frame.height : this._internal.height;
     }
     
     private _rebuildLocalBuffer(): void {
-        if (this._frame == null || (this._frame.width == this._bitmap.width && this._frame.height === this._bitmap.height)) {
+        if (this._frame == null || (this._frame.width == this._internal.width && this._frame.height === this._internal.height)) {
             this._buffer = null;
             if (this._cache_pixiRes != null) {
-                this._cache_pixiRes.data = this._bitmap.buffer.getUint8Array();
-                this._cache_pixiRes.resize(this._bitmap.width, this._bitmap.height);
+                this._cache_pixiRes.data = this._internal.buffer.getUint8Array();
+                this._cache_pixiRes.resize(this._internal.width, this._internal.height);
                 this._cache_pixiRes.update();
             }
         } else {
@@ -70,27 +81,29 @@ export class PkPaletteBitmapResource extends NewTextureResource {
             
             for (let j = this._frame.y1; j <= this._frame.y2; j++) {
                 for (let i = this._frame.x1; i <= this._frame.x2; i++) {
-                    this._buffer.streamWriteUint8(this._bitmap.buffer.readUint8(j * this._bitmap.width * 4 + i * 4));
-                    this._buffer.streamWriteUint8(this._bitmap.buffer.readUint8(j * this._bitmap.width * 4 + i * 4 + 1));
-                    this._buffer.streamWriteUint8(this._bitmap.buffer.readUint8(j * this._bitmap.width * 4 + i * 4 + 2));
-                    this._buffer.streamWriteUint8(this._bitmap.buffer.readUint8(j * this._bitmap.width * 4 + i * 4 + 3));
+                    this._buffer.streamWriteUint8(this._internal.buffer.readUint8(j * this._internal.width * 4 + i * 4));
+                    this._buffer.streamWriteUint8(this._internal.buffer.readUint8(j * this._internal.width * 4 + i * 4 + 1));
+                    this._buffer.streamWriteUint8(this._internal.buffer.readUint8(j * this._internal.width * 4 + i * 4 + 2));
+                    this._buffer.streamWriteUint8(this._internal.buffer.readUint8(j * this._internal.width * 4 + i * 4 + 3));
                 }
             }
             
             if (this._cache_pixiRes != null) {
                 this._cache_pixiRes.data = this._buffer.getUint8Array();
-                this._cache_pixiRes.resize(this._bitmap.width, this._bitmap.height);
+                this._cache_pixiRes.resize(this._internal.width, this._internal.height);
                 this._cache_pixiRes.update();
             }
         }
     }
     
     public update(): void {
-        this.getPixiResource().update();
+        if (this._cache_pixiRes != null) {
+            this.getPixiResource().update();
+        }
     }
     
     public clone(): PkPaletteBitmapResource {
-        return PkPaletteBitmapResource.fromBitmap(this._bitmap.clone());
+        return PkPaletteBitmapResource.fromBitmap(this._internal.clone());
     }
     
     
@@ -98,7 +111,7 @@ export class PkPaletteBitmapResource extends NewTextureResource {
     
     public getPixiResource(): PIXI.resources.Resource {
         if (this._cache_pixiRes == null) {
-            this._cache_pixiRes = new PIXI.resources.BufferResource(this._bitmap.buffer.getUint8Array(), {
+            this._cache_pixiRes = new PIXI.resources.BufferResource(this._internal.buffer.getUint8Array(), {
                 width: this.width,
                 height: this.height
             });

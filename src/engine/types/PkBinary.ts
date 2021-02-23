@@ -1,6 +1,7 @@
 import { int, uint8, uint32, uint16 } from '@fwk/shared/bx-ctypes';
 import { PkError } from '@fwk/error/PkError';
 import { cloneArrayBuffer } from '@fwk/support/utils';
+import { PekkaContext } from '@game/PekkaContext';
 
 export class PkBinary {
     private readonly _ab: ArrayBuffer;
@@ -11,7 +12,6 @@ export class PkBinary {
     /// Cached
     private _xBlob: Blob;
     private _xUint8Array: Uint8Array;
-    
     
     public constructor(initSize: int);
     public constructor(ab: ArrayBuffer);

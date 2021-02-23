@@ -61,7 +61,7 @@ export class UICheckbox extends PkUIComponent<PekkaContext> {
         this._value = checked === true;
         
         this._uiText.setText(this._value ? this._trueText : this._falseText);
-        this._dwCheckbox.setTexture(this._value ? this._trueTx : this._falseTx);
+        this._dwCheckbox.setOldTexture(this._value ? this._trueTx : this._falseTx);
         
         const bounds: PkRectangle = this.dw.getLocalBounds();
         this.dw.hitArea = PkRectangle.$(bounds.x - 2, bounds.y - 2, bounds.width + 4, bounds.height + 4);

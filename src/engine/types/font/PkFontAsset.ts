@@ -1,25 +1,24 @@
 import { DwContainer } from '@fwk/drawable/dw/DwContainer';
 import { DwSprite } from '@fwk/drawable/dw/DwSprite';
+import { PkResourceBase } from '@fwk/filesystem/PkResource';
 import { pathJoin } from '@fwk/support/utils';
-import { PkAssetTk } from '@fwk/toolkit/PkAssetTk';
+import { NewTexture } from '@fwk/texture/NewTexture';
+import { PkPaletteBitmapResource } from '@fwk/texture/PkPaletteBitmapResource';
 import { PkFont } from '@fwk/types/font/PkFont';
-import { PkBaseTexture } from '@fwk/types/image/PkBaseTexture';
-import { PkBitmapBT } from '@fwk/types/image/PkBitmapBT';
-import { PkParameters } from '@fwk/types/PkParameters';
 import { PkRectangle } from '@fwk/types/PkRectangle';
-import { PkTexture } from '@fwk/types/PkTexture';
+import { PekkaContext } from '@game/PekkaContext';
+import { PkParameters } from '@game/resources/PkParameters';
 
-export class PkFontAsset implements PkFont {
-    private readonly _url: string;
+export class PkFontAsset extends PkResourceBase implements PkFont {
     private _parameters: PkParameters;
     
-    private _bitmap: PkBitmapBT;
-    private readonly _textureCache: { [char: string]: PkTexture<PkBaseTexture> };
+    private _bitmap: PkPaletteBitmapResource;
+    private readonly _textureCache: { [char: string]: NewTexture };
     private readonly _charIndex: { [char: string]: number };
     
     private _sourceX: number;
     private _sourceY: number;
-    private sourceW: number;
+    private _sourceW: number;
     
     private _sourceH: number;
     private _chars: string;
@@ -27,13 +26,45 @@ export class PkFontAsset implements PkFont {
     private _charH: number;
     private _charCount: number;
     
-    public static async from(url: string): Promise<PkFontAsset> {
-        const font = new PkFontAsset(url);
-        return await font.load();
+    public static async fetch(uris: string[], context: PekkaContext, child: boolean = false): Promise<PkFontAsset> {
+        const self = new PkFontAsset();
+        
+        const parameters = await PkParameters.fetch(uris, context, true);
+        
+        self._parameters = parameters;
+        self._uri = parameters.uri;
+        
+        self._sourceX = Number(parameters.get('image x'));
+        self._sourceY = Number(parameters.get('image y'));
+        
+        self._charCount = parameters.get('letters').length;
+        self._charW = Number(parameters.get('letter width'));
+        self._charH = Number(parameters.get('letter height'));
+        self._chars = parameters.get('letters');
+        
+        self._sourceW = self._charW * self._charCount;
+        self._sourceH = self._charH;
+        
+        const path = parameters.uri.substring(0, parameters.uri.lastIndexOf('/')) + '/';
+        const imagePath = parameters.get('image');
+        
+        self._bitmap = await PkPaletteBitmapResource.fetch([pathJoin(path, imagePath)], context);
+        self._bitmap.internal.palette.setLastColorTransparent();
+        // TODO: Control error
+        //	temp_image = PisteDraw2_Image_Load(_uri,false);
+        //	if (temp_image == -1) return -1;
+        
+        // Generate characters index
+        for (let i = 0; i < self._charCount; i++) {
+            const key = self._chars[i];
+            self._charIndex[key] = i;
+        }
+        
+        return self;
     }
     
-    private constructor(url: string) {
-        this._url = url;
+    private constructor() {
+        super();
         
         this._charIndex = {};
         this._textureCache = {};
@@ -51,44 +82,7 @@ export class PkFontAsset implements PkFont {
     //     //	ImageIndex = PisteDraw2_Image_Cut(img_source, x, y, _charW*_charCount, _charH*_charCount);
     // }
     
-    private async load(): Promise<PkFontAsset> {
-        this._parameters = await PkAssetTk.getParamFile(this._url);
-        
-        // let buf_width: int;
-        //let font_index[256] int;
-        
-        // buf_width = Number(paramFile.get('image width'));
-        
-        this._sourceX = Number(this._parameters.get('image x'));
-        this._sourceY = Number(this._parameters.get('image y'));
-        
-        this._charCount = this._parameters.get('letters').length;
-        this._charW = Number(this._parameters.get('letter width'));
-        this._charH = Number(this._parameters.get('letter height'));
-        this._chars = this._parameters.get('letters');
-        
-        this.sourceW = this._charW * this._charCount;
-        this._sourceH = this._charH;
-        
-        const path = this._url.substring(0, this._url.lastIndexOf('/')) + '/';
-        const imagePath = this._parameters.get('image');
-        
-        this._bitmap = await   PkAssetTk.getBitmap(pathJoin(path, imagePath));
-        this._bitmap.makeColorTransparent();
-        // TODO: Control error
-        //	temp_image = PisteDraw2_Image_Load(_uri,false);
-        //	if (temp_image == -1) return -1;
-        
-        // Generate characters index
-        for (let i = 0; i < this._charCount; i++) {
-            const key = this._chars[i];
-            this._charIndex[key] = i;
-        }
-        
-        return this;
-    }
-    
-    private getCharTexture(char: string): PkTexture<PkBaseTexture> {
+    private getCharTexture(char: string): NewTexture {
         let character = this._textureCache[char];
         
         if (typeof character === 'undefined') {
@@ -114,7 +108,7 @@ export class PkFontAsset implements PkFont {
         }
         
         let char: string;
-        let texture: PkTexture<PkBaseTexture>;
+        let texture: NewTexture;
         let sprite: DwSprite;
         
         let i;

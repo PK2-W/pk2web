@@ -120,7 +120,7 @@ export class Block extends DwObjectBase<DwSprite> {
         //this._drawable.clear();
         
         const texture = this._proto.texture;
-        this._dw.setNewTexture(texture);
+        this._dw.setTexture(texture);
         //this._drawable.add(this.tmpSpr);
         
         // // Debug

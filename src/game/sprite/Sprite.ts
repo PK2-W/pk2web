@@ -255,8 +255,8 @@ export class Sprite extends DwObjectBase<DwSprite> {
         const texture = this.proto.getFrame(frame);
         // if (texture == null) {
         //     console.debug(`Current frame texture for sprite ${ this.__iid__ } is empty.`);
-        if (this._dw.getNewTexture() !== texture) {
-            this._dw.setNewTexture(texture);
+        if (this._dw.getTexture() !== texture) {
+            this._dw.setTexture(texture);
         }
         
         if (this.proto.shakes) {

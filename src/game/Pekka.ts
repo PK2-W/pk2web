@@ -20,7 +20,8 @@
 //#########################
 
 import { PkURI } from '@fwk/resource/PkURI';
-import { Bitmap3Palette } from '@fwk/types/bitmap/Bitmap3Palette';
+import { BitmapPalette } from '@fwk/shared/bx-bitmap-palette';
+import { PkFontAsset } from '@fwk/types/font/PkFontAsset';
 import { Entropy } from '@game/Entropy';
 import { Episode } from '@game/episodes/Episode';
 import { EpisodeManager } from '@game/episodes/EpisodeManager';
@@ -55,7 +56,7 @@ import { pathJoin } from '@fwk/support/utils';
 import { PkAssetTk } from '@fwk/toolkit/PkAssetTk';
 import { PkFont } from '@fwk/types/font/PkFont';
 import { PkFontHolder } from '@fwk/types/font/PkFontHolder';
-import { PkParameters } from '@fwk/types/PkParameters';
+import { PkParameters } from '@game/resources/PkParameters';
 import { PkScreen, PkIntent } from '@fwk/ui/PkScreen';
 import {
     RESOURCES_PATH,
@@ -275,7 +276,7 @@ export class Pekka implements PkTickable, PekkaContext {
     private siirry_lopusta_menuun: boolean = false;
     
     // GRAPHICS
-    private _gamePalette: Bitmap3Palette;
+    private _gamePalette: BitmapPalette;
     private doublespeed: boolean = false;
     
     // Menus
@@ -402,7 +403,7 @@ export class Pekka implements PkTickable, PekkaContext {
         
         ind_font = this.tx.get(TX.FONT_SMALL_FONT);
         if (ind_path == null || ind_font == null) {
-            this._font1.update(await PkAssetTk.getFont(pathJoin(RESOURCES_PATH, 'language/fonts', 'ScandicSmall.txt')));
+            this._font1.update(await PkFontAsset.fetch([pathJoin('/assets/language/fonts', 'ScandicSmall.txt')], this));
             // PK2_error = true;
             // PK2_error_msg = 'Can\'t create font 1 from ScandicSmall.txt';
         } else {
@@ -414,7 +415,7 @@ export class Pekka implements PkTickable, PekkaContext {
         
         ind_font = this.tx.get(TX.FONT_BIG_FONT_NORMAL);
         if (ind_path == null || ind_font == null) {
-            this._font2.update(await PkAssetTk.getFont(pathJoin(RESOURCES_PATH, 'language/fonts', 'ScandicBig1.txt')));
+            this._font2.update(await PkFontAsset.fetch([pathJoin('/assets/language/fonts', 'ScandicBig1.txt')], this));
             // PK2_error = true;
             // PK2_error_msg = 'Can\'t create font 1 from ScandicBig1.txt';
         } else {
@@ -426,7 +427,7 @@ export class Pekka implements PkTickable, PekkaContext {
         
         ind_font = this.tx.get(TX.FONT_BIG_FONT_HILITE);
         if (ind_path == null || ind_font == null) {
-            this._font3.update(await PkAssetTk.getFont(pathJoin(RESOURCES_PATH, 'language/fonts', 'ScandicBig2.txt')));
+            this._font3.update(await PkFontAsset.fetch([pathJoin('/assets/language/fonts', 'ScandicBig2.txt')], this));
             // PK2_error = true;
             // PK2_error_msg = 'Can\'t create font 3 from ScandicBig2.txt';
         } else {
@@ -438,7 +439,7 @@ export class Pekka implements PkTickable, PekkaContext {
         
         ind_font = this.tx.get(TX.FONT_BIG_FONT_SHADOW);
         if (ind_path == null || ind_font == null) {
-            this._font4.update(await PkAssetTk.getFont(pathJoin(RESOURCES_PATH, 'language/fonts', 'ScandicBig3.txt')));
+            this._font4.update(await PkFontAsset.fetch([pathJoin('/assets/language/fonts', 'ScandicBig3.txt')], this));
             // PK2_error = true;
             // PK2_error_msg = 'Can\'t create font 4 from ScandicBig3.txt';
         } else {

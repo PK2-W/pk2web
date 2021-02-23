@@ -1,6 +1,6 @@
 import { NewTexture } from '@fwk/texture/NewTexture';
 import { PkPaletteBitmapResource } from '@fwk/texture/PkPaletteBitmapResource';
-import { Bitmap3 } from '@fwk/types/bitmap/Bitmap3';
+import { Bitmap } from '@fwk/shared/bx-bitmap';
 import { PkRectangle } from '@fwk/types/PkRectangle';
 import { EBlockPrototype } from '@game/enum/EBlockPrototype';
 import { EBlocks } from '@game/tile/Block';
@@ -146,7 +146,7 @@ export class BlockPrototype {
         
         for (x = 0; x < BLOCK_SIZE; x++) {
             y = 0;
-            while (y < BLOCK_SIZE - 1 && this._texture.resource.bitmap.getPixelIndex(x, y) === 255)
+            while (y < BLOCK_SIZE - 1 && this._texture.resource.internal.getPixelIndex(x, y) === 255)
                 y++;
             
             this._bottomMask[x] = y;
@@ -154,7 +154,7 @@ export class BlockPrototype {
         
         for (x = 0; x < BLOCK_SIZE; x++) {
             y = BLOCK_SIZE - 1;
-            while (y >= 0 && this._texture.resource.bitmap.getPixelIndex(x, y) === 255)
+            while (y >= 0 && this._texture.resource.internal.getPixelIndex(x, y) === 255)
                 y--;
             
             this._topMask[x] = (BLOCK_SIZE - 1) - y;

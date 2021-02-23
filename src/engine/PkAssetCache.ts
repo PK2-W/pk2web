@@ -5,7 +5,7 @@ import { PkAssetTk } from '@fwk/toolkit/PkAssetTk';
 import { PkBitmapBT } from '@fwk/types/image/PkBitmapBT';
 import { PkImageBitmapBT } from '@fwk/types/image/PkImageBitmapBT';
 import { PkBinary } from '@fwk/types/PkBinary';
-import { PkImageTexture } from '@fwk/types/PkImageTexture';
+import { PkImageTexture } from '../../rubish/PkImageTexture';
 import { PkRectangle } from '@fwk/types/PkRectangle';
 import { PkSound } from '@fwk/types/PkSound';
 

@@ -122,7 +122,7 @@ export class DwTilingSprite extends DwObjectBase<DwContainer> {
             for (let j = 0; j < jCount; j++) {
                 for (let i = 0; i < iCount; i++) {
                     spr = this._spriteBuffer[j * iCount + i]
-                        .setNewTexture(this._texture)
+                        .setTexture(this._texture)
                         .setPosition(i * this._texture.width, j * this._texture.height)
                         .addTo(this.dw);
                 }

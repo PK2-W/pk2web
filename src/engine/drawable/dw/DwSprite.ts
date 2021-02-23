@@ -7,32 +7,33 @@ import type { PkTexture } from '@fwk/types/PkTexture';
 
 export class DwSprite extends Dw<PIXI.Sprite> {
     /** @deprecated */
-    private _texture: PkTexture<any>;
-    private _newTexture: NewTexture;
+    private _oldTexture: PkTexture<any>;
+    private _texture: NewTexture;
     
     public constructor() {
         super(new PIXI.Sprite());
     }
     
-    public get texture(): PkTexture<any> {
-        return this._texture;
+    public get oldTexture(): PkTexture<any> {
+        return this._oldTexture;
     }
-    public set texture(texture: PkTexture<any>) { this.setTexture(texture); }
+    public set oldTexture(texture: PkTexture<any>) { this.setOldTexture(texture); }
     /**
-     * Sets the {@link texture} property.
+     * @deprecated
+     * Sets the {@link oldTexture} property.
      */
-    public setTexture(texture: PkTexture<any>): this {
-        this._texture = texture;
+    public setOldTexture(texture: PkTexture<any>): this {
+        this._oldTexture = texture;
         this._pixi.texture = texture.getPixiTexture();
         return this;
     }
     
-    public getNewTexture(): NewTexture<NewTextureResource> {
-        return this._newTexture;
+    public getTexture(): NewTexture {
+        return this._texture;
     }
     
-    public setNewTexture(texture: NewTexture): this {
-        this._newTexture = texture;
+    public setTexture(texture: NewTexture): this {
+        this._texture = texture;
         this._pixi.texture = texture.getPixiTexture();
         return this;
     }

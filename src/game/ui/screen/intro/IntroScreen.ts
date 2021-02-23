@@ -1,7 +1,9 @@
 import { PkInputEvent } from '@fwk/core/input/PkInputEvent';
 import { PkInput } from '@fwk/core/PkInput';
 import { DwSprite } from '@fwk/drawable/dw/DwSprite';
+import { Bitmap } from '@fwk/shared/bx-bitmap';
 import { PkEasing } from '@fwk/support/PkEasing';
+import { PkPaletteBitmapResource } from '@fwk/texture/PkPaletteBitmapResource';
 import { PkAudio, PkAudioType } from '@fwk/types/audio/PkAudio';
 import { PkRectangle } from '@fwk/types/PkRectangle';
 import { PkUIEffectDelay } from '@fwk/ui/effect/PkUIEffectDelay';
@@ -55,7 +57,7 @@ export class IntroScreen extends Screen {
     
     private async _inialize(): Promise<this> {
         // Prepare graphics
-        const bitmap = await this.context.fs.getBitmap('/assets/gfx/intro.bmp');
+        const bitmap = await PkPaletteBitmapResource.fetch(['/assets/gfx/intro.bmp'], this.context);
         
         const bgTex = bitmap.getTexture(PkRectangle.$(280, 80, 360, 400));
         const blinkEyesTex = bitmap.getTexture(PkRectangle.$(242, 313, 33, 119));

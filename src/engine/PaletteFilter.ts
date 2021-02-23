@@ -1,5 +1,5 @@
 import { Binary } from '@fwk/shared/bx-binary';
-import { Bitmap3Palette } from '@fwk/types/bitmap/Bitmap3Palette';
+import { BitmapPalette } from '@fwk/shared/bx-bitmap-palette';
 import { defaultVertex } from 'pixi.js';
 
 export class PaletteFilter extends PIXI.Filter {
@@ -45,7 +45,7 @@ export class PaletteFilter extends PIXI.Filter {
         }
     `;
     
-    private _palette: Bitmap3Palette;
+    private _palette: BitmapPalette;
     
     public constructor(palette, fallbackPalette) {
         super(defaultVertex, PaletteFilter.sFragShader);

@@ -10,4 +10,8 @@ export interface PkFs {
     exists(uri: string): Promise<boolean>;
     
     getBuffer(uri: string): Promise<ArrayBuffer>;
+    
+    getBlob(uri: string): Promise<Blob>
+    
+    getPlainText(uri: string): Promise<string>
 }

@@ -5,7 +5,7 @@
 
 import { TTextId } from '@game/support/types';
 import { PkAssetTk } from '@fwk/toolkit/PkAssetTk';
-import { PkParameters } from '@fwk/types/PkParameters';
+import { PkParameters } from '@game/resources/PkParameters';
 
 
 const LUE_SKIP: number = 0;

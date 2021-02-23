@@ -1,7 +1,10 @@
+import { AssetNotFoundError } from '@fwk/error/AssetNotFoundError';
+import { int, uint, uint8 } from '@fwk/shared/bx-ctypes';
+import { Log } from '@fwk/support/log/LoggerImpl';
+import { pathJoin, rand } from '@fwk/support/utils';
 import { NewTexture } from '@fwk/texture/NewTexture';
 import { PkPaletteBitmapResource } from '@fwk/texture/PkPaletteBitmapResource';
-import { Bitmap3 } from '@fwk/types/bitmap/Bitmap3';
-import { BitmapTx } from '@fwk/types/bitmap/BitmapTx';
+import { PkBitmapBT } from '@fwk/types/image/PkBitmapBT';
 import { PkRectangle } from '@fwk/types/PkRectangle';
 import { Effects } from '@game/effects/Effects';
 import { EBlockPrototype } from '@game/enum/EBlockPrototype';
@@ -9,19 +12,13 @@ import { TEXTURE_ID_BLOCKS } from '@game/game/Game';
 import { GameContext } from '@game/game/GameContext';
 import { PK2KARTTA_KARTTA_LEVEYS, PK2KARTTA_KARTTA_KORKEUS, KYTKIN_ALOITUSARVO } from '@game/map/LevelMap';
 import { CVect, cvect } from '@game/support/types';
+import { TX } from '@game/texts';
 import { Block } from '@game/tile/Block';
 import { BlockCollider } from '@game/tile/BlockCollider';
 import { BLOCK_SIZE, BLOCKSHEET_WIDTH } from '@game/tile/BlockConstants';
 import { BlockContext } from '@game/tile/BlockContext';
 import { BlockPrototype, TBlockProtoCode } from '@game/tile/BlockPrototype';
-import { AssetNotFoundError } from '@fwk/error/AssetNotFoundError';
-import { int, uint, uint8 } from '@fwk/shared/bx-ctypes';
-import { Log } from '@fwk/support/log/LoggerImpl';
-import { pathJoin, rand } from '@fwk/support/utils';
-import { PkAssetTk } from '@fwk/toolkit/PkAssetTk';
-import { PkBitmapBT } from '@fwk/types/image/PkBitmapBT';
-import { TX } from '@game/texts';
-import { RESOURCES_PATH, BLOCK_CULLING } from '@sp/constants';
+import { BLOCK_CULLING } from '@sp/constants';
 
 export class BlockManager {
     // Game Environment
@@ -710,7 +707,7 @@ export class BlockManager {
         
         for (x = 0; x < 32; x++) {
             for (y = 0; y < 31; y++) {
-                pcolor = texture.bitmap.getPixelIndex(x, y + 1);
+                pcolor = texture.internal.getPixelIndex(x, y + 1);
                 
                 if (pcolor != 255) {
                     pcolor %= 32;
@@ -727,17 +724,17 @@ export class BlockManager {
                     }
                 }
                 
-                texture.bitmap.setPixelIndex(x, y, pcolor);
+                texture.internal.setPixelIndex(x, y, pcolor);
             }
         }
         
         if (this._context.switchTimer1 < 20) {
             for (x = 0; x < 32; x++) {
-                texture.bitmap.setPixelIndex(x, y, rand() % 15 + 144);
+                texture.internal.setPixelIndex(x, y, rand() % 15 + 144);
             }
         } else {
             for (x = 0; x < 32; x++) {
-                texture.bitmap.setPixelIndex(x, y, 255);
+                texture.internal.setPixelIndex(x, y, 255);
             }
         }
         
@@ -761,7 +758,7 @@ export class BlockManager {
         // Copy current tile to temporal buffer
         for (x = 0; x < 32; x++) {
             for (y = 0; y < 32; y++) {
-                temp[x + y * 32] = texture.bitmap.getPixelIndex(x, y);
+                temp[x + y * 32] = texture.internal.getPixelIndex(x, y);
             }
         }
         
@@ -784,9 +781,9 @@ export class BlockManager {
                     if (rand() % 160 == 1)
                         index = 30;
                     
-                    texture.bitmap.setPixelIndex(x, (416 + y + plus) % 32, index + index2);
+                    texture.internal.setPixelIndex(x, (416 + y + plus) % 32, index + index2);
                 } else {
-                    texture.bitmap.setPixelIndex(x, (416 + y + plus) % 32, index);
+                    texture.internal.setPixelIndex(x, (416 + y + plus) % 32, index);
                 }
             }
         }
@@ -805,17 +802,17 @@ export class BlockManager {
         const temp = new Array(32);
         
         for (x = 0; x < 32; x++) {
-            temp[x] = texture.bitmap.getPixelIndex(x, 0);
+            temp[x] = texture.internal.getPixelIndex(x, 0);
         }
         
         for (x = 0; x < 32; x++) {
             for (y = 0; y < 31; y++) {
-                texture.bitmap.setPixelIndex(x, y, texture.bitmap.getPixelIndex(x, y + 1));
+                texture.internal.setPixelIndex(x, y, texture.internal.getPixelIndex(x, y + 1));
             }
         }
         
         for (x = 0; x < 32; x++) {
-            texture.bitmap.setPixelIndex(x, y, temp[x]);
+            texture.internal.setPixelIndex(x, y, temp[x]);
         }
         
         texture.update();
@@ -832,17 +829,17 @@ export class BlockManager {
         const texture = this._spritesheetTextures[EBlockPrototype.BLOCK_WATER_SURFACE].resource;
         
         for (y = 0; y < 32; y++) {
-            temp[y] = texture.bitmap.getPixelIndex(0, y);
+            temp[y] = texture.internal.getPixelIndex(0, y);
         }
         
         for (y = 0; y < 32; y++) {
             for (x = 0; x < 31; x++) {
-                texture.bitmap.setPixelIndex(x, y, texture.bitmap.getPixelIndex(x + 1, y));
+                texture.internal.setPixelIndex(x, y, texture.internal.getPixelIndex(x + 1, y));
             }
         }
         
         for (y = 0; y < 32; y++) {
-            texture.bitmap.setPixelIndex(31, y, temp[y]);
+            texture.internal.setPixelIndex(31, y, temp[y]);
         }
         
         texture.update();
@@ -956,7 +953,7 @@ export class BlockManager {
             //> 🏠/gfx/tiles/
             pathJoin('/assets/gfx/tiles/', filename));
         
-        this._spritesheet.bitmap.setPalette(this._context.palette);
+        this._spritesheet.internal.setPalette(this._context.palette);
         
         // Crop final textures
         for (let j = 0; j < 15; j++) {
