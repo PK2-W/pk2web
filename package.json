@@ -7,7 +7,7 @@
     "glob": "^7.1.6",
     "pixi.js": "^5.3.3",
     "ts-key-enum": "^2.0.3",
-    "minimatch": "^3.0.4"
+    "minimatch": "^3.0.5"
   },
   "devDependencies": {
     "@types/bmp-js": "^0.1.0",
